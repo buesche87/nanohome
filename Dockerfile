@@ -15,7 +15,7 @@ RUN chmod +x /opt/nanohome/services/*
 
 # Templates & config
 COPY templates /opt/nanohome/templates
-COPY config.cfg /config.cfg
+COPY config.cfg /opt/nanohome/config.cfg
 
 # Startup script
 COPY start.sh /start.sh
@@ -24,9 +24,6 @@ RUN chmod +x /start.sh
 
 
 VOLUME /opt/nanohome
-
-
-
 
 
 
