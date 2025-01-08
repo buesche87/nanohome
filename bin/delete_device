@@ -3,7 +3,6 @@
 # Nanohome remove a device from InfluxDB
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Catch Parameters
 DEVICE="$1"
 COMPONENT="$2"
 DESCRIPTION="$3"
