@@ -2,7 +2,7 @@ FROM alpine:latest
 LABEL maintainer="buesche"
 RUN apk add --no-cache bash curl sed jq mosquitto-clients 
 WORKDIR /opt/nanohome
-MKDIR /opt/nanohome/config
+RUN mkdir -p /opt/nanohome/config
 
 # Executables
 COPY bin /opt/nanohome/bin
