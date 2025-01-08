@@ -1,26 +1,26 @@
 FROM alpine:latest
 LABEL maintainer="buesche"
-RUN apk add --no-cache bash curl sed jq mosquitto-clients 
+RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients 
+
+# influx-cli
+RUN mkdir -p ./influx-cli
+RUN wget https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz -O ./influx-cli/influx-cli.tar.gz
+RUN tar xvzf ./influx-cli/influx-cli.tar.gz -C ./influx-cli
+RUN mv ./influx-cli/influx /usr/local/bin/
+RUN rm -rf ./influx-cli
+
 WORKDIR /opt/nanohome
 
-# Executables
+# Nanohome
 COPY bin /opt/nanohome/bin
 RUN chmod +x /opt/nanohome/bin/*
 RUN ln -sf /opt/nanohome/bin/* /usr/local/bin/
-
-# Services
 COPY services /opt/nanohome/services
 RUN chmod +x /opt/nanohome/services/*
-
-# Templates & config
 COPY templates /opt/nanohome/templates
 
-# Startup script
+# Defaults
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
-
-# Volumes
 VOLUME /opt/nanohome
-
-# Default command
 CMD ["/start.sh"]
