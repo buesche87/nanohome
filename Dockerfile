@@ -1,16 +1,35 @@
 FROM alpine:latest
 LABEL maintainer="buesche"
-RUN apk add --no-cache bash curl git sed jq mosquitto-clients 
+RUN apk add --no-cache bash curl sed jq mosquitto-clients 
 WORKDIR /opt/nanohome
+MKDIR /opt/nanohome/config
 
-RUN git clone https://github.com/buesche87/nanohome.git /opt/nanohome
+# Executables
+COPY bin /opt/nanohome/bin
+RUN chmod +x /opt/nanohome/bin/*
+RUN ln -sf /opt/nanohome/bin/* /usr/local/bin/
+
+# Services
+COPY services /opt/nanohome/services
+RUN chmod +x /opt/nanohome/services/*
+
+# Templates & config
+COPY templates /opt/nanohome/templates
+COPY config.cfg /config.cfg
+
+# Startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 
 
 VOLUME /opt/nanohome
 
-# Add a script to start both crond and bash
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+
+
+
+
+
 
 # Default command
 CMD ["/start.sh"]
