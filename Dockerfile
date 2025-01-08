@@ -21,11 +21,7 @@ COPY config.cfg /opt/nanohome/config.cfg
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-
-
 VOLUME /opt/nanohome
-
-
 
 
 # Default command

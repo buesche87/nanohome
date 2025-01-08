@@ -1,24 +1,19 @@
 TODO:
 
 - Scripte: Variabeln aus ENV lesen
-
 - For your specific case, it might be better to use an ENTRYPOINT script which does the initialization, irrespective of wthether bash or sh or something else is called.
 - When invoked as an interactive shell with the name sh, Bash looks for the variable ENV, expands its value if it is defined, and uses the expanded value as the name of a file to read and execute.
-
 - timer.css  & standby.css cleanup
-
-
 - influx-cli commands auf influx api umschreiben
+- mosquitto_sub mit json format abholen > -F "%t,%p"
+  - %j oder %J und --pretty
+- /etc/crontab existiert nicht > root crontab nutzen?
 
 ------------------------------------
-Script:
+Build & Run:
 
-    FROM alpine:latest
-    RUN apk add --no-cache bash \
-    ENTRYPOINT ["bash"]
-
-
-
+    docker build -t nanohome .
+    docker run -it --env-file .env --rm nanohome
 
 ------------------------------------
 Folders:

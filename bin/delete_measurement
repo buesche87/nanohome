@@ -1,19 +1,16 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# Nanohome clear a measurement from InfluxDB
+# Nanohome clear a MEASUREMENT from InfluxDB
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Catch Parameters
-measurement="$1"
+MEASUREMENT="$1"
 
-# Load config
-source /opt/nanohome/config.cfg
+# Delete measurement
+if [ -n $MEASUREMENT ]; then
 
-# Delete Measurement
-if [ -n "$measurement" ]; then
-
-	influx delete --bucket $influxdb_measurements_bucket \
+	influx delete --bucket "${INFLUXDB_BUCKET_MEASUREMENTS}" \
 	  --start '1970-01-01T00:00:00Z' \
 	  --stop $(date --utc +"%Y-%m-%dT%H:%M:%SZ") \
-	  --predicate '_measurement="'$measurement'"'
+	  --predicate '_MEASUREMENT="'"${MEASUREMENT}"'"'
 fi

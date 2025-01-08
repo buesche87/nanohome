@@ -7,134 +7,114 @@
 # Create a crontab entry for on and off times
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Load config
-source /opt/nanohome/config.cfg
-
 # crontab entry
-plus_cron="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h $mqtt_server -u $mqtt_system_user -P $mqtt_system_pass -t DEVICEID/command/COMPONENT -m MESSAGE"
-legacy_cron="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h $mqtt_server -u $mqtt_system_user -P $mqtt_system_pass -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
+PLUSCRON="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVICE} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t DEVICEID/command/COMPONENT -m MESSAGE"
+LEGACYCRON="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVICE} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
 
-# Create temporary crontab file
-temp_cron=$(mktemp)
-sed -n '/# Nanohome Crontabs/q;p' /etc/crontab > "$temp_cron"
-echo "# Nanohome Crontabs" >> "$temp_cron"
+# Create temporary crontab file and fill it without nanohome crons
+TEMPCRON=$(mktemp)
+sed '/# Nanohome Crontabs/q' /etc/crontab > "${TEMPCRON}"
 
-# Subscribe to timer topic
-publishedTimers=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$topic_timer" -W 2 --retained-only --nodelay --quiet)
-configuredTimers=${publishedTimers//$'\n'/} # remove newlines
-IFS=']' read -r -a timerArray <<< "$configuredTimers" # create array
+# Subscribe to timer topic and create array with all timers
+PUBLISHEDTIMERS=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_TIMER}" -W 2 --retained-only --nodelay --quiet)
+CONFIGUREDTIMERS="${PUBLISHEDTIMERS//$'\n'/}"
+IFS=']' read -r -a TIMERARRAY <<< "$CONFIGUREDTIMERS"
 
 # Process each timer for every device stored in the arary
-for timer in "${timerArray[@]}"; do
+for timer in "${TIMERARRAY[@]}"; do
 
 	# count timer per device and process data
 	num_objects=$(jq length <<< $timer)
 	for ((i = 0; i < num_objects; i++)); do
 
 		# Fill Variables
-		deviceId=$(echo "$timer" | jq -r .[$i].deviceId )
-		component=$(echo "$timer" | jq -r .[$i].component )
-		description=$(echo "$timer" | jq -r .[$i].description )
-		timerPeriod=$(echo "$timer" | jq -r .[$i].timerPeriodValue )
-		timerPeriodText=$(echo "$timer" | jq -r .[$i].timerPeriodText )
-		timerOn=$(echo "$timer" | jq -r .[$i].timerOn )
-		timerOff=$(echo "$timer" | jq -r .[$i].timerOff )
+		DEVICEID=$(echo "$timer" | jq -r .[$i].deviceId )
+		COMPONENT=$(echo "$timer" | jq -r .[$i].component )
+		DESCRIPTION=$(echo "$timer" | jq -r .[$i].description )
+		TIMERPERIOD=$(echo "$timer" | jq -r .[$i].timerPeriodValue )
+		TIMERPERIODTEXT=$(echo "$timer" | jq -r .[$i].timerPeriodText )
+		TIMERON=$(echo "$timer" | jq -r .[$i].timerOn )
+		TIMEROFF=$(echo "$timer" | jq -r .[$i].timerOff )
 		
 		# Legacy
-		componentDev=$(echo "$timer" | jq -r .[$i].componentDev )
-		componentIndex=$(echo "$timer" | jq -r .[$i].componentIndex )
-
-		# Debug output
-		echo "---------------------------------"
-		echo "deviceId: $deviceId"
-		echo "component: $component"
-		echo "componentDev: $componentDev"
-		echo "componentIndex: $componentIndex"
-		echo "description: $description"
-		echo "timerPeriodText: $timerPeriodText"
-		echo "timerOn: $timerOn"
-		echo "timerOff: $timerOff"
+		COMPONENTDEV=$(echo "$timer" | jq -r .[$i].componentDev )
+		COMPONENTINDEX=$(echo "$timer" | jq -r .[$i].componentIndex )
 
 		# Legacy
-		if [[ "$componentDev" != "null" ]]; then
-			cronEntry=${legacy_cron}
-			cronEntry=$(sed "s|COMPONENTDEV|${componentDev}|g" <<< $cronEntry)
-			cronEntry=$(sed "s|COMPONENTIDEX|${componentIndex}|g" <<< $cronEntry)
+		if [[ "${COMPONENTDEV}" != "null" ]]; then
+			CRONENTRY="${LEGACYCRON}"
+			CRONENTRY=$(sed "s|COMPONENTDEV|${COMPONENTDEV}|g" <<< "${CRONENTRY}")
+			CRONENTRY=$(sed "s|COMPONENTIDEX|${COMPONENTIDEX}|g" <<< "${CRONENTRY}")
 		else
-			cronEntry=${plus_cron}
-			cronEntry=$(sed "s|COMPONENT|${component}|g" <<< $cronEntry)
+			CRONENTRY="${PLUSCRON}"
+			CRONENTRY=$(sed "s|COMPONENT|${COMPONENT}|g" <<< "${CRONENTRY}")
 		fi
 
 		# Prepare cron entry
-		cronEntry=$(sed "s|PERIOD|${timerPeriod}|g" <<< $cronEntry)
-		cronEntry=$(sed "s|DEVICEID|${deviceId}|g" <<< $cronEntry)
+		CRONENTRY=$(sed "s|PERIOD|${TIMERPERIOD}|g" <<< "${CRONENTRY}")
+		CRONENTRY=$(sed "s|DEVICEID|${DEVICEID}|g" <<< "${CRONENTRY}")
 
 		# If timerOn set create a cron entry to switch on component
-		if [[ "$timerOn" != "" ]]; then
+		if [[ "${TIMERON}" != "" ]]; then
+			
+			CRONONENTRY="${CRONENTRY}"
 
 			# Parse hour and minute from time string
-			hour="${timerOn:0:2}"
-			minute="${timerOn:3:5}"
+			HOUR="${TIMERON:0:2}"
+			MINUTE="${TIMERON:3:5}"
 
 			# Check component type
-			case $component in
+			case "${COMPONENT}" in
 				"switch"*)
-					message="on"
+					MESSAGE="on"
 				;;
 				"cover"*)
-					message="open"
+					MESSAGE="open"
 				;;
 				"relay"*)
-					message="on"
+					MESSAGE="on"
 			esac
 
 			# Fill cron entry with on values
-			cronOnEntry=$(sed "s|MINUTE|${minute}|g" <<< $cronEntry)
-			cronOnEntry=$(sed "s|HOUR|${hour}|g" <<< $cronOnEntry)
-			cronOnEntry=$(sed "s|MESSAGE|${message}|g" <<< $cronOnEntry)
+			CRONONENTRY=$(sed "s|MINUTE|${MINUTE}|g" <<< "${CRONONENTRY}")
+			CRONONENTRY=$(sed "s|HOUR|${HOUR}|g" <<< "${CRONONENTRY}")
+			CRONONENTRY=$(sed "s|MESSAGE|${MESSAGE}|g" <<< "${CRONONENTRY}")
 			
 			# Append entry to temp file
-			echo "$cronOnEntry" >> "$temp_cron"
-
-			# Debug output
-			# echo "$cronOnEntry"
+			echo "${CRONONENTRY}" >> "${TEMPCRON}"
 		fi
 
 		# If on time create on entry
-		if [[ "$timerOff" != "" ]]; then
+		if [[ "${TIMEROFF}" != "" ]]; then
+		
+			CRONOFFENTRY="${CRONENTRY}"
 
 			# Parse hour and minute from time string
-			hour="${timerOff:0:2}"
-			minute="${timerOff:3:5}"
+			HOUR="${TIMEROFF:0:2}"
+			MINUTE="${TIMEROFF:3:5}"
 
 			# Check component type
-			case $component in
+			case "${COMPONENT}" in
 				"switch"*)
-					message="off"
+					MESSAGE="off"
 				;;
 				"cover"*)
-					message="close"
+					MESSAGE="close"
 				;;
 				"relay"*)
-					message="off"
+					MESSAGE="off"
 			esac
 
 			# Fill cron entry with off values
-			cronOffEntry=$(sed "s|MINUTE|${minute}|g" <<< $cronEntry)
-			cronOffEntry=$(sed "s|HOUR|${hour}|g" <<< $cronOffEntry)
-			cronOffEntry=$(sed "s|MESSAGE|${message}|g" <<< $cronOffEntry)
+			CRONOFFENTRY=$(sed "s|MINUTE|${MINUTE}|g" <<< "${CRONOFFENTRY}")
+			CRONOFFENTRY=$(sed "s|HOUR|${HOUR}|g" <<< "${CRONOFFENTRY}")
+			CRONOFFENTRY=$(sed "s|MESSAGE|${MESSAGE}|g" <<< "${CRONOFFENTRY}")
 			
 			# Append entry to temp file
-			echo "$cronOffEntry" >> "$temp_cron"
-
-			# Debug output
-			# echo "$cronOffEntry"
+			echo "${CRONOFFENTRY}" >> "${TEMPCRON}"
 		fi
 	done
 done
 
 # Save to crontab
-cat $temp_cron > /etc/crontab
-
-# Debug Output
-# cat $temp_cron
+cat ${TEMPCRON} > /etc/crontab
