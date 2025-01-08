@@ -3,7 +3,6 @@ var deviceAttribute = "deviceData";
 var timerAttribute = "timerData";
 var standbyAttribute = "standbyData";
 
-
 /*
 ---------------------------------------------------------------
 	Common Helper Functions

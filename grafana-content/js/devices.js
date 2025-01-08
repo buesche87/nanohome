@@ -7,9 +7,9 @@ var descriptionTopicLegacy = "shellies/+/+/+/description";
 var statusTopicRoot        = "shellystatus"
 
 // MQTT connection
-var fastsubscribe = 250;
+var fastsubscribe   = 250;
 var normalsubscribe = 500;
-var longsubscribe = 1000;
+var longsubscribe   = 1000;
 
 // ID prefixes of elements on dashboard
 var devmgrDescriptionPrefix = "description_";
@@ -78,17 +78,8 @@ function connectDevice(device) {
 	getDeviceInfo(device);
 }
 
-// OLD - Save description
-function saveDescription(device) {
-	let deviceDetails = getDeviceDetails(device);
-	let deviceTopics = getDeviceTopics(device, deviceDetails);
 
-	// Publish and refresh
-	mqttPublish(deviceTopics.description, deviceDetails.description, true);
-	getDeviceInfo(device);
-}
-
-// NEW - Save device
+// Save device details
 // TODO - Replace description in json (html element attribute, mqtt topics)
 // TODO - Delete old mqtt topics in nanohome/
 function saveDevice(device) {
@@ -115,8 +106,8 @@ function createDashboardElement(device) {
 	let confirmDialog = confirm('Create Dashbaord element "' + deviceDetails.description + '" for device: "' + device + '/' + deviceDetails.component + '"?');
 
 	if (confirmDialog) {
-		let jsonStore = document.getElementById(deviceCommands.jsonStoreElement);
-		let existingJson = JSON.parse(jsonStore.getAttribute(deviceCommands.jsonStoreAttribute));
+		let jsonStore = document.getElementById("deviceData");
+		let existingJson = JSON.parse(jsonStore.getAttribute("deviceDetails"));
 
 		// TODO - Search and replace existing element
 
@@ -128,7 +119,7 @@ function createDashboardElement(device) {
 		existingJson.push(newJsonElement);
 
 		// Save modified attribute
-		jsonStore.setAttribute(deviceCommands.jsonStoreAttribute, JSON.stringify(existingJson));
+		jsonStore.setAttribute("deviceDetails", JSON.stringify(existingJson));
 		mqttPublish(deviceTopics.dashboard, JSON.stringify(newJsonElement), true);
 		createPayload = deviceCommands.createElement + ' "' + jsonIndex + '"'
 		shellCommand(createPayload);

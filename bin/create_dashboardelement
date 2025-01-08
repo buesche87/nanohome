@@ -13,7 +13,7 @@ RANDOM="$(date +%s)"
 
 # Element templates
 if [[ "${LEGACY}" == "true" ]]; then
-	SWITCHTEMPLATE="${ROOTPATH/}templates/shelly_legacy_switch.json.template"
+	SWITCHTEMPLATE="${ROOTPATH}/templates/shelly_legacy_switch.json.template"
 	COVERTEMPLATE="${ROOTPATH}/templates/shelly_legacy_cover.json.template"
 else
 	SWITCHTEMPLATE="${ROOTPATH}/templates/shelly_plus_switch.json.template"
@@ -27,7 +27,7 @@ FINALDASHBOARD=$(mktemp)
 PANELTEMPLATE=$(mktemp)
 
 # Main
-PUBLISHEDELEMENTS=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "{$TOPIC_DASHBOARD}" -C 1 -W 2 --retained-only --nodelay --quiet)
+PUBLISHEDELEMENTS=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_DASHBOARD}" -C 1 -W 2 --retained-only --nodelay --quiet)
 NEWELEMENT=$(echo "${PUBLISHEDELEMENTS}" | jq --argjson idx "${INDEX}" '.[] | select(.index == $idx)')
 
 DEVICEID=$(echo "${NEWELEMENT}" | jq -r .deviceId )
@@ -43,17 +43,17 @@ case "${COMPONENT}" in
     "relay"*)
         cp "${SWITCHTEMPLATE}" "${PANELTEMPLATE}"
         ;;
-	"cover"*)
+    "cover"*)
         cp "${COVERTEMPLATE}" "${PANELTEMPLATE}"
         ;;
     *)
         echo "No dashboard element for component $COMPONENT available"
-		exit 0
+        exit 0
         ;;
 esac
 
-# Check Legacy and if template got copied
-[[ "${LEGACY}" == "true" ]] && COMPONENT="${component#*:}"
+# Check legacy device and if panel got copied
+[[ "${LEGACY}" == "true" ]] && COMPONENT="${COMPONENT#*:}"
 [ ! -s "${PANELTEMPLATE}" ] && echo "Error copying template" && exit 1
 
 # Replace device-strings in template
@@ -67,11 +67,11 @@ sed -i "s/_RAND_/${RANDOM}/g" "${PANELTEMPLATE}"
 curl -X GET -H "Authorization: Bearer ${GRAFANA_TOKEN}" -H "Content-Type: application/json" "http://${GRAFANA_SERVICE}/api/dashboards/uid/${GRAFANA_HOME_UID}" > "${ORIGINALDASHBOARD}"
 
 # Add element from template to dashboard
-jq --argjson PANEL "$(cat "${PANELTEMPLATE}")" '.dashboard.panels += [${PANEL}]' "${ORIGINALDASHBOARD}" > "${MODIFIEDDASHBOARD}"
+jq --argjson PANEL "$(cat "${PANELTEMPLATE}")" '.dashboard.panels += [$PANEL]' "${ORIGINALDASHBOARD}" > "${MODIFIEDDASHBOARD}"
 
 # Get and overwrite folderId of modified dashboard
 FOLDERID=$(grep folderId "${MODIFIEDDASHBOARD}" | awk '{ sub(/^[ \t]+/, ""); print }')
-jq --argjson OPTIONS "{ ${FOLDERID} \"overwrite\": true }" '. += ${OPTIONS}' "${MODIFIEDDASHBOARD}" > "${FINALDASHBOARD}"
+jq --argjson OPTIONS "{ ${FOLDERID} \"overwrite\": true }" '. += $OPTIONS' "${MODIFIEDDASHBOARD}" > "${FINALDASHBOARD}"
 
 # Error and exit if merge failed
 [ ! -s "${FINALDASHBOARD}" ] && echo "Error merging template" && exit 1

@@ -1,8 +1,13 @@
 // Variables
-var cmdInputTopic = "input_command";
-var cmdOutputTopic = "output_command";
+var cmdInputTopic   = "input_command";
+var cmdOutputTopic  = "output_command";
 var deviceAttribute = "deviceData";
-var timerAttribute = "timerData";
+var timerAttribute  = "timerData";
+
+// MQTT connection
+var fastsubscribe   = 250;
+var normalsubscribe = 500;
+var longsubscribe   = 1000;
 
 /*
  ---------------------------------------------------------------
@@ -12,10 +17,10 @@ var timerAttribute = "timerData";
 
 // Get Device Info - Subscribe to the MQTT topics
 function getTimerInfo(description) {
-	let topics = getTimerTopics(description);
+	let timerTopics = getTimerTopics(description);
 
-	mqttSubscribe(topics.deviceTopic, 2000);
-	mqttSubscribe(topics.timerTopic, 2000);
+	mqttSubscribe(timerTopics.deviceTopic, fastsubscribe);
+	mqttSubscribe(timerTopics.timerTopic, fastsubscribe);
 }
 
 /*
@@ -27,34 +32,34 @@ function getTimerInfo(description) {
 // Get current timers for component and append a new one
 function saveTimer(description) {
 	let timerDetails = getTimerElements(description);
-	let topics = getTimerTopics(description);
-	let activeTimerJson = JSON.parse(timerDetails.timerStatus.getAttribute("Timer"));
+	let timerTopics = getTimerTopics(description);
+	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timerAttribute));
 
 	// Define new index
-	let jsonIndex = checkElement(activeTimerJson) ? checkJsonIndex(activeTimerJson) : (activeTimerJson = [], 1);
+	let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
 
 	// Add entry to json
 	let newJsonElement = generateTimerJson(description, jsonIndex);
-	activeTimerJson.push(newJsonElement);
+	existingJson.push(newJsonElement);
 
 	// Populate data
-	populateTimerAttribute(activeTimerJson);
-	populateTimerList(activeTimerJson);
-	mqttPublish(topics.timerTopic, JSON.stringify(activeTimerJson), true);
+	populateTimerAttribute(existingJson);
+	populateTimerList(existingJson);
+	mqttPublish(timerTopics.timerTopic, JSON.stringify(existingJson), true);
 	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
 // Remove selected timer
 function removeTimer(description) {
 	let timerDetails = getTimerElements(description);
-	let topics = getTimerTopics(description);
+	let timerTopics = getTimerTopics(description);
 
 	// get index of selected timer
 	let selectedIndex = timerDetails.timerList.selectedIndex;
 	var selectedData = timerDetails.timerList.options[selectedIndex].value;
 
 	// Remove entry from json
-	let activeTimerJson = JSON.parse(timerDetails.timerStatus.getAttribute("Timer"));
+	let activeTimerJson = JSON.parse(timerDetails.timerStatus.getAttribute(timerAttribute));
 
 	activeTimerJson = activeTimerJson.filter(function(obj) {
 		let objString = JSON.stringify(obj);
@@ -64,7 +69,7 @@ function removeTimer(description) {
 	// Populate data
 	populateTimerAttribute(activeTimerJson);
 	populateTimerList(activeTimerJson);
-	mqttPublish(topics.timerTopic, JSON.stringify(activeTimerJson), true);
+	mqttPublish(timerTopics.timerTopic, JSON.stringify(activeTimerJson), true);
 	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
@@ -77,7 +82,7 @@ function removeTimer(description) {
 function onMessageArrived(message) {
 	let payload = message.payloadString;
 	let topic = message.destinationName;
-	let topicSplit = topic.split("/");
+	//let topicSplit = topic.split("/");
 
 	jsonPayload = JSON.parse(payload);
 
@@ -105,7 +110,7 @@ function populateDeviceAttribute(deviceJson) {
 	let description = deviceJson.description;
 	let timerDetails = getTimerElements(description);
 
-	timerDetails.timerStatus.setAttribute("Device", JSON.stringify(deviceJson));
+	timerDetails.timerStatus.setAttribute(deviceAttribute, JSON.stringify(deviceJson));
 	console.log("Device JSON Populated: ");
 	console.log(deviceJson);
 }
@@ -115,7 +120,7 @@ function populateTimerAttribute(timerJson) {
 	let description = timerJson[0].description;
 	let timerDetails = getTimerElements(description);
 
-	timerDetails.timerStatus.setAttribute("Timer", JSON.stringify(timerJson));
+	timerDetails.timerStatus.setAttribute(timerAttribute, JSON.stringify(timerJson));
 	console.log("Timer JSON Populated: ");
 	console.log(timerJson);
 }
@@ -188,7 +193,7 @@ function getTimerTopics(description) {
 // Generate Json for TimerData
 function generateTimerJson(description, index) {
 	let timerDetails = getTimerElements(description);
-	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute("Device"));
+	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute(deviceAttribute));
 
 	let selectedIndex = timerDetails.timerPeriod.selectedIndex;
 	let selectedText = timerDetails.timerPeriod.options[selectedIndex].textContent;

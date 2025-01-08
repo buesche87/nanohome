@@ -13,12 +13,13 @@ LEGACYCRON="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVICE
 
 # Create temporary crontab file and fill it without nanohome crons
 TEMPCRON=$(mktemp)
-sed '/# Nanohome Crontabs/q' /etc/crontab > "${TEMPCRON}"
+sed '/# Nanohome Crontabs/q' /etc/crontabs/root > "${TEMPCRON}"
 
 # Subscribe to timer topic and create array with all timers
 PUBLISHEDTIMERS=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_TIMER}" -W 2 --retained-only --nodelay --quiet)
-CONFIGUREDTIMERS="${PUBLISHEDTIMERS//$'\n'/}"
-IFS=']' read -r -a TIMERARRAY <<< "$CONFIGUREDTIMERS"
+CONFIGUREDTIMERS="${PUBLISHEDTIMERS//$'\n'/}" # remove newlines
+CONFIGUREDTIMERS="${CONFIGUREDTIMERS//]/];}" # replace ] with ]; to easily create an array
+IFS=';' read -r -a TIMERARRAY <<< "$CONFIGUREDTIMERS"
 
 # Process each timer for every device stored in the arary
 for timer in "${TIMERARRAY[@]}"; do

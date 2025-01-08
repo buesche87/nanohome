@@ -15,14 +15,13 @@ RUN chmod +x /opt/nanohome/services/*
 
 # Templates & config
 COPY templates /opt/nanohome/templates
-COPY config.cfg /opt/nanohome/config.cfg
 
 # Startup script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
+# Volumes
 VOLUME /opt/nanohome
-
 
 # Default command
 CMD ["/start.sh"]
