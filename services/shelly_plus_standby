@@ -1,0 +1,84 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome Shelly Plus standby manager
+#
+# Subscribe to the status topic of all devices
+# For each message, check if a standby json for the component was published
+# Compare the standby value with the current output power and do some magic
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Subscribe to status topic of all devices
+mosquitto_sub -v -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${topic_status} -q 2 | while read -r deviceStatus; do
+
+    # Extract information from mosquitto_sub
+    statusTopic=$(echo "$deviceStatus" | cut -d ' ' -f 1)
+    statusMessage=$(echo "$deviceStatus" | cut -d ' ' -f 2-)
+	deviceId=$(echo "$statusTopic" | cut -d '/' -f 1)
+	component=$(echo "$statusTopic" | cut -d '/' -f 3)
+	
+	# Get component description
+	descriptionTopic="$deviceId/status/$component/description"
+	componentDescription=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$descriptionTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+	
+	# Get standby json and parse values. set wait time to 1 second if nothing defined
+	standbyJson=""
+	if [[ "$componentDescription" != "null" ]]; then
+		standbyTopic="nanohome/$componentDescription/standby"
+		standbyJson=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$standbyTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+		standbyDescription=$(echo "$standbyJson" | jq -r .description )
+		standbyValue=$(echo "$standbyJson" | jq -r .standby )
+		standbyWait=$(echo "$standbyJson" | jq -r .wait )
+		[[ "$standbyWait" == "null" ]] && standbyWait=1
+	fi
+
+	# Manage standby if value found
+	if jq -e . >/dev/null 2>&1 <<<"$statusMessage" && [ -n "$standbyValue" ] && [[ "$componentDescription" == "$standbyDescription" ]]; then
+
+		# Parse message payload
+		currentPower=$(echo "$statusMessage" | jq -r .apower )
+
+		# Debug Output
+		echo "---------------------------------"
+		echo "Description: $componentDescription"
+		echo "Device: $deviceId"
+		echo "Component: $component"
+		echo "Max. Standby: $standbyValue"
+		echo "Wait time: $standbyWait"
+		echo "Current Power: $currentPower"
+
+		# Define component control topic
+		componentControl="$deviceId/command/$component"
+
+		# Check last manager status
+		managerTopic="nanohome/$componentDescription/standby/manager"
+		managerValue=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$managerTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+
+		# Do some magic and don't kill the device if it just started
+		if awk 'BEGIN { exit !('$currentPower' == 0) }'; then
+			echo "$componentDescription: off"
+			mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$managerTopic" -m "off" >/dev/null 2>&1
+		elif awk 'BEGIN { exit !('$currentPower' < '$standbyValue') }'; then
+			if [ "$managerValue" == "off" ]; then
+				echo "$componentDescription: Just started"
+				sleep $standbyWait
+				mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$managerTopic" -m "on" >/dev/null 2>&1
+			elif [ "$managerValue" == "on" ]; then
+				echo "$componentDescription: Running in standby"
+				mosquitto_pub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$componentControl" -m "off" >/dev/null 2>&1
+				mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$managerTopic" -m "off" >/dev/null 2>&1		
+			fi
+		elif awk 'BEGIN { exit !('$currentPower' > '$standbyValue') }'; then
+			if [ "$managerValue" == "off" ]; then
+				echo "$componentDescription: Just started"
+				mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$managerTopic" -m "on" >/dev/null 2>&1
+				sleep $standbyWait
+			else
+				echo "$componentDescription: Running"
+				mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$managerTopic" -m "on" >/dev/null 2>&1
+			fi
+		fi
+	fi
+done

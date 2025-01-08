@@ -1,0 +1,86 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome Shelly Plus measurement watcher
+#
+# Subscribe to the status topic of all devices
+# Check the connected status of each component not filtered in config
+# For each connected component parse the status json and write values to influxdb
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Subscribe to status topic of all devices
+mosquitto_sub -v -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${topic_status} -q 2 | while read -r deviceStatus; do
+
+    # Extract information from mosquitto_sub
+    statusTopic=$(echo "$deviceStatus" | cut -d ' ' -f 1)
+    statusMessage=$(echo "$deviceStatus" | cut -d ' ' -f 2-)
+	deviceId=$(echo "$statusTopic" | cut -d '/' -f 1)
+	component=$(echo "$statusTopic" | cut -d '/' -f 3)
+
+	# Don't monitor components excluded in config
+	for item in "${not_monitored_components[@]}"; do
+		if [[ "$component" == "$item" ]]; then
+			break
+		fi
+	done
+
+	# Get connected status of component
+	connectedTopic="$deviceId/status/$component/connected"
+	connectedStatus=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$connectedTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+
+	# Get component description for measurement in influxdb
+	descriptionTopic="$deviceId/status/$component/description"
+	componentDescription=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$descriptionTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+
+    # Debug Output
+	echo "---------------------------------"
+	echo "Device: $deviceId"
+	echo "Component: $component"
+	echo "Description: $componentDescription"
+	echo "Connected: $connectedStatus"
+
+	# Check if message is a json string, if component is connected and contains a description
+	if jq -e . >/dev/null 2>&1 <<< "$statusMessage" && [[ "$connectedStatus" == "true" ]] && [[ "$componentDescription" != "null" ]] ; then
+
+		# Escape whitespaces from description for influx cli
+		description="${componentDescription// /\\ }"
+
+		# Parse message payload
+		power=$(echo "$statusMessage" | jq -r .apower )
+		energy=$(echo "$statusMessage" | jq -r .aenergy.total )
+		voltage=$(echo "$statusMessage" | jq -r .voltage )
+		current=$(echo "$statusMessage" | jq -r .current )
+		temperature=$(echo "$statusMessage" | jq -r .temperature.tC )
+		currentposition=$(echo "$statusMessage" | jq -r .current_pos )
+		targetposition=$(echo "$statusMessage" | jq -r .target_pos )
+		tC=$(echo "$statusMessage" | jq -r .tC )
+		rh=$(echo "$statusMessage" | jq -r .rh )
+		battery=$(echo "$statusMessage" | jq -r .battery.percent )
+
+		# Debug Output
+		[[ "$power" != "null" ]] && echo "Power: $power W"
+		[[ "$energy" != "null" ]] && echo "Energy: $energy Wh"
+		[[ "$voltage" != "null" ]] && echo "Voltage: $voltage V"
+		[[ "$current" != "null" ]] && echo "Current: $current A"
+		[[ "$temperature" != "null" ]] && echo "Temperature: $temperature °C"
+		[[ "$currentposition" != "null" ]] && echo "Current Position: $currentposition"
+		[[ "$targetposition" != "null" ]] && echo "Target Position: $targetposition"
+		[[ "$tC" != "null" ]] && echo "Raumtempteratur: $tC"
+		[[ "$rh" != "null" ]] && echo "Raumfeuchte: $rh"
+		[[ "$battery" != "null" ]] && echo "Battery: $battery"
+
+		# Insert values into influxdb
+		[[ "$power" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Power=$power"
+		[[ "$energy" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Energy=$energy"
+		[[ "$voltage" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Voltage=$voltage"
+		[[ "$current" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Current=$current"
+		[[ "$temperature" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Temperature=$temperature"
+		[[ "$currentposition" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Position=$currentposition"
+		[[ "$targetposition" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Target=$targetposition"
+		[[ "$tC" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Temperature=$tC"
+		[[ "$rh" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Humidity=$rh"
+		[[ "$battery" != "null" ]] && influx write -b "$influxdb_measurements_bucket" -p s "$description Battery=$battery"
+	fi
+done

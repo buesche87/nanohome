@@ -1,0 +1,217 @@
+/*
+---------------------------------------------------------------
+	Status Output
+---------------------------------------------------------------
+*/
+
+.statusOut {
+	color: hotpink;
+	text-align: center;
+	text-align-last: center;
+	white-space: pre-line;
+	font-size: 2.4em;
+	width: 100%;
+	height: auto;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+/*
+---------------------------------------------------------------
+	Button
+---------------------------------------------------------------
+*/
+
+.btnContainer {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	padding-left: 10px;
+	padding-right: 10px;
+	border-radius: 10px;
+	cursor: pointer;
+	text-decoration: none;
+	background-color: #1a75c9;
+	color: #ffffff;
+	width: 100%;
+	height: 100%;
+	font-size: 1.8em;
+	border-style: hidden!important;
+}
+
+.btnImage {
+	border: none;
+	width: 70px;
+	height: 70px;
+	margin: 20px;
+	background-size: cover;
+	background-position: center;
+}
+
+.btnDescription {
+	flex-grow: 1;
+	padding: 10px;
+}
+
+.statusgreen {
+	background-color: #19e512;
+}
+
+/*
+---------------------------------------------------------------
+	Slider
+---------------------------------------------------------------
+*/
+
+.slider {
+	display: flex; 
+	flex-direction: column;
+	text-align: center;
+	font-size: 1.8em;
+	white-space: pre;
+	line-height: 0.8;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+	margin-top: -10px;
+}
+
+input[type=range] {
+	-webkit-appearance: none;
+	margin: 20px 0;
+}
+
+input[type=range]:focus {
+	outline: none;
+}
+
+/* slider style for webkit */
+input[type=range]::-webkit-slider-runnable-track {
+	width: 100%;
+	height: 30px;
+	cursor: pointer;
+	background: #1a75c9;
+	border-radius: 2px;
+}
+
+/* slider focus style for webkit */
+input[type=range]:focus::-webkit-slider-runnable-track {
+	background: #1a75c9;
+}
+
+/* slider style for webkit - green */
+input[type=range].statusgreen::-webkit-slider-runnable-track {
+	background: #19e512;
+}
+
+/* slider focus style for webkit - green */
+input[type=range].statusgreen:focus::-webkit-slider-runnable-track {
+	background: #19e512;
+}
+
+/* thumb style for webkit */
+input[type=range]::-webkit-slider-thumb {
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border: 1px solid #000000;
+	height: 50px;
+	width: 18px;
+	border-radius: 3px;
+	background: #ffffff;
+	cursor: pointer;
+	-webkit-appearance: none;
+	margin-top: calc((30px - 50px) / 2); /* Vertically center the thumb */
+}
+
+/* slider style for mozilla */
+input[type=range]::-moz-range-track {
+	width: 100%;
+	height: 30px;
+	cursor: pointer;
+	background: #1a75c9;
+	border-radius: 2px;
+}
+
+/* slider style for mozilla - green */
+input[type=range].statusgreen::-moz-range-track {
+	background: #19e512;
+}
+
+/* thumb style for mozilla */
+input[type=range]::-moz-range-thumb {
+	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+	border: 1px solid #000000;
+	height: 50px;
+	width: 16px;
+	border-radius: 3px;
+	background: #ffffff;
+	cursor: pointer;
+	margin-top: calc((30px - 50px) / 2); /* Vertically center the thumb */
+}
+
+/*
+---------------------------------------------------------------
+	Unused - Toastbox
+---------------------------------------------------------------
+*/
+
+.toast-box{
+	display: flex;
+	position: absolute;
+	width: 420px;
+	background: #fff;
+	padding: 12px 18px;
+	border-radius: 8px;
+	box-shadow: 1px 2px 4px 2px rgb(227, 222, 222);
+	gap: 20px;
+	align-items: center;
+	border-left: 4px solid #7440ff;
+	visibility: hidden;
+
+	/**** alignment **/
+	top: 0;
+	right: 0;
+	margin: 20px;
+}
+
+.toast-box.active{
+	visibility: visible;
+}
+.toast-box .toast-box-icon{
+	background: #7440ff;
+	padding: 5px 8px;
+	border-radius: 100%;
+}
+
+.toast-box .toast-box-icon .bx{
+	font-size: 32px;
+	color: #fff;
+}
+
+.toast-box .toast-box-text{
+	position: relative;
+	text-align: left;
+}
+
+.toast-box-text .toast-heading{
+	font-size: 18px;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.toast-box-text .toast-description{
+	font-size: 16px;
+	font-weight: 400;
+	color: #3d3d3d;
+}
+
+.toast-box .toast-close{
+	position: absolute;
+	display: block;
+	top: 0;
+	right: 0;
+	padding: 4px;
+	font-size: 24px;
+	cursor: pointer;
+}

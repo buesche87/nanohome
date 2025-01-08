@@ -1,0 +1,107 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome create dashboard element
+#
+# Create a dashbaord element from template
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Create the element from json instead of input parameters
+# fetch index and legacy status
+# get settings from mqtt
+
+# Catch Parameters
+description=$1
+legacy=$2
+index=$3
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Variables
+dashboardTopic="nanohome/config/dashboard"
+sa_token="$(cat $rootpath/conf/sa_token.json | jq -r '.key')"
+random="$(date +%s)"
+
+# Element templates
+if [ "$legacy" == "true" ]; then
+	switchtemplate="$rootpath/templates/shelly_legacy_switch.json.template"
+	covertemplate="$rootpath/templates/shelly_legacy_cover.json.template"
+else
+	switchtemplate="$rootpath/templates/shelly_plus_switch.json.template"
+	covertemplate="$rootpath/templates/shelly_plus_cover.json.template"
+fi
+
+# Tempfiles
+original_dashboard=$(mktemp)
+modified_dashboard=$(mktemp)
+final_dashboard=$(mktemp)
+panel_template=$(mktemp)
+
+#/////////////////////////////////////////////////////////////////////////////////////
+# Main
+#/////////////////////////////////////////////////////////////////////////////////////
+
+publishedElements=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$dashboardTopic" -C 1 -W 2 --retained-only --nodelay --quiet)
+newElement=$(echo "$publishedElements" | jq --argjson idx "$index" '.[] | select(.index == $idx)')
+
+deviceId=$(echo "$newElement" | jq -r .deviceId )
+component=$(echo "$newElement" | jq -r .component )
+description=$(echo "$newElement" | jq -r .description )
+icon=$(echo "$newElement" | jq -r .icon )
+
+# Copy panel template
+case $component in
+    "switch"*)
+        cp "$switchtemplate" "$panel_template"
+        ;;
+    "relay"*)
+        cp "$switchtemplate" "$panel_template"
+        ;;
+	"cover"*)
+        cp "$covertemplate" "$panel_template"
+        ;;
+    *)
+        echo "No dashboard element for component $component available"
+		exit 0
+        ;;
+esac
+
+if [ "$legacy" == "true" ]; then
+	component=${component#*:}
+fi
+
+if [ ! -s "$panel_template" ]; then
+	echo "Error copying template"
+	exit 1
+else
+	# Replace device-strings in template
+	sed -i "s/_DEVID_/$deviceId/g" "$panel_template"
+	sed -i "s/_DESCRIPTION_/$description/g" "$panel_template"
+	sed -i "s/_COMPONENT_/$component/g" "$panel_template"
+	sed -i "s/_ICON_/$icon/g" "$panel_template"
+	sed -i "s/_RAND_/$random/g" "$panel_template"
+fi
+
+# Download home dashboard from grafana to temporary file
+curl -X GET -H "Authorization: Bearer $sa_token" -H "Content-Type: application/json" "http://$grafana_url/api/dashboards/uid/$home_uid" > "$original_dashboard"
+
+# Add element from template to dashboard
+jq --argjson panel "$(cat "$panel_template")" '.dashboard.panels += [$panel]' "$original_dashboard" > "$modified_dashboard"
+
+# Get and overwrite folderId of modified dashboard
+folderid=$(grep folderId "$modified_dashboard" | awk '{ sub(/^[ \t]+/, ""); print }')
+jq --argjson options "{ $folderid \"overwrite\": true }" '. += $options' "$modified_dashboard" > "$final_dashboard"
+
+if [ ! -s "$final_dashboard" ]; then
+	echo "Error merging template"
+	exit 1
+else
+	# Upload dashboard to grafana
+	curl -X POST --insecure -H "Authorization: Bearer $sa_token" -H "Content-Type: application/json" -d @"$final_dashboard" "http://$grafana_url/api/dashboards/db" > /dev/null 2>&1
+
+	# Remove temporary files
+	rm -f $original_dashboard
+	rm -f $modified_dashboard
+	rm -f $final_dashboard
+	rm -f $panel_template
+fi

@@ -1,0 +1,70 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome MQTT Shell
+#
+# Execute allowed shell commands published to the defined command input topic
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Advanced Settings
+touch .mqtt_shell.pid
+touch .mqtt_shell.cmds
+touch .mqtt_shell.out
+clean=".mqtt_shell.cmds .mqtt_shell.pid .mqtt_shell.out"
+p=".mqtt_shell.cache"
+pid=$(cat .mqtt_shell.pid)
+
+# Clean
+ctrl_c() {
+  echo "Cleaning up..."
+  rm -f $p;rm $clean;kill $pid 2>/dev/null
+  if [[ "$?" -eq "0" ]];
+  then
+     echo "Exit success";exit 0
+  else
+     exit 1
+  fi
+}
+
+# MQTT Listen on topic_cmdInput
+listen(){
+	([ ! -p "$p" ]) && mkfifo $p
+	(mosquitto_sub -h $mqtt_server -u $mqtt_system_user -P $mqtt_system_pass -t $topic_cmdInput > $p 2>/dev/null) &
+	echo "$!" > .mqtt_shell_v2.pid
+	while read line <$p
+	do
+		# Make it secure here -> only nanohome commands
+		# awk grep first command -> if command in allowed_commands execute
+		command=$(echo "$line" | awk '{print $1;}')
+
+		for item in "${allowed_commands[@]}"
+		do
+			# Check if the variable matches any element in the array
+			if [ "$item" == "$command" ]; then
+				echo $line > .mqtt_shell_v2.cmds
+				(bash .mqtt_shell_v2.cmds | tee .mqtt_shell_v2.out) && mosquitto_pub -h $mqtt_server -u $mqtt_system_user -P $mqtt_system_pass -t $topic_cmdOutput -f .mqtt_shell_v2.out;>.mqtt_shell_v2.out
+			fi
+		done
+	done
+}
+
+usage(){
+	echo "    MQTT_shell - Drop bash commands"
+	echo "  Usage: $0 -s [Change Settings inside]"
+	echo "  Subscripe to topic /"$topic_cmdOutput", publish to topic /"$topic_cmdInput""
+}
+
+
+case "$1" in
+-s |--start)
+trap ctrl_c INT
+listen
+;;
+*)
+usage
+exit 1
+;;
+esac
+

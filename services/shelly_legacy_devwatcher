@@ -1,0 +1,89 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome Shelly Plus device watcher
+#
+# Every defined second subscribe to the defined online topic
+# Get all available devices, their online status and component configuration
+# Write those informations to the device bucket in influxdb
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Convert string-boolean to 1 or 0
+convert_value() {
+    if [[ "$1" == "true" ]] || [[ "$1" == "on" ]]; then
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+# Main
+mosquitto_sub -v -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${topic_online_legacy} -q 2 | while read -r deviceStatus; do
+
+	# Extract information from mosquitto_sub
+    statusTopic=$(echo "$deviceStatus" | cut -d ' ' -f 1)
+    statusMessage=$(echo "$deviceStatus" | cut -d ' ' -f 2-)
+	deviceId=$(echo "$statusTopic" | cut -d '/' -f 2)
+	component=$(echo "$statusTopic" | cut -d '/' -f 3)
+	componentIndex=$(echo "$statusTopic" | cut -d '/' -f 4)
+
+	# Merge component and index
+	componentmerged="${component}:${componentIndex}"
+
+	# Don't monitor components excluded in config
+	match=false
+	for item in "${not_monitored_components_legacy[@]}"; do
+		if [[ "$component" == "$item" ]]; then
+			match=true
+			break
+		fi
+	done
+
+	# If current component is monitored
+	if ! $match; then
+
+		# Get connected status
+		connectedTopic="shellies/$deviceId/$component/$componentIndex/connected"
+		connectedMessage=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$connectedTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+
+		# Get description
+		descriptionTopic="shellies/$deviceId/$component/$componentIndex/description"
+		descriptionMessage=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$descriptionTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+
+		# Convert values for influxdb
+		connectedValue=$(convert_value "$connectedMessage")
+
+		# Publish connected=false for new devices to be recognized by device manager dashboard
+		if [ -z "$connectedMessage" ]; then
+			mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$connectedTopic" -m "false"
+			echo "New device found"
+		fi
+
+		# Write device into influxdb devices bucket
+		if [ -z "$descriptionMessage" ]; then
+			influx write -b "$influxdb_devices_bucket" -p s "$deviceId,Component=$componentmerged Connected=${connectedValue}"
+			# Debug
+			echo "---------------------------------"
+			echo "$deviceId,Component=$componentmerged Connected=${connectedValue}"
+		elif [ -n "$descriptionMessage" ]; then
+			description="${descriptionMessage// /\\ }" # Escape whitespaces in description for influx cli
+			influx write -b "$influxdb_devices_bucket" -p s "$deviceId,Component=$componentmerged,Description=$description Connected=${connectedValue}"
+			# Debug
+			echo "---------------------------------"
+			echo "$deviceId,Component=$componentmerged,Description=$description Connected=${connectedValue}"
+		fi
+
+		# Debug Output
+		echo "---------------------------------"
+		echo "Device: $deviceId"
+		echo "Component: $componentmerged"
+		echo "Description: $description"
+		echo "Connected: $connectedValue"
+
+	else
+		echo "\"$deviceId\" - \"$componentmerged\" skipped"
+	fi
+
+done

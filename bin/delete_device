@@ -1,0 +1,55 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome remove a device from InfluxDB
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Catch Parameters
+device="$1"
+component="$2"
+description="$3"
+legacy="$4"
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Delete Measurement
+if [ -n "$device" ]; then
+	
+	influx delete --bucket $influxdb_devices_bucket \
+	  --start '1970-01-01T00:00:00Z' \
+	  --stop $(date --utc +"%Y-%m-%dT%H:%M:%SZ") \
+	  --predicate '_measurement="'$device'"'
+fi
+
+# Delete device topics
+deviceTopic="nanohome/$description/device"
+timerTopic="nanohome/$description/timer"
+standbyTopic="nanohome/$description"
+
+mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${deviceTopic} -m ""
+mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${timerTopic} -m ""
+mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${standbyTopic} -m ""
+
+
+if [ "$legacy" == "true" ]; then
+	componentName=$(echo "$component" | cut -d ':' -f 1)
+	componentIndex=$(echo "$component" | cut -d ':' -f 2)
+
+	connectedTopic="shellies/$device/$componentName/$componentIndex/connected"
+	descriptionTopic="shellies/$device/$componentName/$componentIndex/description"
+	outputTopic="shellies/$device/$componentName/$componentIndex/output"
+else
+	onlineTopic="$device/online"
+	mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${onlineTopic} -m ""
+
+	connectedTopic="$device/status/$component/connected"
+	descriptionTopic="$device/status/$component/description"
+	outputTopic="$device/status/$component/output"
+fi
+
+mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${connectedTopic} -m ""
+mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${descriptionTopic} -m ""
+mosquitto_pub -r -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${outputTopic} -m ""
+
+# Remove from crontab
+sed -i "/${device}/d" /etc/crontab

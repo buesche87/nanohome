@@ -1,0 +1,68 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome Shelly Legacy measurement watcher
+#
+# Subscribe to the status topic of all devices
+# Check the connected status of each component not filtered in config
+# For each connected component parse the status json and write values to influxdb
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Read measurements
+read_measurement() {
+	measurement="$1"
+	description="$2"
+	topic="$3"
+	
+	while read -r line; do
+		echo "---------------------------------"
+		echo "Device: $description"
+		echo "$measurement: $line"
+		influx write -b "$influxdb_measurements_bucket" -p s "$description $measurement=$line"
+	done < <(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$topic" -q 2) &
+}
+
+# Main
+while /bin/true; do
+	
+	# Get all connected devices
+	connectedTopic="shellies/+/+/+/connected"
+	connectedDevices=($(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$connectedTopic" -W 2 --retained-only --nodelay --quiet -F "%t,%p"))
+
+	# Process every device available
+	for connectedDevice in "${connectedDevices[@]}"; do
+
+		# Extract message from online topic
+		deviceTopic=$(echo "$connectedDevice" | cut -d ',' -f 1)
+		deviceMessage=$(echo "$connectedDevice" | cut -d ',' -f 2-)
+		deviceId=$(echo "$deviceTopic" | cut -d '/' -f 2)
+		component=$(echo "$deviceTopic" | cut -d '/' -f 3)
+		componentIndex=$(echo "$deviceTopic" | cut -d '/' -f 4)	
+		
+		# Get description
+		descriptionTopic="shellies/$deviceId/$component/$componentIndex/description"
+		descriptionMessage=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$descriptionTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+		
+		# Check for measurement topic
+		energyTopic="shellies/$deviceId/$component/$componentIndex/energy"
+		powerTopic="shellies/$deviceId/$component/$componentIndex/power"
+		temperatureTopic="shellies/$deviceId/$component/$componentIndex/temperature"
+		
+		# Read measurements
+		if [ -n "$descriptionMessage" ]; then 
+			read_measurement "Energy" "$descriptionMessage" "$energyTopic"
+		fi
+		if [ -n "$descriptionMessage" ]; then 
+			read_measurement "Power" "$descriptionMessage" "$powerTopic"
+		fi
+		if [ -n "$descriptionMessage" ]; then
+			read_measurement "Energy" "$descriptionMessage" "$temperatureTopic"
+		fi
+		
+	done
+	
+	tail -f /dev/null
+
+done

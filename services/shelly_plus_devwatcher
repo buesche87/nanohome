@@ -1,0 +1,143 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome Shelly Plus device watcher
+#
+# - loop forever, iterate every n seconds defined in $devwatcher_interval from config
+# - subscribe to $topic_online to get all available shellies and their
+#   - online status
+#   - component configuration
+# - for every component not filtered through $not_monitored_components get
+#   - connected state
+#   - component description
+#   - output and/or position and publish this value retained for dashboard elements
+#   - publish connected=false if the device is not known
+#   - write values into influxdb
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Load config
+source /opt/nanohome/config.cfg
+
+# Convert string-boolean to 1 or 0
+convert_value() {
+	if [[ "$1" == "true" ]]; then
+		echo 1
+	elif [[ "$1" == "false" ]]; then
+		echo 0
+	else
+		echo "null"
+	fi
+}
+
+#/////////////////////////////////////////////////////////////////////////////////////
+
+#/////////////////////////////////////////////////////////////////////////////////////
+
+while /bin/true; do
+
+	# Subscribe to online topics for 2 seconds
+	availableDevices=($(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$topic_online" -W 2 --retained-only --nodelay --quiet -F "%t,%p"))
+
+	# Process every device available
+	for availableDevice in "${availableDevices[@]}"; do
+
+		# Extract message from online topic
+		onlineTopic=$(echo "$availableDevice" | cut -d ',' -f 1)
+		onlineMessage=$(echo "$availableDevice" | cut -d ',' -f 2-)
+		deviceId=$(echo "$onlineTopic" | cut -d '/' -f 1)
+
+		# Create temp file to write device status into
+		tempOutput=$(mktemp)
+
+		# Subscribe to status topic for 2 seconds, do this in background and write output to the temp file
+		statusTopic="$deviceId/status"
+		mosquitto_sub -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${statusTopic} -C 1 -W 2 --nodelay --quiet > "$tempOutput" &
+
+		# Publish status_update to device, the output will be catched by the previous subscribtion
+		commandTopic="$deviceId/command"
+		mosquitto_pub -h ${mqtt_server} -u ${mqtt_system_user} -P ${mqtt_system_pass} -t ${commandTopic} -m "status_update"
+		sleep 2
+
+		# Validate file content and fill it to a variable, goto next iteration if validation fails
+		if jsonOutput=$(jq -e . "$tempOutput" 2>/dev/null); then
+			rm "$tempOutput"
+		else
+			rm "$tempOutput"
+			continue
+		fi
+
+		# Loop through all components found in the temp file
+		echo "$jsonOutput" | jq -r 'to_entries[] | "\(.key), \(.value)"' |
+		while IFS=, read -r component value; do
+
+			# Do not monitor components excluded in config
+			match=false
+			for item in "${not_monitored_components[@]}"; do
+				if [[ "$component" == "$item" ]]; then
+					match=true
+					break
+				fi
+			done
+
+			# If current component is monitored
+			if ! $match; then
+
+				# Get description
+				descriptionTopic="$deviceId/status/$component/description"
+				descriptionMessage=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$descriptionTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+			
+				# Get connected status
+				connectedTopic="$deviceId/status/$component/connected"
+				connectedMessage=$(mosquitto_sub -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$connectedTopic" -C 1 -W 1 --retained-only --nodelay --quiet)
+
+				# Get output or position
+				switchPower=$(echo "$value" | jq -r .apower )
+				currentPosition=$(echo "$value" | jq -r .current_pos )
+
+				# Convert output value for influxdb
+				onlineValue=$(convert_value "$onlineMessage")
+				connectedValue=$(convert_value "$connectedMessage")
+				[[ "$switchPower" != "null" ]] && outputValue=$switchPower
+				[[ "$currentPosition" != "null" ]] && outputValue=$currentPosition
+
+				# Publish current output status for home dashboard element
+				outputTopic="$deviceId/status/$component/output"
+				mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$outputTopic" -m "$outputValue"
+
+				# Publish connected=false for new devices to be recognized by device manager dashboard
+				if [[ "$connectedValue" == "null" ]]; then
+					mosquitto_pub -r -h "$mqtt_server" -u "$mqtt_system_user" -P "$mqtt_system_pass" -t "$connectedTopic" -m "false"
+					echo "New device found"
+				fi
+
+				# Write device into influxdb devices bucket
+				if [[ "$descriptionMessage" == "null" ]]; then
+					influx write -b "$influxdb_devices_bucket" -p s "$deviceId,Component=$component Online=${onlineValue},Connected=${connectedValue},Output=${outputValue}"
+					# Debug
+					echo "---------------------------------"
+					echo "$deviceId,Component=$component Online=${onlineValue},Connected=${connectedValue},Output=${outputValue}"
+				elif [[ "$descriptionMessage" != "null" ]]; then
+					description="${descriptionMessage// /\\ }" # Escape whitespaces in description for influx cli
+					influx write -b "$influxdb_devices_bucket" -p s "$deviceId,Component=$component,Description=$description Online=${onlineValue},Connected=${connectedValue},Output=${outputValue}"
+					# Debug
+					echo "---------------------------------"
+					echo "$deviceId,Component=$component,Description=$description Online=${onlineValue},Connected=${connectedValue},Output=${outputValue}"
+				fi
+
+				# Debug
+				echo "---------------------------------"
+				echo "Device: $deviceId"
+				echo "Component: $component"
+				echo "Description: $description"
+				echo "Online: $onlineValue"
+				echo "Connected: $connectedValue"
+				echo "Output: $outputValue"
+				echo "---------------------------------"
+			else
+				echo "\"$deviceId\" - \"$component\" skipped"
+			fi
+		done
+	done
+
+	sleep $devwatcher_interval
+
+done
