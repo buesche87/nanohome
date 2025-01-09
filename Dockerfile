@@ -2,6 +2,11 @@ FROM alpine:latest
 LABEL maintainer="buesche"
 RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients 
 
+# runonce
+RUN mkdir -p /opt/nanohome/config
+COPY runonce.sh /opt/nanohome/config
+RUN chmod +x /opt/nanohome/config/runonce.sh
+
 # influx-cli
 RUN mkdir -p ./influx-cli
 RUN wget https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz -O ./influx-cli/influx-cli.tar.gz
