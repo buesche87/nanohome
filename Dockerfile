@@ -4,6 +4,7 @@ RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients
 
 # runonce
 RUN mkdir -p /opt/nanohome/config
+RUN mkdir -p /opt/nanohome/log
 COPY runonce.sh /opt/nanohome/config
 RUN chmod +x /opt/nanohome/config/runonce.sh
 
