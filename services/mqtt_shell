@@ -28,7 +28,7 @@ ctrl_c() {
 # MQTT Listen on topic_cmdInput
 listen(){
 	([ ! -p "$p" ]) && mkfifo $p
-	(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_CMDINPUT}" > $p 2>/dev/null) &
+	(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_CMDINPUT}" > $p 2>/dev/null) &
 	echo "$!" > .mqtt_shell.pid
 	while read line <$p; do
 	
@@ -39,7 +39,7 @@ listen(){
 		for item in "${ALLOWEDCOMMANDS[@]}"; do
 			if [ "$item" == "$COMMAND" ]; then
 				echo $line > .mqtt_shell.cmds
-				(bash .mqtt_shell.cmds | tee .mqtt_shell.out) && mosquitto_pub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_CMDOUTPUT}" -f .mqtt_shell.out;>.mqtt_shell.out
+				(bash .mqtt_shell.cmds | tee .mqtt_shell.out) && mosquitto_pub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_CMDOUTPUT}" -f .mqtt_shell.out;>.mqtt_shell.out
 			fi
 		done
 	done

@@ -13,7 +13,7 @@ convert_value() {
 }
 
 # Main Service
-mosquitto_sub -v -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_STATUS}" -q 2 | while read -r DEVICESTATUS; do
+mosquitto_sub -v -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_STATUS}" -q 2 | while read -r DEVICESTATUS; do
 
     # Extract information from mosquitto_sub
     STATUSTOPIC=$(echo "${DEVICESTATUS}" | cut -d ' ' -f 1)
@@ -29,12 +29,12 @@ mosquitto_sub -v -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t
 
 	# Get connected status of component
 	CONNECTEDTOPIC="${DEVICEID}/status/${COMPONENT}/connected"
-	CONNECTEDMESSAGE=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
+	CONNECTEDMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
 	CONNECTEDVALUE=$(convert_value "${CONNECTEDMESSAGE}")
 	
 	# Get component description for measurement in influxdb
 	DESCRIPTIONTOPIC="${DEVICEID}/status/${COMPONENT}/description"
-	DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
+	DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
 	DESCRIPTION="${DESCRIPTIONMESSAGE// /\\ }"
 	
 	# Check if message is a json string, if component is connected and contains a description

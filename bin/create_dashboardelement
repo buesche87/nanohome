@@ -26,7 +26,7 @@ FINALDASHBOARD=$(mktemp)
 PANELTEMPLATE=$(mktemp)
 
 # Main
-PUBLISHEDELEMENTS=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_DASHBOARD}" -C 1 -W 2 --retained-only --nodelay --quiet)
+PUBLISHEDELEMENTS=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_DASHBOARD}" -C 1 -W 2 --retained-only --nodelay --quiet)
 NEWELEMENT=$(echo "${PUBLISHEDELEMENTS}" | jq --argjson idx "${INDEX}" '.[] | select(.index == $idx)')
 
 DEVICEID=$(echo "${NEWELEMENT}" | jq -r .deviceId )

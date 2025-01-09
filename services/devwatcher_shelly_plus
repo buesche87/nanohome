@@ -24,7 +24,7 @@ convert_value() {
 while /bin/true; do
 
 	# Subscribe to online topics for 2 seconds
-	AVAILABLEDEVICES=($(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_ONLINE}" -W 2 --retained-only --nodelay --quiet -F "%t,%p"))
+	AVAILABLEDEVICES=($(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_ONLINE}" -W 2 --retained-only --nodelay --quiet -F "%t,%p"))
 
 	# Process every device available
 	for AVAILABLEDEVICE in "${AVAILABLEDEVICES[@]}"; do
@@ -40,11 +40,11 @@ while /bin/true; do
 
 		# Subscribe to status topic for 2 seconds, do this in background and write output to the temp file
 		STATUSTOPIC="${DEVICEID}/status"
-		mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${STATUSTOPIC}" -C 1 -W 2 --nodelay --quiet > "${TEMPOUT}" &
+		mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${STATUSTOPIC}" -C 1 -W 2 --nodelay --quiet > "${TEMPOUT}" &
 
 		# Publish status_update to device, the output will be catched by the previous subscribtion
 		COMMANDTOPIC="${DEVICEID}/command"
-		mosquitto_pub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${COMMANDTOPIC}" -m "status_update"
+		mosquitto_pub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${COMMANDTOPIC}" -m "status_update"
 
 		sleep 2
 
@@ -67,13 +67,13 @@ while /bin/true; do
 
 				# Get connected status, publish connected=false for new devices 
 				CONNECTEDTOPIC="${DEVICEID}/status/$COMPONENT}/connected"
-				CONNECTEDMESSAGE=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
+				CONNECTEDMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
 				CONNECTEDVALUE=$(convert_value "${CONNECTEDMESSAGE}")
-				[[ $CONNECTEDVALUE -eq 0 ]] && mosquitto_pub -r -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m "false"
+				[[ $CONNECTEDVALUE -eq 0 ]] && mosquitto_pub -r -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m "false"
 
 				# Get description
 				DESCRIPTIONTOPIC="${DEVICEID}/status/${COMPONENT}/description"
-				DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
+				DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
 				DESCRIPTION="${DESCRIPTIONMESSAGE// /\\ }"
 			
 				# Get output or position and publish value
@@ -82,7 +82,7 @@ while /bin/true; do
 				CURRENTPOSITION=$(echo "${VALUE}" | jq -r .current_pos )
 				[[ "${SWITCHPOWER}" != "null" ]] && OUTPUTVALUE="${SWITCHPOWER}"
 				[[ "${CURRENTPOSITION}" != "null" ]] && OUTPUTVALUE="${CURRENTPOSITION}"
-				mosquitto_pub -r -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
+				mosquitto_pub -r -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
 
 				# Write device into influxdb devices bucket
 				[ -z "${DESCRIPTION}" ] && PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"

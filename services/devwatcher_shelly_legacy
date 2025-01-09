@@ -1,10 +1,11 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# nanohome Shelly legacy device watcher
+# nanohome Shelly legacy device watcher service
 #
-# Subscribe to the defined online topic
-# Get all available devices, their online status and component configuration
-# Filter components not monitored and write device infos into device bucket
+# - MQTT Subscribe to devices online topic
+# - Get all available devices, their online status and component configuration
+# - Filter components not monitored
+# - Write component infos into influxdb bucket "devices"
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Convert string-boolean to 1 or 0
@@ -13,9 +14,9 @@ convert_value() {
 }
 
 # Main Service
-mosquitto_sub -v -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_ONLINE_LEGACY}" -q 2 | while read -r DEVICESTATUS; do
+mosquitto_sub -v -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_ONLINE_LEGACY}" -q 2 | while read -r DEVICESTATUS; do
 
-	# Extract information from mosquitto_sub
+	# Extract information from mosquitto subscription
     STATUSTOPIC=$(echo "${DEVICESTATUS}" | cut -d ' ' -f 1)
     STATUSMESSAGE=$(echo "${DEVICESTATUS}" | cut -d ' ' -f 2-)
 	DEVICEID=$(echo "${STATUSTOPIC}" | cut -d '/' -f 2)
@@ -24,25 +25,26 @@ mosquitto_sub -v -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t
 	COMPONENTMERGED="${COMPONENT}:${COMPONENTINDEX}"
 
 	# Do not monitor components excluded in config
-	IFS=',' read -r -a COMPONENTSARRAY <<< "${NOT_MONITORED_COMPONENTS_LEGACY}"
 	match=false
+	IFS=',' read -r -a COMPONENTSARRAY <<< "${NOT_MONITORED_COMPONENTS_LEGACY}"
 	for item in "${COMPONENTSARRAY[@]}"; do
 		[[ "${COMPONENT}" == "$item" ]] && match=true && break
 	done
 
 	if ! $match; then
-		# Get connected status, publish connected=false for new devices 
+		# Get connected status
 		CONNECTEDTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
-		CONNECTEDMESSAGE=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
-		CONNECTEDVALUE=$(convert_value "${CONNECTEDMESSAGE}") # Convert value for influxdb
-		[[ $CONNECTEDVALUE -eq 0 ]] && mosquitto_pub -r -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m "false"
+		CONNECTEDMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
+		CONNECTEDVALUE=$(convert_value "${CONNECTEDMESSAGE}")
+		# publish connected=false for new devices 
+		[[ $CONNECTEDVALUE -eq 0 ]] && mosquitto_pub -r -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m "false"
 
-		# Get description
+		# Get component description
 		DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
-		DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
+		DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
 		DESCRIPTION="${DESCRIPTIONMESSAGE// /\\ }"
 
-		# Write device into influxdb devices bucket
+		# Write device infos into devices bucket
 		[ -z "${DESCRIPTION}" ] && PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Connected=${CONNECTEDVALUE}"
 		[ -n "${DESCRIPTION}" ] && PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION} Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUXDB_BUCKET_DEVICES}" -p s "${PAYLOAD}"

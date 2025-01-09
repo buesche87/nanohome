@@ -35,16 +35,16 @@ else
 	DESCRIPTIONTOPIC="${DEVICE}/status/${COMPONENT}/description"
 	OUTPUTTOPIC="${DEVICE}/status/${COMPONENT}/output"	
 	
-	mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${ONLINETOPIC}" -m ""
+	mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${ONLINETOPIC}" -m ""
 fi
 
 # Clean topics
-mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DEVICETOPIC}" -m ""
-mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TIMERTOPIC}" -m ""
-mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${STANDBYTOPIC}" -m ""
-mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m ""
-mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -m ""
-mosquitto_pub -r -h "${MQTT_SERVICE}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${OUTPUTTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DEVICETOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TIMERTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${STANDBYTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${OUTPUTTOPIC}" -m ""
 
 # Remove from crontab
 sed -i "/${DEVICE}/d" /etc/crontab
