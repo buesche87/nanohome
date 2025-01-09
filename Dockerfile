@@ -29,4 +29,4 @@ COPY templates /opt/nanohome/templates
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 VOLUME /opt/nanohome
-CMD ["/start.sh"]
+CMD ["/start.sh","/runonce.sh"]
