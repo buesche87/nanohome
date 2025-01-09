@@ -38,7 +38,7 @@ mosquitto_sub -v -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t
 	DESCRIPTION="${DESCRIPTIONMESSAGE// /\\ }"
 	
 	# Check if message is a json string, if component is connected and contains a description
-	if jq -e . >/dev/null 2>&1 <<< "${STATUSMESSAGE}" && [[ $CONNECTEDVALUE -eq 1 ]] && [ -n $DESCRIPTION ] ; then
+	if jq -e . >/dev/null 2>&1 <<< "${STATUSMESSAGE}" && [[ $CONNECTEDVALUE -eq 1 ]] && [ -n "${DESCRIPTION}" ] ; then
 
 		# Parse message payload
 		POWER=$(echo "${STATUSMESSAGE}" | jq -r .apower )

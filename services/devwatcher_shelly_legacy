@@ -43,8 +43,8 @@ mosquitto_sub -v -h "${MQTT_SERVICE}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t
 		DESCRIPTION="${DESCRIPTIONMESSAGE// /\\ }"
 
 		# Write device into influxdb devices bucket
-		[ -z $DESCRIPTION ] && PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Connected=${CONNECTEDVALUE}"
-		[ -n $DESCRIPTION ] && PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION} Connected=${CONNECTEDVALUE}"
+		[ -z "${DESCRIPTION}" ] && PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Connected=${CONNECTEDVALUE}"
+		[ -n "${DESCRIPTION}" ] && PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION} Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUXDB_BUCKET_DEVICES}" -p s "${PAYLOAD}"
 	fi
 done

@@ -42,9 +42,9 @@ while /bin/true; do
 		TEMPERATURETOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/temperature"
 		
 		# Read measurements
-		[ -n $DESCRIPTION ] && read_measurement "Energy" "${DESCRIPTION}" "${ENERGYTOPIC}"
-		[ -n $DESCRIPTION ] && read_measurement "Power" "${DESCRIPTION}" "${POWERTOPIC}"
-		[ -n $DESCRIPTION ] && read_measurement "Energy" "${DESCRIPTION}" "${TEMPERATURETOPIC}"
+		[ -n "${DESCRIPTION}" ] && read_measurement "Energy" "${DESCRIPTION}" "${ENERGYTOPIC}"
+		[ -n "${DESCRIPTION}" ] && read_measurement "Power" "${DESCRIPTION}" "${POWERTOPIC}"
+		[ -n "${DESCRIPTION}" ] && read_measurement "Energy" "${DESCRIPTION}" "${TEMPERATURETOPIC}"
 		
 	done
 	
