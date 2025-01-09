@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+  nanohome:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: nanohome
+    container_name: nanohome
+    restart: unless-stopped
+    networks:
+      - nanohome
+    depends_on:
+      - influxdb
+      - grafana
+      - mosquitto
+    volumes:
+      - /mnt/data/appdata/nanohome/config:/opt/nanohome/config
+      - /mnt/data/appdata/nanohome/log:/opt/nanohome/log
+    working_dir: /opt/nanohome
+    env_file: .env
+    command: ["bash"]
+
+
+  influxdb:
+    image: influxdb:2
+    hostname: influxdb
+    container_name: influxdb
+    restart: unless-stopped
+    networks:
+      - nanohome
+    ports:
+      - 8086:8086
+    volumes:
+      - /mnt/data/appdata/influxdb/data:/var/lib/influxdb2
+      - /mnt/data/appdata/influxdb/config:/etc/influxdb2
+    env_file: .env
+
+
+  grafana:
+    image: grafana/grafana:latest
+    hostname: grafana
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+     - GF_INSTALL_PLUGINS=grafana-clock-panel
+    networks:
+      - nanohome
+    ports:
+     - 3000:3000
+    volumes:
+      - /mnt/data/appdata/grafana/data:/var/lib/grafana
+      - /mnt/data/appdata/grafana/content:/usr/share/grafana/public/nanohome
+
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    hostname: mosquitto
+    container_name: mosquitto
+    restart: unless-stopped
+    networks:
+      - nanohome
+    ports:
+     - 1883:1883
+     - 1884:1884
+    volumes:
+      - /mnt/data/appdata/mosquitto/log:/mosquitto/log
+      - /mnt/data/appdata/mosquitto/config:/mosquitto/config
+      - /mnt/data/appdata/mosquitto/data:/mosquitto/data
+
+
+
+volumes: # define any named volumes used by the services
+  db_data: # name of the volume for persisting database data
+
+networks:
+  nanohome:
+    driver: bridge
