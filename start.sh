@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/bin/bash /opt/nanohome/config/runonce.sh
+#/bin/bash /opt/nanohome/config/runonce.sh
 
 # Start crond in the background
 crond -f &
