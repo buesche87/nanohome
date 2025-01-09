@@ -1,18 +1,21 @@
 #!/bin/bash
 
-#/bin/bash /opt/nanohome/config/runonce.sh
 
+# Create InfluxDB configuration profiles
+influx config create \
+  --config-name "${INFLUXDB_CONFIG}" \
+  --host-url "http://${INFLUXDB_SERVICE}" \
+  --org "${INFLUXDB_ORG}" \
+  --token "${INFLUXDB_ADMINTOKEN}" \
+  --active
+
+
+# Run once 
 RUNONCEDONE="/opt/nanohome/config/runoncedone"
 
 if [ ! -f "${RUNONCEDONE}" ]; then
 
-	# Create InfluxDB configuration profiles
-	influx config create \
-	  --config-name "${INFLUXDB_CONFIG}" \
-	  --host-url "http://${INFLUXDB_SERVICE}" \
-	  --org "${INFLUXDB_ORG}" \
-	  --token "${INFLUXDB_ADMINTOKEN}" \
-	  --active
+
 
 	# Create devices bucket
 	influx bucket create \
