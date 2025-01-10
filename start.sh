@@ -24,114 +24,329 @@ export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
 
-########################
-# InfluxDB       
-########################
+# TODO: Check communication to influxdb
+# TODO: Log
 
-# Check if influx configuration exists, create it if not
-influxconfig=$(influx config list --json | jq -r ."${INFLUXDB_CONFIG}")
-if [[ "${influxconfig}" == "null" ]]; then 
-	influx config create \
+
+# InfluxDB config
+############################################################
+
+influxconfigjson=$( \
+	influx config list --json | \
+	jq -r ."${INFLUXDB_CONFIG}" )
+
+influxconfigjsonobjects=$( \
+	jq length \
+	<<< "${influxconfigjson}" )
+
+# Check if influx configuration exists
+if [ "$influxconfigjsonobjects" -ne 1 ]
+then # Create one it if not
+	influxconfigjson=$( \
+		influx config create \
 	  --config-name "${INFLUXDB_CONFIG}" \
 	  --host-url "http://${INFLUXDB_SERVICE}" \
 	  --org "${INFLUXDB_ORG}" \
 	  --token "${INFLUXDB_ADMINTOKEN}" \
-	  --active
+	  --active | jq )
 fi
 
-# Check if devices bucket exists, create if not
-influx bucket list --name "${INFLUXDB_BUCKET_DEVICES}" >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	influx bucket create \
+# InfluxDB devices bucket
+############################################################
+
+influxbucketdevicesjson=$( \
+	influx bucket list \
+	--name "${INFLUXDB_BUCKET_DEVICES}" \
+	--json | jq )
+
+influxbucketdevicesobjects=$( \
+	jq length \
+	<<< "${influxbucketdevicesjson}" )
+
+# Check if devices bucket exists
+if [ "$influxbucketdevicesobjects" -ne 1 ]
+then # Create one it if not
+	influxbucketdevicesjson=$( \
+		influx bucket create \
 	  --name "${INFLUXDB_BUCKET_DEVICES}" \
 	  --org "${INFLUXDB_ORG}" \
-	  --token "${INFLUXDB_ADMINTOKEN}"
+	  --token "${INFLUXDB_ADMINTOKEN}" \
+	  --json | jq )
 fi
 
-# Check if measurement bucket exists, create if not
-influx bucket list --name "${INFLUXDB_BUCKET_MEASUREMENTS}" >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	influx bucket create \
+# Get id of devices bucket
+influxbucketdevicesid=$( \
+	echo "${influxbucketdevicesjson}" | \
+	jq -r '.[].id' )
+
+
+# InfluxDB measurements bucket
+############################################################
+
+influxbucketmeasurementsjson=$( \
+	influx bucket list \
+  --name "${INFLUXDB_BUCKET_MEASUREMENTS}" \
+  --json | jq )
+
+influxbucketmeasurementsobjects=$( \
+	jq length \
+	<<< "${influxbucketdevicesjson}" )
+
+# Check if measurements bucket exists
+if [ "$influxbucketmeasurementsobjects" -ne 1 ]
+then # Create one it if not
+	influxbucketmeasurementsjson=$( \
+		influx bucket create \
 	  --name "${INFLUXDB_BUCKET_MEASUREMENTS}" \
 	  --org "${INFLUXDB_ORG}" \
-	  --token "${INFLUXDB_ADMINTOKEN}"
+	  --token "${INFLUXDB_ADMINTOKEN}" \
+	  --json | jq )
 fi
 
-# Check if influxdb service user exists
-influxauthlist=$(influx auth list --json)
-auth_objects=$(jq length <<< ${influxauthlist})
-for ((i = 0; i < auth_objects; i++)); do
-	influxuser=$(echo "${influxauthlist}" | jq -r .[$i].userName)
-	if [[ "${influxuser}" -eq "${INFLUXDB_GRAFANAUSER}" ]]; then
-		INFLUXDB_ROTOKEN = $(echo "${influxauthlist}" | jq -r .[$i].token)
+# Get id of measurements bucket
+influxbucketmeasurementsid=$( \
+	echo "${influxbucketmeasurementsjson}" | \
+	jq -r '.[].id' )
+
+
+# InfluxDB RO-Token for Grafana      
+############################################################
+
+# Check if influxdb ro-token exists
+influxauthtokendescription="nanohome grafana ro token"
+
+influxauthlist=$( \
+	influx auth list \
+	--json | jq )
+
+influxauthentry=$( \
+	jq \
+	--arg description "${influxauthtokendescription}" \
+	'[.[] | select(.description == $description)]' \
+	<<< "${influxauthlist}" )
+
+influxauthobjects=$( \
+	jq length \
+	<<< "${influxauthentry}" )
+
+# If there are multiple tokens, delete them - we will recreate one later
+if [ "$influxauthobjects" -gt 1 ]
+then
+	for (( i = 0; i < influxauthobjects; i++ ))
+	do
+		tokenid=$( \
+		echo "${influxauthentry}" | \
+		jq -r .[$i].id )
+
+		influx auth delete --id "${tokenid}"
+	done
+	influxauthobjects=0
+fi
+
+# If it's just one token, check if it has the right permissions
+if [ "$influxauthobjects" -eq 1 ]
+then
+	tokenpermission=$( \
+		jq \
+		--arg val1 "${influxbucketdevicesid}" \
+		--arg val2 "${influxbucketmeasurementsid}" \
+		'[.permissions[]] | contains([$val1, $val2])' \
+		<<< "${influxauthentry}" )
+
+	# Delete it if not
+	if ( ! $tokenpermission )
+	then
+		tokenid=$( \
+			echo "${influxauthentry}" | \
+			jq -r .id )
+
+		influx auth delete --id "${tokenid}"
+		influxauthobjects=0
 	fi
-done
-
-# Create influxdb ro-token for grafana if it does not exist
-if [ -z "${INFLUXDB_ROTOKEN}" ]; then 
-	influxrotokenjson=$(influx auth create \
-	  --description "nanohome grafana ro user" \
-	  --org "${INFLUXDB_ORG}" \
-	  --read-bucket "${INFLUXDB_BUCKET_DEVICES}" \
-	  --read-bucket "${INFLUXDB_BUCKET_MEASUREMENTS}" \
-	  --json)
-	INFLUXDB_ROTOKEN=$(echo "${influxrotokenjson}" | jq -r '.token')
 fi
 
+# Create a new token if needed
+if [ "$influxauthobjects" -eq 0 ]
+then
+	influxrotokenjson=$( \
+		influx auth create \
+	  --description "${influxauthtokendescription}" \
+	  --org "${INFLUXDB_ORG}" \
+	  --read-bucket "${influxbucketdevicesid}" \
+	  --read-bucket "${influxbucketmeasurementsid}" \
+	  --json | jq )
+
+	influxauthentry=$( \
+		jq \
+		--arg description "${influxauthtokendescription}" \
+		'.[] | select(.description == $description)' \
+		<<< "$influxauthlist" )
+fi
+
+# Extract token from auth json
+INFLUXDB_ROTOKEN=$( \
+	echo "${influxauthentry}" | \
+	jq -r '.token' )
+
 ########################
-# Grafana       
+# Grafana - Service account & Access Token      
 ########################
 
-# If no access token specified inf env file, create it
-if [ -z "${GRAFANA_SERVICEUSERTOKEN}" ]; then
-
+# If no access token specified in env file, create it
+if [ -z "${GRAFANA_SERVICEUSERTOKEN}" ]
+then
 	# Define service user json
-	sananohome='{
+	grafanasauser='{
 	  "name": "'"${GRAFANA_SERVICEUSER}"'",
 	  "role": "Admin",
 	  "isDisabled": false
 	}'
 
 	# Check if service user exists
-	grafanasajson=$(curl \
+	grafanasajson=$( \
+		curl \
 		-H "Accept: application/json" \
 		-H "Content-Type: application/json" \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEUSER}" | jq)
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEUSER}" | \
+		jq )
+
+	grafanasaobjects=$( \
+		echo "${grafanasajson}" | \
+		jq -r .totalCount )
 
 	# Create service user if it does not exist
-	sa_objects=$(echo "${grafanasajson}" | jq -r .totalCount)
-	if [ "$sa_objects" -eq 0 ]; then
-		grafanasajson=$(curl \
+	if [ "$grafanasaobjects" -eq 0 ]
+	then
+		grafanasajson=$( \
+			curl \
 			-H "Accept: application/json" \
 			-H "Content-Type: application/json" \
-			-X POST -d "${sananohome}" "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts")
+			-d "${grafanasauser}" \
+			-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts" | \
+			jq )
 	fi
 
-	# Get access tokens of service account
-	said=$(echo "${grafanasajson}" | jq -r .serviceAccounts[].id)
-	grafanasatokenjson=$(curl \
+	# Get id of service user
+	said=$( \
+		echo "${grafanasajson}" | \
+		jq -r .id )
+
+	# Get token of service user
+	grafanasatokenjson=$( \
+		curl \
 		-H "Accept: application/json" \
 		-H "Content-Type: application/json" \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens" | jq)
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens" | \
+		jq )
 
-	# Delete access tokens
-	token_objects=$(jq length <<< ${grafanasatokenjson})
-	for ((i = 0; i < token_objects; i++)); do
-		tokenid=$(echo "${grafanasatokenjson}" | jq -r .[$i].id)
-		curl -i \
-			-H "Content-Type: application/json" \
-			-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens/${tokenid}"
+	grafanasatokenobjects=$( \
+		jq length \
+		<<< ${grafanasatokenjson} )
+
+	# Delete access tokens if there are any
+	for (( i = 0; i < grafanasatokenobjects; i++ ))
+	do
+		tokenid=$( \
+		echo "${grafanasatokenjson}" | \
+		jq -r .[$i].id )
+		
+		curl \
+		-H "Content-Type: application/json" \
+		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens/${tokenid}"
 	done
 
 	# Create a new access token
-	satokenjson=$(curl \
+	satokenjson=$( \
+		curl \
 		-H "Accept: application/json" \
 		-H "Content-Type: application/json" \
-		-d "${sananohome}" \
-		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens")
+		-d "${grafanasauser}" \
+		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens" | \
+		jq )
 
-	GRAFANA_SERVICEUSERTOKEN=$(echo "${satokenjson}" | jq -r .key)
+	# Extract token
+	GRAFANA_SERVICEUSERTOKEN=$( \
+		echo "${satokenjson}" | \
+		jq -r .key )
 fi
+
+########################
+# Grafana - Datasources    
+########################
+
+# Create datasources if they do not exist
+
+# Get Devices Datasource
+datasourcesjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/datasources" | \
+	jq )
+
+# For each object, check name and type
+datasourceobjects=$( \
+	jq length \
+	<<< ${datasourcesjson} )
+
+for (( i = 0; i < datasourceobjects; i++ ))
+do
+
+	dsname=$(echo "${datasourcesjson}" | jq -r .[$i].name)
+	dstype=$(echo "${datasourcesjson}" | jq -r .[$i].type)
+
+	# Devices
+	if [["${$dsname}" == "${INFLUXDB_BUCKET_DEVICES}"]] && [["${$dstype}" == "influxdb"]]
+	then
+		datasourcedevicesid=$(echo "${datasourcesjson}" | jq -r .[$i].id)
+		datasourcedevicesuid=$(echo "${datasourcesjson}" | jq -r .[$i].uid)
+	fi
+
+	# Measurements
+	if [["${$dsname}" == "${INFLUXDB_BUCKET_MEASUREMENTS}"]] && [["${$dstype}" == "influxdb"]]
+	then
+		datasourcedevicesid=$(echo "${datasourcesjson}" | jq -r .[$i].id)
+		datasourcedevicesuid=$(echo "${datasourcedevicesjson}" | jq -r .[$i].uid)
+	fi
+done
+
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type:application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X POST -d "${datasourcedevices}" "http://${GRAFANA_SERVICE}/api/datasources"
+
+	# Measurements Datasource
+	datasourcemeasurements='{
+		"name":"Measurements",
+		"type":"influxdb",
+		"typeName":"InfluxDB",
+		"access":"proxy",
+		"url":"http://'"${INFLUXDB_SERVICE}"'",
+		"jsonData":{"dbName":"'"${INFLUXDB_BUCKET_MEASUREMENTS}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
+		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
+		"isDefault":true,
+		"readOnly":false
+	}'
+
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type:application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X POST -d "${datasourcemeasurements}" "http://${GRAFANA_SERVICE}/api/datasources"
+
+########################
+# Grafana - Dashboards    
+########################
+
+# Check if dashboards exist
+if [ -n "${}" ]; then
+
+
+fi
+
+# Upload if not
 
 ########################
 # Mosquitto       
