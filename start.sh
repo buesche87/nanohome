@@ -35,7 +35,28 @@ export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
 
-# InfluxDB config
+# InfluxDB config - functions
+############################################################
+
+createinfluxconfig() {
+	influx config create \
+	--config-name "${INFLUXDB_CONFIG}" \
+	--host-url "http://${INFLUXDB_SERVICE}" \
+	--org "${INFLUXDB_ORG}" \
+	--token "${INFLUXDB_ADMINTOKEN}" \
+	--active \
+	--json | jq
+
+	if [ $? -eq 0 ]
+	then
+		echo "InfluxDB config: Created config \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+	else
+		echo "InfluxDB config: Failed to create config \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		Exit 1
+	fi
+}
+
+# InfluxDB config - nanohome
 ############################################################
 
 # Check if influx configuration exists, create it if not
@@ -48,16 +69,9 @@ if [ $? -eq 0 ]
 then
 	echo "Influx config: \"${INFLUXDB_CONFIG}\" found" >> /proc/1/fd/1
 else
-	influxconfig=$( \
-		influx config create \
-		--config-name "${INFLUXDB_CONFIG}" \
-		--host-url "http://${INFLUXDB_SERVICE}" \
-		--org "${INFLUXDB_ORG}" \
-		--token "${INFLUXDB_ADMINTOKEN}" \
-		--active \
-		--json | jq )
-	
-	echo "Influx config: \"${INFLUXDB_CONFIG}\" created" >> /proc/1/fd/1
+	influxconfig=$(
+		createinfluxconfig
+	)
 fi
 
 echo "${influxconfig}" | jq '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
@@ -84,9 +98,9 @@ createinfluxbucket() {
 	
 	if [ $? -eq 0 ]
 	then
-		echo "InfluxDB buckets: \"${bucket}\" created" >> /proc/1/fd/1
+		echo "InfluxDB buckets: Created bucket \"${bucket}\"" >> /proc/1/fd/1
 	else
-		echo "InfluxDB buckets: Error creating \"${bucket}\"" >> /proc/1/fd/1
+		echo "InfluxDB buckets: Failed to create \"${bucket}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -101,9 +115,9 @@ influxbucket_devices=$(
 
 if [ $? -eq 0 ]
 then
-	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: Found bucket \"${INFLUXDB_BUCKET_DEVICES}\"" >> /proc/1/fd/1
 else
-	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_DEVICES}\" not found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: Failed to get bucket \"${INFLUXDB_BUCKET_DEVICES}\"" >> /proc/1/fd/1
 
 	influxbucket_devices=$( 
 		createinfluxbucket "${INFLUXDB_BUCKET_DEVICES}" )
@@ -127,9 +141,9 @@ influxbucket_measurements=$(
 
 if [ $? -eq 0 ]
 then
-	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_MEASUREMENTS}\" found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: Found bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\"" >> /proc/1/fd/1
 else
-	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_MEASUREMENTS}\" not found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: Failed to get bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\"" >> /proc/1/fd/1
 
 	influxbucket_measurements=$(
 		createinfluxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
@@ -164,9 +178,9 @@ deleteinfluxauthtoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "InfluxDB auth: Removed token with id \"${id}\"" >> /proc/1/fd/1
+		echo "InfluxDB auth: Removed token \"${id}\"" >> /proc/1/fd/1
 	else
-		echo "InfluxDB auth: Error removing token with id \"${id}\"" >> /proc/1/fd/1
+		echo "InfluxDB auth: Error removing token \"${id}\"" >> /proc/1/fd/1
 	fi
 }
 
@@ -183,7 +197,7 @@ createinfluxauthtoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
+		echo "InfluxDB auth: Created token \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 	else
 		echo "InfluxDB auth: Error creating \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 		Exit 1
@@ -204,7 +218,7 @@ influxauth_token_objects=$(
 # If there are multiple tokens, delete them - we will recreate one later
 if [ "$influxauth_token_objects" -gt 1 ]
 then
-	echo "InfluxDB auth: Multiple \"${INFLUXDB_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
+	echo "InfluxDB auth: Found multiple \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 
 	for (( i = 0; i < influxauth_token_objects; i++ ))
 	do
@@ -284,6 +298,14 @@ getgrafanaserviceaccount() {
 	-H "Content-Type: application/json" \
 	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${sa}" | \
 	jq -e
+
+	if [ $? -eq 0 ]
+	then
+		echo "Grafana service account: Found service account \"${sa}\"" >> /proc/1/fd/1
+	else
+		echo "Grafana service account: Failed to get service account \"${sa}\"" >> /proc/1/fd/1
+		Exit 1
+	fi
 }
 
 creategrafanaserviceaccount() {
@@ -298,9 +320,9 @@ creategrafanaserviceaccount() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Grafana service account: Account \"${GRAFANA_SERVICEUSER}\" created" >> /proc/1/fd/1
+		echo "Grafana service account: Created account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
 	else
-		echo "Grafana service account: Error creating account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Failed to create account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -313,6 +335,14 @@ getgrafanaserviceaccounttoken() {
 	-H "Content-Type: application/json" \
 	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${id}/tokens" | \
 	jq -e
+
+	if [ $? -eq 0 ]
+	then
+		echo "Grafana service account: Found token with id \"${id}\"" >> /proc/1/fd/1
+	else
+		echo "Grafana service account: Failed to get token with id \"${id}\"" >> /proc/1/fd/1
+		Exit 1
+	fi
 }
 
 deletegrafanaserviceaccounttoken() {
@@ -322,6 +352,14 @@ deletegrafanaserviceaccounttoken() {
 	curl -s \
 	-H "Content-Type: application/json" \
 	-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens/${tid}"
+
+	if [ $? -eq 0 ]
+	then
+		echo "Grafana service account: Deleted token \"${tid}\" for account \"${uid}\"" >> /proc/1/fd/1
+	else
+		echo "Grafana service account: Failed to delete token \"${tid}\" for account \"${uid}\"" >> /proc/1/fd/1
+		Exit 1
+	fi
 }
 
 creategrafanaserviceaccounttoken() {
@@ -360,6 +398,8 @@ then
 	# Check if service account exists
 	grafanaserviceaccount=$(
 		getgrafanaserviceaccount "${GRAFANA_SERVICEUSER}"
+
+
 	)
 
 	grafanaserviceaccount_objects=$(
