@@ -188,9 +188,8 @@ INFLUXDB_ROTOKEN=$( \
 	echo "${influxauthentry}" | \
 	jq -r '.token' )
 
-########################
-# Grafana - Service account & Access Token      
-########################
+# Grafana service account and token   
+############################################################
 
 # If no access token specified in env file, create it
 if [ -z "${GRAFANA_SERVICEUSERTOKEN}" ]
@@ -270,13 +269,36 @@ then
 		jq -r .key )
 fi
 
-########################
-# Grafana - Datasources    
-########################
+# Grafana datasources
+############################################################
 
-# Create datasources if they do not exist
+# Devices datasource
+datasourcedevices='{
+	"name":"Devices",
+	"type":"influxdb",
+	"typeName":"InfluxDB",
+	"access":"proxy",
+	"url":"http://'"${INFLUXDB_SERVICE}"'",
+	"jsonData":{"dbName":"'"${INFLUXDB_BUCKET_DEVICES}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
+	"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
+	"isDefault":true,
+	"readOnly":false
+}'
 
-# Get Devices Datasource
+# Measurements datasource
+datasourcemeasurements='{
+	"name":"Measurements",
+	"type":"influxdb",
+	"typeName":"InfluxDB",
+	"access":"proxy",
+	"url":"http://'"${INFLUXDB_SERVICE}"'",
+	"jsonData":{"dbName":"'"${INFLUXDB_BUCKET_MEASUREMENTS}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
+	"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
+	"isDefault":true,
+	"readOnly":false
+}'
+
+# Get available datasources
 datasourcesjson=$( \
 	curl \
 	-H "Accept: application/json" \
@@ -285,68 +307,190 @@ datasourcesjson=$( \
 	-X GET "http://${GRAFANA_SERVICE}/api/datasources" | \
 	jq )
 
-# For each object, check name and type
 datasourceobjects=$( \
 	jq length \
 	<<< ${datasourcesjson} )
 
+# Check if devices an mesurements datasources exist, if so get their ID
 for (( i = 0; i < datasourceobjects; i++ ))
 do
+	dsname=$( \
+		echo "${datasourcesjson}" | \
+		jq -r .[$i].name )
 
-	dsname=$(echo "${datasourcesjson}" | jq -r .[$i].name)
-	dstype=$(echo "${datasourcesjson}" | jq -r .[$i].type)
+	dstype=$( \
+		echo "${datasourcesjson}" | \
+		jq -r .[$i].type )
 
-	# Devices
+	# Check for devices datasource
 	if [["${$dsname}" == "${INFLUXDB_BUCKET_DEVICES}"]] && [["${$dstype}" == "influxdb"]]
-	then
-		datasourcedevicesid=$(echo "${datasourcesjson}" | jq -r .[$i].id)
-		datasourcedevicesuid=$(echo "${datasourcesjson}" | jq -r .[$i].uid)
+	then # Get its ID
+		datasourcedevicesid=$( \
+			echo "${datasourcesjson}" | \
+			jq -r .[$i].id )
+		
+		datasourcedevicesuid=$( \
+			echo "${datasourcesjson}" | \
+			jq -r .[$i].uid )
 	fi
 
-	# Measurements
+	# Check for measurements datasource
 	if [["${$dsname}" == "${INFLUXDB_BUCKET_MEASUREMENTS}"]] && [["${$dstype}" == "influxdb"]]
-	then
-		datasourcedevicesid=$(echo "${datasourcesjson}" | jq -r .[$i].id)
-		datasourcedevicesuid=$(echo "${datasourcedevicesjson}" | jq -r .[$i].uid)
+	then # Get its ID
+		datasourcemeasurementsid=$( \
+			echo "${datasourcesjson}" | \
+			jq -r .[$i].id )
+		
+		datasourcemeasurementsuid=$( \
+			echo "${datasourcesjson}" | \
+			jq -r .[$i].uid )
 	fi
 done
 
-	curl \
-	-H "Accept: application/json" \
-	-H "Content-Type:application/json" \
-	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
-	-X POST -d "${datasourcedevices}" "http://${GRAFANA_SERVICE}/api/datasources"
-
-	# Measurements Datasource
-	datasourcemeasurements='{
-		"name":"Measurements",
-		"type":"influxdb",
-		"typeName":"InfluxDB",
-		"access":"proxy",
-		"url":"http://'"${INFLUXDB_SERVICE}"'",
-		"jsonData":{"dbName":"'"${INFLUXDB_BUCKET_MEASUREMENTS}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
-		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
-		"isDefault":true,
-		"readOnly":false
-	}'
-
-	curl \
-	-H "Accept: application/json" \
-	-H "Content-Type:application/json" \
-	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
-	-X POST -d "${datasourcemeasurements}" "http://${GRAFANA_SERVICE}/api/datasources"
-
-########################
-# Grafana - Dashboards    
-########################
-
-# Check if dashboards exist
-if [ -n "${}" ]; then
-
-
+# If devices datasource does not exist, create it
+if ( ! $datasourcedevicesid )
+then
+	datasourcedevicesjson=$( \
+		curl \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d "${datasourcedevices}" "http://${GRAFANA_SERVICE}/api/datasources" | \
+		jq )
 fi
 
-# Upload if not
+# If measurements datasource does not exist, create it
+if ( ! $datasourcemeasurementsid )
+then
+	datasourcemeasurementsjson=$( \
+		curl \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d "${datasourcemeasurements}" "http://${GRAFANA_SERVICE}/api/datasources" | \
+		jq )
+fi
+
+# Grafana content
+############################################################
+
+# Set credentials in grafana content
+sed -i 's#var user = \\\"\\\"#var user = \\\"'${MQTT_USER}'\\\"#' ./grafana-content/js/mqttconfig.js
+sed -i 's#var pwd = \\\"\\\"#var pwd = \\\"'${MQTT_PASSWORD}'\\\"#' ./grafana-content/js/mqttconfig.js
+
+
+# Grafana dashboards
+############################################################
+
+grafanadashboardsjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards" | \
+	jq )
+
+
+homedashboardjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards" | \
+	jq )
+
+# Check if home dashboard exists, if not upload it
+if ( ! $homedashboardjson )
+then
+	homedashboardjson=$( \
+		curl \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d @./grafana-content/dashboards/home.json "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+		jq )
+fi
+
+devicesdashboardjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards" | \
+	jq )
+
+# Check if devices dashboard exists, if not upload it
+if ( ! $devicesdashboardjson )
+then
+	devicesdashboardjson=$( \
+		curl -i \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d @./grafana-content/dashboards/devices.json "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+		jq )
+fi
+
+timerdashboardjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards" | \
+	jq )
+
+# Check if timer dashboard exists, if not upload it
+if ( ! $timerdashboardjson )
+then
+	timerdashboardjson=$( \
+		curl -i \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d @./grafana-content/dashboards/timer.json "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+		jq )
+fi
+
+standbydashboardjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards" | \
+	jq )
+
+# Check if standby dashboard exists, if not upload it
+if ( ! $standbydashboardjson )
+then
+	standbydashboardjson=$( \
+		curl -i \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d @./grafana-content/dashboards/standby.json "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+		jq )
+fi
+
+measurementsdashboardjson=$( \
+	curl \
+	-H "Accept: application/json" \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards" | \
+	jq )
+
+# Check if standby dashboard exists, if not upload it
+if ( ! $measurementsdashboardjson )
+then
+	measurementsdashboardjson=$( \
+		curl -i \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEUSERTOKEN}" \
+		-X POST -d @./grafana-content/dashboards/measurements.json "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+		jq )
+fi
+
 
 ########################
 # Mosquitto       
