@@ -5,8 +5,6 @@ RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients
 # runonce
 RUN mkdir -p /opt/nanohome/config
 RUN mkdir -p /opt/nanohome/log
-#COPY runonce.sh /opt/nanohome/config
-#RUN chmod +x /opt/nanohome/config/runonce.sh
 
 # influx-cli
 RUN mkdir -p ./influx-cli
@@ -21,9 +19,12 @@ WORKDIR /opt/nanohome
 COPY bin /opt/nanohome/bin
 RUN chmod +x /opt/nanohome/bin/*
 RUN ln -sf /opt/nanohome/bin/* /usr/local/bin/
+
 COPY services /opt/nanohome/services
 RUN chmod +x /opt/nanohome/services/*
+
 COPY templates /opt/nanohome/templates
+COPY grafana-content /opt/nanohome/grafana-content
 
 # Defaults
 COPY start.sh /start.sh
