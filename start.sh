@@ -131,8 +131,9 @@ then
 else
 	echo "InfluxDB bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\" not found" >> /proc/1/fd/1
 
-	influxbucket_measurements=$( \
-		createinfluxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}" )
+	influxbucket_measurements=$(
+		createinfluxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
+	)
 fi
 
 echo "${influxbucket_measurements}" | jq >> /proc/1/fd/1
@@ -153,7 +154,7 @@ getinfluxauthtoken() {
 
 	influx auth list --json | \
 	jq -e --arg description "${description}" \
-	'[.[] | select(.description == $description)]'
+	'.[] | select(.description == $description)'
 }
 
 deleteinfluxauthtoken() {
