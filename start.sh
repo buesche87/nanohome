@@ -161,8 +161,6 @@ export INFLUXBUCKET_MEASUREMENTS_ID=$(
 # InfluxDB auth - Functions   
 ############################################################
 
-# TODO: Fehler hier
-
 getinfluxauthtoken() {
 	local description=$1
 
@@ -244,17 +242,26 @@ if [ "$influxauth_token_objects" -eq 1 ]
 then
 	# Delete it if not
 	if ( ! checkinfluxauthtokenpermissions )
-		echo "InfluxDB auth: Found token \"${INFLUXDB_TOKEN_DESCRIPTION}\" with correct permissions" >> /proc/1/fd/1
 	then
 		echo "InfluxDB auth: Found token ${INFLUXDB_TOKEN_DESCRIPTION} with missing permissions" >> /proc/1/fd/1
 
 		influxauth_token_id=$(
 			echo "${influxauth_token}" | \
-			jq -r .[].id
+			jq -r .id
 		)
 
 		deleteinfluxauthtoken "${influxauth_token_id}"
 		influxauth_token_objects=0
+	else
+		echo "InfluxDB auth: Found token \"${INFLUXDB_TOKEN_DESCRIPTION}\" with correct permissions" >> /proc/1/fd/1
+
+		# Extract token from auth json
+		export INFLUXDB_ROTOKEN=$(
+			echo "${influxauth_token}" | \
+			jq -r '.[].token'
+		)
+
+		echo "${influxauth_token}" | jq '.[].token = "<SECURETOKEN>"' >> /proc/1/fd/1
 	fi
 fi
 
@@ -266,13 +273,16 @@ then
 	influxauth_token=$(
 		createinfluxauthtoken "${INFLUXBUCKET_DEVICES_ID}" "${INFLUXBUCKET_MEASUREMENTS_ID}"
 	)
+
+	# Extract token from auth json
+	export INFLUXDB_ROTOKEN=$(
+		echo "${influxauth_token}" | \
+		jq -r '.token'
+	)
+
+	echo "${influxauth_token}" | jq '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
 fi
 
-# Extract token from auth json
-export INFLUXDB_ROTOKEN=$(
-	echo "${influxauth_token}" | \
-	jq -r '.[].token'
-)
 
 # Grafana service account - Functions 
 ############################################################
@@ -318,9 +328,9 @@ creategrafanaserviceaccount() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Grafana service account: Created account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Created account \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
 	else
-		echo "Grafana service account: Failed to create account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Failed to create account \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -373,9 +383,9 @@ creategrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Grafana service account: Token for \"${GRAFANA_SERVICEUSER}\" created" >> /proc/1/fd/1
+		echo "Grafana service account: Token for \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
 	else
-		echo "Grafana service account: Error creating token for \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Error creating token for \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -390,12 +400,12 @@ then
 
 	# Define service account json
 	grafanaserviceaccount_json=$(
-		setgrafanaserviceaccount "${GRAFANA_SERVICEUSER}"
+		setgrafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}"
 	)
 
 	# Check if service account exists
 	grafanaserviceaccount=$(
-		getgrafanaserviceaccount "${GRAFANA_SERVICEUSER}"
+		getgrafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}"
 
 
 	)
@@ -408,7 +418,7 @@ then
 	# Create service account if it does not exist
 	if [ "$grafanaserviceaccount_objects" -eq 0 ]
 	then
-		echo "Grafana service account: Account \"${GRAFANA_SERVICEUSER}\" not fund, create it" >> /proc/1/fd/1
+		echo "Grafana service account: Account \"${GRAFANA_SERVICEACCOUNT}\" not fund, create it" >> /proc/1/fd/1
 
 		grafanaserviceaccount=$(
 			creategrafanaserviceaccount "${grafanaserviceaccount_json}"
