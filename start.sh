@@ -126,8 +126,8 @@ fi
 echo "${influxbucket_devices}" | jq >> /proc/1/fd/1
 
 # Get id of devices bucket for later use
-influxbucket_devices_id=$(
-	echo "${influxbucket_devicesjson}" | \
+export INFLUXBUCKET_DEVICES_ID=$(
+	echo "${influxbucket_devices}" | \
 	jq -r '.id'
 )
 
@@ -153,7 +153,7 @@ fi
 echo "${influxbucket_measurements}" | jq >> /proc/1/fd/1
 
 # Get id of measurements bucket for later use
-influxbucket_measurements_id=$(
+export INFLUXBUCKET_MEASUREMENTS_ID=$(
 	echo "${influxbucket_measurements}" | \
 	jq -r '.id'
 )
@@ -171,6 +171,15 @@ getinfluxauthtoken() {
 	'[.[] | select(.description == $description)]'
 }
 
+checkinfluxauthtokenpermissions() {
+	jq \
+	--arg val1 "${INFLUXBUCKET_DEVICES_ID}" \
+	--arg val2 "${INFLUXBUCKET_MEASUREMENTS_ID}" \
+	'[.[].permissions[]] | contains([$val1, $val2])' \
+	<<< "${influxauth_token}"
+}
+
+
 deleteinfluxauthtoken() {
 	local id=$1
 
@@ -185,14 +194,11 @@ deleteinfluxauthtoken() {
 }
 
 createinfluxauthtoken() {
-	local bktid1=$1
-	local bktid2=$2
-
 	influx auth create \
 	--description "${INFLUXDB_TOKEN_DESCRIPTION}" \
 	--org "${INFLUXDB_ORG}" \
-	--read-bucket "${influxbucket_devices_id}" \
-	--read-bucket "${influxbucket_measurements_id}" \
+	--read-bucket "${INFLUXBUCKET_DEVICES_ID}" \
+	--read-bucket "${INFLUXBUCKET_MEASUREMENTS_ID}" \
 	--json | jq -e
 
 	if [ $? -eq 0 ]
@@ -236,18 +242,11 @@ fi
 # If there is just one token, check if it has the right permissions
 if [ "$influxauth_token_objects" -eq 1 ]
 then
-	influxauth_token_permissions=$(
-		jq \
-		--arg val1 "${influxbucket_devices_id}" \
-		--arg val2 "${influxbucket_measurements_id}" \
-		'[.[].permissions[]] | contains([$val1, $val2])' \
-		<<< "${influxauth_token}"
-	)
-
 	# Delete it if not
-	if ( ! $influxauth_token_permissions )
+	if ( ! checkinfluxauthtokenpermissions )
+		echo "InfluxDB auth: Found token \"${INFLUXDB_TOKEN_DESCRIPTION}\" with correct permissions" >> /proc/1/fd/1
 	then
-		echo "${INFLUXDB_TOKEN_DESCRIPTION} found but with wrong permission, remove it" >> /proc/1/fd/1
+		echo "InfluxDB auth: Found token ${INFLUXDB_TOKEN_DESCRIPTION} with missing permissions" >> /proc/1/fd/1
 
 		influxauth_token_id=$(
 			echo "${influxauth_token}" | \
@@ -255,7 +254,6 @@ then
 		)
 
 		deleteinfluxauthtoken "${influxauth_token_id}"
-
 		influxauth_token_objects=0
 	fi
 fi
@@ -263,17 +261,17 @@ fi
 # Create a new token if needed
 if [ "$influxauth_token_objects" -eq 0 ]
 then
-	echo "InfluxDB auth: No suitable token found, creating one" >> /proc/1/fd/1
+	echo "InfluxDB auth: No suitable token found" >> /proc/1/fd/1
 
 	influxauth_token=$(
-		createinfluxauthtoken "${influxbucket_devices_id}" "${influxbucket_measurements_id}"
+		createinfluxauthtoken "${INFLUXBUCKET_DEVICES_ID}" "${INFLUXBUCKET_MEASUREMENTS_ID}"
 	)
 fi
 
 # Extract token from auth json
 export INFLUXDB_ROTOKEN=$(
 	echo "${influxauth_token}" | \
-	jq -r '.token'
+	jq -r '.[].token'
 )
 
 # Grafana service account - Functions 
