@@ -54,7 +54,8 @@ else
 		--host-url "http://${INFLUXDB_SERVICE}" \
 		--org "${INFLUXDB_ORG}" \
 		--token "${INFLUXDB_ADMINTOKEN}" \
-		--active | jq )
+		--active \
+		--json | jq )
 	
 	echo "Influx config \"${INFLUXDB_CONFIG}\" created" >> /proc/1/fd/1
 fi
@@ -121,7 +122,7 @@ influxbucket_devices_id=$(
 
 # Check if measurements bucket exists, create it if not
 influxbucket_measurements=$(
-	getinfluxbucketjson "${INFLUXDB_BUCKET_MEASUREMENTS}"
+	getinfluxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
 )
 
 if [ $? -eq 0 ]
@@ -145,6 +146,8 @@ influxbucket_measurements_id=$(
 # InfluxDB auth - Functions   
 ############################################################
 
+# TODO: Fehler hier
+
 getinfluxauthtoken() {
 	local description=$1
 
@@ -167,6 +170,9 @@ deleteinfluxauthtoken() {
 }
 
 createinfluxauthtoken() {
+	local bktid1=$1
+	local bktid2=$2
+
 	influx auth create \
 	--description "${INFLUXDB_TOKEN_DESCRIPTION}" \
 	--org "${INFLUXDB_ORG}" \
@@ -245,14 +251,14 @@ then
 	echo "No suitable token found, creating one" >> /proc/1/fd/1
 
 	influxauth_token=$(
-		createinfluxauthtoken
+		createinfluxauthtoken "${influxbucket_devices_id}" "${influxbucket_measurements_id}"
 	)
 fi
 
 # Extract token from auth json
 export INFLUXDB_ROTOKEN=$(
 	echo "${influxauth_token}" | \
-	jq -r '.[].token'
+	jq -r '.token'
 )
 
 # Grafana service account - Functions 

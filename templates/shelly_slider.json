@@ -1,0 +1,19 @@
+{
+  "datasource": null,
+  "content": "_PANELTEMPLATE_",
+  "gridPos": {
+    "h": 4,
+    "w": 12,
+    "x": 0,
+    "y": 19
+  },
+  "id": 9490,
+  "links": [],
+  "mode": "html",
+  "options": {},
+  "timeFrom": null,
+  "timeShift": null,
+  "title": "",
+  "transparent": true,
+  "type": "text"
+}

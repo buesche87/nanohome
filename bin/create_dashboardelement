@@ -11,13 +11,13 @@ INDEX=$3
 RANDOM="$(date +%s)"
 
 # Element templates
-if [[ "${LEGACY}" == "true" ]]; then
-	SWITCHTEMPLATE="${ROOTPATH}/templates/shelly_legacy_switch.json.template"
-	COVERTEMPLATE="${ROOTPATH}/templates/shelly_legacy_cover.json.template"
-else
-	SWITCHTEMPLATE="${ROOTPATH}/templates/shelly_plus_switch.json.template"
-	COVERTEMPLATE="${ROOTPATH}/templates/shelly_plus_cover.json.template"
-fi
+TEMPLATESUFFIX_JSON=".json"
+[[ "${LEGACY}" == "true" ]] && TEMPLATESUFFIX_JSON="_legacy.json"
+
+SWITCHTEMPLATE_HTML="${ROOTPATH}/templates/shelly_button${TEMPLATESUFFIX_JSON}"
+SWITCHTEMPLATE_JSON="${ROOTPATH}/templates/shelly_button.html"
+COVERTEMPLATE_HTML="${ROOTPATH}/templates/shelly_slider${TEMPLATESUFFIX_JSON}"
+COVERTEMPLATE_JSON="${ROOTPATH}/templates/shelly_slider.html"
 
 # Tempfiles
 ORIGINALDASHBOARD=$(mktemp)

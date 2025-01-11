@@ -1,0 +1,14 @@
+<div
+    class="slider" >
+    <span>_DESCRIPTION_</span>
+</div>
+<div
+    class="slider">
+    <input
+        type="range" 
+        min="0"
+        max="100"
+        onchange='sendCommand("_DEVID_", "_COMPONENT_", "_DESCRIPTION_", "pos," + this.value)'
+        oninput="statusOutput.textContent = this.value + '% offen'"/>
+    </div>
+</div>
