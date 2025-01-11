@@ -154,7 +154,7 @@ getinfluxauthtoken() {
 
 	influx auth list --json | \
 	jq -e --arg description "${description}" \
-	'.[] | select(.description == $description)'
+	'[.[] | select(.description == $description)]'
 }
 
 deleteinfluxauthtoken() {
