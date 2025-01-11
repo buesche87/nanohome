@@ -46,7 +46,7 @@ influxconfig=$(
 
 if [ $? -eq 0 ]
 then
-	echo "Influx config \"${INFLUXDB_CONFIG}\" found" >> /proc/1/fd/1
+	echo "Influx config: \"${INFLUXDB_CONFIG}\" found" >> /proc/1/fd/1
 else
 	influxconfig=$( \
 		influx config create \
@@ -57,7 +57,7 @@ else
 		--active \
 		--json | jq )
 	
-	echo "Influx config \"${INFLUXDB_CONFIG}\" created" >> /proc/1/fd/1
+	echo "Influx config: \"${INFLUXDB_CONFIG}\" created" >> /proc/1/fd/1
 fi
 
 echo "${influxconfig}" | jq '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
@@ -84,9 +84,9 @@ createinfluxbucket() {
 	
 	if [ $? -eq 0 ]
 	then
-		echo "InfluxDB bucket \"${bucket}\" created" >> /proc/1/fd/1
+		echo "InfluxDB buckets: \"${bucket}\" created" >> /proc/1/fd/1
 	else
-		echo "Error creating InfluxDB bucket \"${bucket}\"" >> /proc/1/fd/1
+		echo "InfluxDB buckets: Error creating \"${bucket}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -101,9 +101,9 @@ influxbucket_devices=$(
 
 if [ $? -eq 0 ]
 then
-	echo "InfluxDB bucket \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
 else
-	echo "InfluxDB bucket \"${INFLUXDB_BUCKET_DEVICES}\" not found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_DEVICES}\" not found" >> /proc/1/fd/1
 
 	influxbucket_devices=$( 
 		createinfluxbucket "${INFLUXDB_BUCKET_DEVICES}" )
@@ -127,9 +127,9 @@ influxbucket_measurements=$(
 
 if [ $? -eq 0 ]
 then
-	echo "InfluxDB bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\" found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_MEASUREMENTS}\" found" >> /proc/1/fd/1
 else
-	echo "InfluxDB bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\" not found" >> /proc/1/fd/1
+	echo "InfluxDB buckets: \"${INFLUXDB_BUCKET_MEASUREMENTS}\" not found" >> /proc/1/fd/1
 
 	influxbucket_measurements=$(
 		createinfluxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
@@ -164,9 +164,9 @@ deleteinfluxauthtoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Removed token with id \"${id}\"" >> /proc/1/fd/1
+		echo "InfluxDB auth: Removed token with id \"${id}\"" >> /proc/1/fd/1
 	else
-		echo "Error removing token with id \"${id}\"" >> /proc/1/fd/1
+		echo "InfluxDB auth: Error removing token with id \"${id}\"" >> /proc/1/fd/1
 	fi
 }
 
@@ -183,9 +183,9 @@ createinfluxauthtoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "${INFLUXDB_TOKEN_DESCRIPTION} created" >> /proc/1/fd/1
+		echo "InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 	else
-		echo "Error creating ${INFLUXDB_TOKEN_DESCRIPTION}" >> /proc/1/fd/1
+		echo "InfluxDB auth: Error creating \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 		Exit 1
 	fi	
 }
@@ -204,7 +204,7 @@ influxauth_token_objects=$(
 # If there are multiple tokens, delete them - we will recreate one later
 if [ "$influxauth_token_objects" -gt 1 ]
 then
-	echo "Multiple ${INFLUXDB_TOKEN_DESCRIPTION} found" >> /proc/1/fd/1
+	echo "InfluxDB auth: Multiple \"${INFLUXDB_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 
 	for (( i = 0; i < influxauth_token_objects; i++ ))
 	do
@@ -249,7 +249,7 @@ fi
 # Create a new token if needed
 if [ "$influxauth_token_objects" -eq 0 ]
 then
-	echo "No suitable token found, creating one" >> /proc/1/fd/1
+	echo "InfluxDB auth: No suitable token found, creating one" >> /proc/1/fd/1
 
 	influxauth_token=$(
 		createinfluxauthtoken "${influxbucket_devices_id}" "${influxbucket_measurements_id}"
@@ -298,9 +298,9 @@ creategrafanaserviceaccount() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "service account \"${GRAFANA_SERVICEUSER}\" created" >> /proc/1/fd/1
+		echo "Grafana service account: Account \"${GRAFANA_SERVICEUSER}\" created" >> /proc/1/fd/1
 	else
-		echo "Error creating service account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Error creating account \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -337,9 +337,9 @@ creategrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Token for \"${GRAFANA_SERVICEUSER}\" created" >> /proc/1/fd/1
+		echo "Grafana service account: Token for \"${GRAFANA_SERVICEUSER}\" created" >> /proc/1/fd/1
 	else
-		echo "Error creating Token for \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Error creating token for \"${GRAFANA_SERVICEUSER}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -350,7 +350,7 @@ creategrafanaserviceaccounttoken() {
 # If no access token specified in env file, create it
 if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
-	echo "No grafana service account token provided" >> /proc/1/fd/1
+	echo "Grafana service account: No token provided" >> /proc/1/fd/1
 
 	# Define service account json
 	grafanaserviceaccount_json=$(
@@ -370,7 +370,7 @@ then
 	# Create service account if it does not exist
 	if [ "$grafanaserviceaccount_objects" -eq 0 ]
 	then
-		echo "service account \"${GRAFANA_SERVICEUSER}\" not fund, create it" >> /proc/1/fd/1
+		echo "Grafana service account: Account \"${GRAFANA_SERVICEUSER}\" not fund, create it" >> /proc/1/fd/1
 
 		grafanaserviceaccount=$(
 			creategrafanaserviceaccount "${grafanaserviceaccount_json}"
@@ -413,7 +413,7 @@ then
 		echo "${grafanasatokenjson}" | \
 		jq -r .key )
 else
-	echo "Grafana service account token provided" >> /proc/1/fd/1
+	echo "Grafana service account: Token provided" >> /proc/1/fd/1
 fi
 
 # Grafana datasources - functions
@@ -466,9 +466,9 @@ createdatasource() {
 	
 	if [ $? -eq 0 ]
 	then
-		echo "Datasource for influxdb bucket \"${dsname}\" created" >> /proc/1/fd/1
+		echo "Grafana datasources: Datasource \"${dsname}\" created" >> /proc/1/fd/1
 	else
-		echo "Error creating datasource for influxdb bucket \"${dsname}\"" >> /proc/1/fd/1
+		echo "Grafana datasources: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
 	fi
 }
 
@@ -486,10 +486,10 @@ datasourcedevices=$(
 
 if [ ! $datasourcedevices ]
 then
-	echo "Datasource for influxdb bucket \"${INFLUXDB_BUCKET_DEVICES}\" not found" >> /proc/1/fd/1
+	echo "Grafana datasources: Datasource \"${INFLUXDB_BUCKET_DEVICES}\" not found" >> /proc/1/fd/1
 	createdatasource "${datasourcedevices_json}"
 else
-	echo "Datasource for influxdb bucket \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
+	echo "Grafana datasources: Datasource \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
 fi
 
 # Grafana datasources - Measurements
@@ -506,10 +506,10 @@ datasourcemeasurements=$(
 
 if [ ! $datasourcemeasurements ]
 then
-	echo "Datasource for influxdb bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\" not found" >> /proc/1/fd/1
+	echo "Grafana datasources: Datasource \"${INFLUXDB_BUCKET_MEASUREMENTS}\" not found" >> /proc/1/fd/1
 	createdatasource "${datasourcemeasurements_json}"
 else
-	echo "Datasource for influxdb bucket \"${INFLUXDB_BUCKET_MEASUREMENTS}\" found" >> /proc/1/fd/1
+	echo "Grafana datasources: Datasource \"${INFLUXDB_BUCKET_MEASUREMENTS}\" found" >> /proc/1/fd/1
 fi
 
 # Grafana content
