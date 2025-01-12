@@ -295,7 +295,7 @@ setgrafanaserviceaccount() {
 	  "name": "'"${sa}"'",
 	  "role": "Admin",
 	  "isDisabled": false
-	}'
+	}' |  jq
 }
 
 getgrafanaserviceaccount() {
@@ -346,9 +346,9 @@ getgrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Grafana service account: Found token with id \"${id}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Found token with for account id \"${id}\"" >> /proc/1/fd/1
 	else
-		echo "Grafana service account: Failed to get token with id \"${id}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Failed to get token with for account id \"${id}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -358,6 +358,7 @@ deletegrafanaserviceaccounttoken() {
 	local tid=$2
 
 	curl -s \
+	-H "Accept: application/json" \
 	-H "Content-Type: application/json" \
 	-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens/${tid}"
 
@@ -406,8 +407,6 @@ then
 	# Check if service account exists
 	grafanaserviceaccount=$(
 		getgrafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}"
-
-
 	)
 
 	grafanaserviceaccount_objects=$(
@@ -458,7 +457,7 @@ then
 
 	# Extract token
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$( \
-		echo "${grafanasatokenjson}" | \
+		echo "${grafanaserviceaccount_token}" | \
 		jq -r .key )
 else
 	echo "Grafana service account: Token provided" >> /proc/1/fd/1
