@@ -44,8 +44,10 @@ LOG_SUCCESS="[${LOG_GREEN}Success${LOG_NC}]"
 LOG_WARNING="[${LOG_YELLOW}Warning${LOG_NC}]"
 LOG_ERROR="[${LOG_RED}Error${LOG_NC}]"
 
-# InfluxDB config - functions
+# InfluxDB config
 ############################################################
+
+# TODO: Omit token output
 
 checkinfluxonfig() {
 	influx config list --json | \
@@ -54,9 +56,11 @@ checkinfluxonfig() {
 	if [ $? -eq 0 ]
 	then
 		echo -e "${LOG_SUCCESS} Influx config: Found config \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		return 0
 	else
 		echo -e "${LOG_WARNING} Influx config: Config not found \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
-	fi	
+		return 1
+	fi
 }
 
 createinfluxconfig() {
@@ -66,28 +70,21 @@ createinfluxconfig() {
 	--org "${INFLUXDB_ORG}" \
 	--token "${INFLUXDB_ADMINTOKEN}" \
 	--active \
-	--json | jq
+	--json | \
+	jq -e '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
 
 	if [ $? -eq 0 ]
 	then
 		echo -e "${LOG_SUCCESS} InfluxDB config: Config created \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		return 0
 	else
 		echo -e "${LOG_ERROR} InfluxDB config: Failed to create config \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
 		exit 1
 	fi
 }
 
-# InfluxDB config - nanohome
-############################################################
-
 # Check if influx configuration exists, create it if not
-influxconfig=$(checkinfluxonfig)
-
-[ $? -eq 0 ] || influxconfig=$(
-	createinfluxconfig
-)
-
-echo "${influxconfig}" | jq '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
+checkinfluxonfig || createinfluxconfig
 
 # InfluxDB buckets - functions
 ############################################################
@@ -96,14 +93,17 @@ getinfluxbucket() {
 	local bucket=$1
 
 	influx bucket list --json | \
-		jq -e --arg name "${bucket}" \
-		'.[] | select(.name == $name)'
+	jq -e --arg name "${bucket}" \
+	'.[] | select(.name == $name)'
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB buckets: Found bucket \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB buckets: Bucket \"${INFLUXDB_BUCKET_DEVICES}\" found" >> /proc/1/fd/1
+		echo "${result}" | jq
+		return 0
 	else
 		echo -e "${LOG_WARNING} InfluxDB bucket: Bucket \"${INFLUXDB_BUCKET_DEVICES}\" not found" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
@@ -119,6 +119,8 @@ createinfluxbucket() {
 	if [ $? -eq 0 ]
 	then
 		echo -e "${LOG_SUCCESS} InfluxDB buckets: Created bucket \"${bucket}\"" >> /proc/1/fd/1
+		echo "${result}" | jq -e
+		return 0
 	else
 		echo -e "${LOG_ERROR} InfluxDB buckets: Failed to create bucket \"${bucket}\"" >> /proc/1/fd/1
 		exit 1
@@ -129,13 +131,10 @@ createinfluxbucket() {
 ############################################################
 
 # Check if devices bucket exists, create it if not
-influxbucket_devices=$(getinfluxbucket "${INFLUXDB_BUCKET_DEVICES}")
-
-[ $? -eq 0 ] || influxbucket_devices=$(
+influxbucket_devices=$(
+	getinfluxbucket "${INFLUXDB_BUCKET_DEVICES}" || \
 	createinfluxbucket "${INFLUXDB_BUCKET_DEVICES}"
 )
-
-echo "${influxbucket_devices}" | jq >> /proc/1/fd/1
 
 # Get id of devices bucket for later use
 export INFLUXBUCKET_DEVICES_ID=$(
