@@ -1,10 +1,16 @@
 #!/bin/bash
+# write
+# some
+# things
+# here
 
-########################
+
+
 # NanoHome Environment         
-########################
+############################################################
 
 export ROOTPATH="/opt/nanohome"
+export GRAFANA_FOLDER_NAME="nanohome"
 export GRAFANA_HOME_UID="XieEaLmRk"
 export GRAFANA_HOME_FILE="./templates/home.json"
 export GRAFANA_DEVICES_UID="fe47pva0wy8lcb"
@@ -35,19 +41,22 @@ export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
 
+# Script logging      
+############################################################
+
+LOG_LEVEL="debug"
 LOG_GREEN="\033[1;32m"
 LOG_YELLOW="\033[0;93m"
 LOG_RED="\033[1;31m"
 LOG_NC="\033[0m"
-
 LOG_SUCCESS="[${LOG_GREEN}Success${LOG_NC}]"
 LOG_WARNING="[${LOG_YELLOW}Warning${LOG_NC}]"
 LOG_ERROR="[${LOG_RED}Error${LOG_NC}]"
 
-# InfluxDB config
+# InfluxDB: Config
 ############################################################
 
-checkinfluxonfig() {
+checkinfluxconfig() {
 	local result=$(
 		influx config list --json | \
 		jq -e ."${INFLUXDB_CONFIG}"
@@ -87,7 +96,7 @@ createinfluxconfig() {
 
 # Check if influx configuration exists, create it if not
 influxconfig=$(
-	checkinfluxonfig || createinfluxconfig
+	checkinfluxconfig || createinfluxconfig
 )
 
 # Log
@@ -335,10 +344,20 @@ then
 	jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauth_token}" >> /proc/1/fd/1
 fi
 
-# Grafana service account - Functions 
+############################################################
+# Grafana
 ############################################################
 
-# TODO: Ab hier
+grafanaapiheader=$(
+	echo -e '-H "Accept: application/json" \'
+	echo -e '-H "Content-Type:application/json" \'
+	echo -e '-H "Authorization: Bearer '"${GRAFANA_SERVICEACCOUNT_TOKEN}"
+)
+
+echo "${grafanaapiheader}"
+
+# Grafana service account - Account 
+############################################################
 
 setgrafanaserviceaccount() {
 	local result='{
@@ -384,6 +403,9 @@ creategrafanaserviceaccount() {
 	fi
 }
 
+# Grafana service account - Token 
+############################################################
+
 getgrafanaserviceaccounttoken() {
 	local id=$1
 
@@ -413,9 +435,9 @@ deletegrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana: Service account token deleted" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Old service account token deleted" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_WARNING} Grafana: Service account token failed to delete" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} Grafana: Old service account token failed to delete" >> /proc/1/fd/1
 	fi
 }
 
@@ -432,20 +454,20 @@ creategrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana: Service account token for \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: New service account token created" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_ERROR} Grafana: Error creating token for service account \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Grafana: Error creating new service account token" >> /proc/1/fd/1
 		exit 1
 	fi
 }
 
-# Grafana service account - Token   
+# Grafana service account   
 ############################################################
 
 # If no access token specified in env file, create it
 if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
-	echo -e "${LOG_WARNING} Grafana service account: No token provided" >> /proc/1/fd/1
+	echo -e "${LOG_WARNING} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
 
 	# Define service account json
 	grafanaserviceaccount_json=$(
@@ -532,7 +554,8 @@ fi
 setgrafanadatasourcejson() {
 	local bucket=$1
 
-	local result='{
+	local result=\
+	'{
 		"name":"'"${bucket}"'",
 		"type":"influxdb",
 		"typeName":"InfluxDB",
@@ -581,7 +604,7 @@ getgrafanadatasource() {
 	else
 		echo -e "${LOG_ERROR} Grafana: Could not connect to Grafana" >> /proc/1/fd/1
 		jq <<< "${result}"
-		# exit 1
+		exit 1
 	fi
 }
 
@@ -621,7 +644,7 @@ grafanadatasource_devices=$(
 )
 
 # Log
-jq '.datasource | {uid, name, type, url}' <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
+jq '. | {uid, name, type, url}' <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
 
 # Grafana datasources - Measurements
 ############################################################
@@ -636,8 +659,10 @@ grafanadatasource_measurements=$(
 	creategrafanadatasource "${grafanadatasource_measurements_json}"
 )
 
+# TODO: Maybe - jq > unterscheiden create / found 
+
 # Log
-jq '.datasource | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
+jq '. | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
 # Grafana content
 ############################################################
@@ -652,8 +677,48 @@ jq '.datasource | {uid, name, type, url}' <<< "${grafanadatasource_measurements}
 # sed -i 's#var pwd = \\\"\\\"#var pwd = \\\"'${MQTT_PASSWORD}'\\\"#' ./grafana-content/js/mqttconfig.js
 
 
-# Grafana dashboards - functions
+# Grafana dashboards - folder
 ############################################################
+
+getgrafanafolder() {
+
+	curl -s \
+	-H "Accept: application/json" \
+	-H "Content-Type:application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+	-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder" | \
+	jq -e
+
+	if [ $? -eq 0 ]
+	then
+		echo -e "${LOG_SUCCESS} Grafana: Folder \"${dsname}\" created" >> /proc/1/fd/1
+	else
+		echo -e "${LOG_ERROR} Grafana: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
+		exit 1
+	fi
+
+}
+
+creategrafanafolder() {
+
+	local result=$(
+		curl -s \
+		-H "Accept: application/json" \
+		-H "Content-Type:application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		-X POST -d '{"title": "'"${GRAFANA_FOLDER_NAME}"'"}' "http://${GRAFANA_SERVICE}/api/folders"
+	)
+
+
+	if [ $? -eq 0 ]
+	then
+		echo -e "${LOG_SUCCESS} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" created" >> /proc/1/fd/1
+	else
+		echo -e "${LOG_ERROR} Grafana: Error creating folder \"${GRAFANA_FOLDER_NAME}\"" >> /proc/1/fd/1
+	fi
+
+}
+
 
 getgrafanadashboard() {
 	local uid=$1
@@ -681,23 +746,78 @@ getgrafanadashboard() {
 	fi	
 }
 
+# TODO: error
+# {
+#   "message": "bad request data",
+#   "traceID": ""
+# }
+
+# TODO: json anpassen, damit es hochgeladen werden kann
+
+
+setgrafanadashboard() {
+	local title=$1
+	local folderuid=$2
+
+	local result=\
+	'{
+		"dashboard": {
+			"id": null,
+			"uid": null,
+			"title": "'"${title}"'",
+			"tags": [ "nanohome" ],
+			"timezone": "browser",
+			"schemaVersion": 16,
+			"refresh": "25s"
+		},
+		"folderUid": "'"${folderuid}"'",
+		"message": "Initial upload",
+		"overwrite": true
+	}'
+
+	jq <<< "${result}"
+}
+
+# TODO
 creategrafanadashboard() {
-	local file=$1
+	local jsonfile=$1
+
+	echo "${jsonfile}"
 
 	curl -s \
 	-H "Accept: application/json" \
 	-H "Content-Type:application/json" \
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
-	-X POST -d @"${file}" "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+	-X POST -d @"${jsonfile}" "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
+	jq -e
+
+
+	curl -s \
+	-H "Accept: application/json" \
+	-H "Content-Type:application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+	-X POST -d @"./templates/devices.json" "http://${GRAFANA_SERVICE}/api/dashboards/db" | \
 	jq -e
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana: Dashboard \"${file}\" uploaded" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Dashboard \"${jsonfile}\" uploaded" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_ERROR} Grafana: Dashboard uploading \"${file}\" failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Grafana: Dashboard uploading \"${jsonfile}\" failed" >> /proc/1/fd/1
 		return 1
 	fi	
+}
+
+
+setgrafanahomedashboard() {
+
+	curl -s \
+	-H "Accept: application/json" \
+	-H "Content-Type:application/json" \
+	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+	-X PUT -d '{"homeDashboardId":'"${GRAFANA_HOME_UID}"'}' "http://${GRAFANA_SERVICE}/api/org/preferences" | \
+	jq -e
+
 }
 
 # Grafana dashboards - Home
@@ -712,82 +832,33 @@ grafanadashboard_home=$(
 ############################################################
 
 grafanadashboard_devices=$(
-	getgrafanadashboard "${GRAFANA_DEVICES_UID}"
-)
-
-grafanadashboard_devices_objects=$(
-	jq length <<< "${grafanadashboard_devices}"
-)
-
-# Upload devices dashboard if it does not exist
-if [ "$grafanadashboard_devices_objects" -eq 0 ]
-then
-	echo "Devices dashboard not found" >> /proc/1/fd/1
+	getgrafanadashboard "${GRAFANA_DEVICES_UID}" || \
 	creategrafanadashboard "${GRAFANA_DEVICES_FILE}"
-else
-	echo "Devices dashboard found" >> /proc/1/fd/1
-fi
+)
 
 # Grafana dashboards - Timer
 ############################################################
 
 grafanadashboard_timer=$(
-	getgrafanadashboard "${GRAFANA_TIMER_UID}"
-)
-
-grafanadashboard_timer_objects=$(
-	jq length <<< "${grafanadashboard_timer}"
-)
-
-# Upload timer dashboard if it does not exist
-if [ "$grafanadashboard_timer_objects" -eq 0 ]
-then
-	echo "Timer dashboard not found" >> /proc/1/fd/1
+	getgrafanadashboard "${GRAFANA_TIMER_UID}" || \
 	creategrafanadashboard "${GRAFANA_TIMER_FILE}"
-else
-	echo "Timer dashboard found" >> /proc/1/fd/1
-fi
+)
 
 # Grafana dashboards - Standby
 ############################################################
 
 grafanadashboard_standby=$(
-	getgrafanadashboard "${GRAFANA_STANDBY_UID}"
-)
-
-grafanadashboard_standby_objects=$(
-	jq length <<< "${grafanadashboard_standby}"
-)
-
-# Upload standby dashboard if it does not exist
-if [ "$grafanadashboard_standby_objects" -eq 0 ]
-then
-	echo "Standby dashboard not found" >> /proc/1/fd/1
+	getgrafanadashboard "${GRAFANA_STANDBY_UID}" || \
 	creategrafanadashboard "${GRAFANA_STANDBY_FILE}"
-else
-	echo "Standby dashboard found" >> /proc/1/fd/1
-fi
+)
 
 # Grafana dashboards - Measurements
 ############################################################
 
 grafanadashboard_measurements=$(
-	getgrafanadashboard "${GRAFANA_MEASUREMENTS_UID}"
-)
-
-grafanadashboard_measurements_objects=$(
-	jq length <<< "${grafanadashboard_measurements}"
-)
-
-# Upload measurements dashboard if it does not exist
-if [ "$grafanadashboard_measurements_objects" -eq 0 ]
-then
-	echo "Measurements dashboard not found" >> /proc/1/fd/1
+	getgrafanadashboard "${GRAFANA_MEASUREMENTS_UID}" || \
 	creategrafanadashboard "${GRAFANA_MEASUREMENTS_FILE}"
-else
-	echo "Measurements dashboard found" >> /proc/1/fd/1
-fi
-
+)
 
 # Mosquitto - Functions
 ############################################################
