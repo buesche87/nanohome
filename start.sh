@@ -177,7 +177,6 @@ checkinfluxauthtokenpermissions() {
 	<<< "${influxauth_token}"
 }
 
-
 deleteinfluxauthtoken() {
 	local id=$1
 
@@ -288,32 +287,21 @@ fi
 ############################################################
 
 setgrafanaserviceaccount() {
-	local sa=$1
-
 	echo \
 	'{
-	  "name": "'"${sa}"'",
+	  "name": "'"${GRAFANA_SERVICEACCOUNT}"'",
 	  "role": "Admin",
 	  "isDisabled": false
-	}' |  jq
+	}' | \
+	jq -e
 }
 
 getgrafanaserviceaccount() {
-	local sa=$1
-
 	curl -s \
 	-H "Accept: application/json" \
 	-H "Content-Type: application/json" \
-	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${sa}" | \
+	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}" | \
 	jq -e
-
-	if [ $? -eq 0 ]
-	then
-		echo "Grafana service account: Found service account \"${sa}\"" >> /proc/1/fd/1
-	else
-		echo "Grafana service account: Failed to get service account \"${sa}\"" >> /proc/1/fd/1
-		Exit 1
-	fi
 }
 
 creategrafanaserviceaccount() {
@@ -346,9 +334,9 @@ getgrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Grafana service account: Found token with for account id \"${id}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Found token for account id \"${id}\"" >> /proc/1/fd/1
 	else
-		echo "Grafana service account: Failed to get token with for account id \"${id}\"" >> /proc/1/fd/1
+		echo "Grafana service account: Failed to get token for account id \"${id}\"" >> /proc/1/fd/1
 		Exit 1
 	fi
 }
@@ -360,7 +348,8 @@ deletegrafanaserviceaccounttoken() {
 	curl -s \
 	-H "Accept: application/json" \
 	-H "Content-Type: application/json" \
-	-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens/${tid}"
+	-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens/${tid}" | \
+	jq -e
 
 	if [ $? -eq 0 ]
 	then
@@ -401,12 +390,12 @@ then
 
 	# Define service account json
 	grafanaserviceaccount_json=$(
-		setgrafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}"
+		setgrafanaserviceaccount
 	)
 
 	# Check if service account exists
 	grafanaserviceaccount=$(
-		getgrafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}"
+		getgrafanaserviceaccount
 	)
 
 	grafanaserviceaccount_objects=$(
@@ -417,18 +406,24 @@ then
 	# Create service account if it does not exist
 	if [ "$grafanaserviceaccount_objects" -eq 0 ]
 	then
-		echo "Grafana service account: Account \"${GRAFANA_SERVICEACCOUNT}\" not fund, create it" >> /proc/1/fd/1
+		echo "Grafana service account: Account not found \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
 
 		grafanaserviceaccount=$(
 			creategrafanaserviceaccount "${grafanaserviceaccount_json}"
 		)
-	fi
 
-	# Get id of service account for later use
-	grafanaserviceaccount_id=$(
-		echo "${grafanaserviceaccount}" | \
-		jq -r .serviceAccounts.[].id
-	)
+		grafanaserviceaccount_id=$(
+			echo "${grafanaserviceaccount}" | \
+			jq -r .id
+		)
+	else
+		echo "Grafana service account: Account found \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
+
+		grafanaserviceaccount_id=$(
+			echo "${grafanaserviceaccount}" | \
+			jq -r .serviceAccounts.[].id
+		)
+	fi
 
 	# Get token of service user
 	grafanaserviceaccount_token=$(
@@ -455,10 +450,13 @@ then
 		creategrafanaserviceaccounttoken "${grafanaserviceaccount_json}" "${grafanaserviceaccount_id}"
 	)
 
+	echo "${grafanaserviceaccount_token}" | jq '.key = "<SECUREKEY>"' >> /proc/1/fd/1
+
 	# Extract token
-	export GRAFANA_SERVICEACCOUNT_TOKEN=$( \
+	export GRAFANA_SERVICEACCOUNT_TOKEN=$(
 		echo "${grafanaserviceaccount_token}" | \
-		jq -r .key )
+		jq -r .key
+	)
 else
 	echo "Grafana service account: Token provided" >> /proc/1/fd/1
 fi
@@ -471,7 +469,7 @@ datasourcejson() {
 
 	echo \
 	'{
-		"name":"Devices",
+		"name":"'"${bucket}"'",
 		"type":"influxdb",
 		"typeName":"InfluxDB",
 		"access":"proxy",
@@ -480,7 +478,8 @@ datasourcejson() {
 		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
 		"isDefault":true,
 		"readOnly":false
-	}' | jq
+	}' | \
+	jq -e
 }
 
 getdatasource() {
@@ -500,7 +499,7 @@ getdatasource() {
 createdatasource() {
 	local dsjson=$1
 	local dsname=$(
-		echo "${$dsjson}" | \
+		echo "${1}" | \
 		jq -r .name
 	)
 
@@ -563,6 +562,7 @@ fi
 ############################################################
 
 # TODO: run once
+# TODO: Test ab hier
 
 # Set credentials in grafana content
 # sed -i 's#var user = \\\"\\\"#var user = \\\"'${MQTT_USER}'\\\"#' ./grafana-content/js/mqttconfig.js
