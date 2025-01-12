@@ -6,15 +6,15 @@
 
 export ROOTPATH="/opt/nanohome"
 export GRAFANA_HOME_UID="XieEaLmRk"
-export GRAFANA_HOME_FILE="./grafana-content/dashboards/home.json"
+export GRAFANA_HOME_FILE="./templates/home.json"
 export GRAFANA_DEVICES_UID="fe47pva0wy8lcb"
-export GRAFANA_DEVICES_FILE="./grafana-content/dashboards/devices.json"
+export GRAFANA_DEVICES_FILE="./templates/devices.json"
 export GRAFANA_TIMER_UID="ae489b6q64nwgf"
-export GRAFANA_TIMER_FILE="./grafana-content/dashboards/timer.json"
+export GRAFANA_TIMER_FILE="./templates/timer.json"
 export GRAFANA_STANDBY_UID="adjak60hekvswd"
-export GRAFANA_STANDBY_FILE="./grafana-content/dashboards/standby.json"
+export GRAFANA_STANDBY_FILE="./templates/standby.json"
 export GRAFANA_MEASUREMENTS_UID="ee8v5d70ojpj4b"
-export GRAFANA_MEASUREMENTS_FILE="./grafana-content/dashboards/measurements.json"
+export GRAFANA_MEASUREMENTS_FILE="./templates/measurements.json"
 export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUXDB_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
 export INFLUXDB_TOKEN_DESCRIPTION="nanohome grafana ro-token"
@@ -658,21 +658,27 @@ jq '.datasource | {uid, name, type, url}' <<< "${grafanadatasource_measurements}
 getgrafanadashboard() {
 	local uid=$1
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
-	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
-	-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}" | \
-	jq -e
+	local result=$(
+		curl -s \
+		-H "Accept: application/json" \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}" | \
+		jq -e
+	)
 
-	if [ $? -eq 0 ]
+	local result_length=$(
+		jq length <<< "${result}"
+	)
+
+	if [ "$result_length" -ne 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana dashboard: Datasource \"${dsname}\" created" >> /proc/1/fd/1
-		echo "Dashboard \"${file}\" uploaded" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Dashboard \"${uid}\" found" >> /proc/1/fd/1
+		jq <<< "${result}"
 	else
-		echo "Error uploading dashboard \"${file}\"" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
+		return 1
 	fi	
-
 }
 
 creategrafanadashboard() {
@@ -687,9 +693,10 @@ creategrafanadashboard() {
 
 	if [ $? -eq 0 ]
 	then
-		echo "Dashboard \"${file}\" uploaded" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Dashboard \"${file}\" uploaded" >> /proc/1/fd/1
 	else
-		echo "Error uploading dashboard \"${file}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Grafana: Dashboard uploading \"${file}\" failed" >> /proc/1/fd/1
+		return 1
 	fi	
 }
 
@@ -697,22 +704,9 @@ creategrafanadashboard() {
 ############################################################
 
 grafanadashboard_home=$(
-	getgrafanadashboard "${GRAFANA_HOME_UID}"
-)
-
-grafanadashboard_home_objects=$(
-	jq length <<< "${grafanadashboard_home}"
-)
-
-# Upload home dashboard if it does not exist
-if [ "$grafanadashboard_home_objects" -eq 0 ]
-then
-	echo "Home dashboard not found" >> /proc/1/fd/1
+	getgrafanadashboard "${GRAFANA_HOME_UID}" || \
 	creategrafanadashboard "${GRAFANA_HOME_FILE}"
-else
-	echo "Home dashboard found" >> /proc/1/fd/1
-fi
-
+)
 
 # Grafana dashboards - Devices
 ############################################################

@@ -1,0 +1,326 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_MEASUREMENTS",
+      "label": "Measurements",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    },
+    {
+      "name": "DS_DEVICES",
+      "label": "Devices",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.4.0"
+    },
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "text",
+      "name": "Text",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "volkovlabs-variable-panel",
+      "name": "Variable",
+      "version": "2.5.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<head>\r\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"../public/nanohome/css/timer.css\" />\r\n</head>\r\n<div id=\"timerData\" style=\"font-size: large;\">\r\n\tTimer\r\n\t<hr class=\"thight\"></hr>\r\n</div>\r\n<script>\r\n\tfunction loadScript(url) {\r\n\t\treturn new Promise((resolve, reject) => {\r\n\r\n\t\t\tvar script = document.createElement(\"script\");\r\n\t\t\tscript.type = \"text/javascript\";\r\n\t\t\tscript.src = url;\r\n\r\n\t\t\tscript.onload = () => {\r\n\t\t\t\tconsole.log(\"successfully loaded: \" + url.replace('../public/nanohome/js/',''));\r\n\t\t\t\tresolve();\r\n\t\t\t};\r\n\t\t\tscript.onerror = () => reject(new Error(`Failed to load script: ${url}`));\r\n\r\n\t\t\tdocument.head.appendChild(script);\r\n\t\t});\r\n\t}\r\n\r\n\tasync function loadScriptsInOrder(scripts) {\r\n\t\ttry {\r\n\t\t\tfor (const url of scripts) {\r\n\t\t\t\tawait loadScript(url);\r\n\t\t\t}\r\n\t\t} catch (error) {\r\n\t\t\tconsole.error(\"An error occurred:\", error);\r\n\t\t}\r\n\t}\r\n\r\n\tloadScriptsInOrder([\r\n\t\t\"../public/nanohome/js/common.js\",\r\n\t\t\"../public/nanohome/js/timer.js\",\r\n\t\t\"../public/nanohome/js/mqttconfig.js\"\r\n\t]);\r\n</script>",
+        "mode": "html"
+      },
+      "pluginVersion": "11.4.0",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 192,
+      "panels": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MEASUREMENTS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 3
+          },
+          "id": 189,
+          "options": {
+            "alwaysVisibleFilter": false,
+            "autoScroll": false,
+            "customValue": false,
+            "displayMode": "button",
+            "emptyValue": false,
+            "favorites": false,
+            "filter": false,
+            "groupSelection": false,
+            "header": false,
+            "padding": 15,
+            "persistent": false,
+            "saveSelectedGroup": false,
+            "saveSelectedGroupKey": "",
+            "showLabel": false,
+            "showName": false,
+            "statusSort": false,
+            "sticky": false,
+            "variable": "Description"
+          },
+          "pluginVersion": "2.5.0",
+          "targets": [
+            {
+              "query": "show tag values with key=Description where Component =~ /(?:switch|cover|relay)/",
+              "rawQuery": true,
+              "refId": "A",
+              "resultFormat": "time_series",
+              "datasource": {
+                "type": "influxdb",
+                "uid": "${DS_MEASUREMENTS}"
+              }
+            }
+          ],
+          "title": "",
+          "transparent": true,
+          "type": "volkovlabs-variable-panel"
+        }
+      ],
+      "title": "Device Picker",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 4,
+      "panels": [
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 10,
+            "x": 0,
+            "y": 4
+          },
+          "id": 95,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<select class=\"devmgr listBox\"\n        id=\"timerList_${Description}\"\n        size=\"6\"\n        onchange='timerSelected(\"${Description}\")' />\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimerInfo(\"${Description}\"); \n     }\n  }, 500);\n</script>",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 9,
+            "x": 10,
+            "y": 4
+          },
+          "id": 190,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<details class=\"devmgr\" id=\"details_${Description}\">\r\n\t<summary id=\"summary_${Description}\"></summary>\r\n\t\t<div class=\"detailDiv\">\r\n\t\t\t<div class=\"detailGroup\">\r\n\t\t\t\t<select class=\"detailValue\" id=\"timerPeriod_${Description}\">\r\n\t\t\t\t\t<option value=\"*\" selected>Täglich</option>\r\n\t\t\t\t\t<option value=\"1\">Montag</option>\r\n\t\t\t\t\t<option value=\"2\">Dienstag</option>\r\n\t\t\t\t\t<option value=\"3\">Mittwoch</option>\r\n\t\t\t\t\t<option value=\"4\">Donnerstag</option>\r\n\t\t\t\t\t<option value=\"5\">Freitag</option>\r\n\t\t\t\t\t<option value=\"6\">Samstag</option>\r\n\t\t\t\t\t<option value=\"0\">Sonntag</option>\r\n\t\t\t\t\t<option value=\"6-7\">Wochenende</option>\r\n\t\t\t\t\t<option value=\"1-5\">Werktags</option>\r\n\t\t\t\t</select>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"detailGroup\">\r\n  \t\t\t<label class=\"detailLabel\" for=\"timerOn_${Description}\">Ein / Auf:</label>\r\n\t\t\t\t<input \r\n\t\t\t\t\tclass=\"detailValue\"\r\n\t\t\t\t\tid=\"timerOn_${Description}\"\r\n\t\t\t\t\ttype=\"time\"\r\n\t\t\t\t\tstep=\"3600\"\r\n\t\t\t\t\tmin=\"00:00\"\r\n\t\t\t\t\tmax=\"23:59\"\r\n\t\t\t\t\tpattern=\"[0-9]{2}:[0-9]{2}\"\r\n\t\t\t\t\tonchange=\"timerInput('${Description}')\" />\r\n\t\t\t</div>\r\n\t\t<div class=\"detailGroup\">\r\n  \t\t<label class=\"detailLabel\" for=\"timerOff_${Description}\">Aus / Zu:</label>\r\n\t\t\t<input \r\n\t\t\t\t\tclass=\"detailValue\"\r\n\t\t\t\t\tid=\"timerOff_${Description}\"\r\n\t\t\t\t\ttype=\"time\"\r\n\t\t\t\t\tstep=\"3600\"\r\n\t\t\t\t\tmin=\"00:00\"\r\n\t\t\t\t\tmax=\"23:59\"\r\n\t\t\t\t\tpattern=\"[0-9]{2}:[0-9]{2}\"\r\n\t\t\t\t\tonchange=\"timerInput('${Description}')\"/>\r\n\t\t</div>\r\n\t</div>\r\n</details>\r\n",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 19,
+            "y": 4
+          },
+          "id": 191,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<div class=\"statusDiv\">\n  <div class=\"statusGroup\">\n    <div class=\"statusElement statusfalse\"\n          id=\"timerStatus_${Description}\">\n      Inactive\n    </div>\n  </div>\n  <div class=\"statusGroup\">\n    <button class=\"statusElement\"\n            id=\"timerSaveBtn_${Description}\"\n            onclick='saveTimer(\"${Description}\")'\n            disabled>\n      Save\n    </button>\n  </div>\n  <div class=\"statusGroup\">\n    <button class=\"statusElement\"\n            id=\"timerRemoveBtn_${Description}\"\n            onclick='removeTimer(\"${Description}\")'\n            disabled>\n      Remove\n    </button>\n  </div>\n</div>",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "id": 188,
+          "options": {
+            "code": {
+              "language": "html",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<div style=\"margin-top: -10px;\"><hr></div>",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        }
+      ],
+      "repeat": "Description",
+      "title": "$Description",
+      "type": "row"
+    }
+  ],
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${DS_DEVICES}"
+        },
+        "definition": "show tag values with key=Description where Component =~ /(?:switch|cover|relay)/",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Description",
+        "multi": true,
+        "name": "Description",
+        "options": [],
+        "query": {
+          "query": "show tag values with key=Description where Component =~ /(?:switch|cover|relay)/",
+          "refId": "InfluxVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "hidden": true
+  },
+  "timezone": "browser",
+  "title": "Timer",
+  "uid": "ae489b6q64nwgf",
+  "version": 26,
+  "weekStart": ""
+}
