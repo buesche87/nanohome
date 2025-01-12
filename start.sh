@@ -55,10 +55,10 @@ checkinfluxonfig() {
 
 	if [ "${result}" != "null" ]
 	then
-		echo -e "${LOG_SUCCESS} Influx CLI: Config found \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Influx CLI: Config \"${INFLUXDB_CONFIG}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARNING} Influx CLI: Config not found \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} Influx CLI: Config \"${INFLUXDB_CONFIG}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -77,10 +77,10 @@ createinfluxconfig() {
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB: Config created \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Influx CLI: Config \"${INFLUXDB_CONFIG}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERROR} InfluxDB: Failed to create config \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Influx CLI: Config \"${INFLUXDB_CONFIG}\" failed to create" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -108,10 +108,10 @@ getinfluxbucket() {
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB buckets: Bucket \"${bucket}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB: Bucket \"${bucket}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARNING} InfluxDB buckets: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} InfluxDB: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -130,10 +130,10 @@ createinfluxbucket() {
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB buckets: Bucket \"${bucket}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB: Bucket \"${bucket}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERROR} InfluxDB buckets: Failed to create bucket \"${bucket}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} InfluxDB: Bucket \"${bucket}\" failed to create" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -212,10 +212,10 @@ checkinfluxauthtokenpermissions() {
 
 	if ( $result )
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB: Auth token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_WARNING} InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} InfluxDB: Auth token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -230,10 +230,10 @@ deleteinfluxauthtoken() {
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Token removed" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB: Auth token removed" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARNING} InfluxDB auth: Failed to remove token" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} InfluxDB: Auth token failed to remove" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -251,10 +251,10 @@ createinfluxauthtoken() {
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB: Auth token \"${INFLUXDB_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERROR} InfluxDB auth: Failed to create token \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} InfluxDB: Auth token \"${INFLUXDB_TOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
 		exit 1
 	fi	
 }
@@ -273,7 +273,7 @@ influxauth_token_objects=$(
 # If there are multiple tokens, delete them - we will recreate one later
 if [ "$influxauth_token_objects" -gt 1 ]
 then
-	echo -e "${LOG_WARNING} InfluxDB auth: Found multiple token \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
+	echo -e "${LOG_WARNING} InfluxDB: Multiple auth token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 
 	for (( i = 0; i < influxauth_token_objects; i++ ))
 	do
@@ -320,7 +320,7 @@ fi
 # Create a new token if needed
 if [ "$influxauth_token_objects" -eq 0 ]
 then
-	echo -e "${LOG_WARNING} InfluxDB auth: No suitable token found" >> /proc/1/fd/1
+	echo -e "${LOG_WARNING} InfluxDB: No suitable auth token found" >> /proc/1/fd/1
 
 	influxauth_token=$(
 		createinfluxauthtoken "${INFLUXBUCKET_DEVICES_ID}" "${INFLUXBUCKET_MEASUREMENTS_ID}"
@@ -341,13 +341,13 @@ fi
 # TODO: Ab hier
 
 setgrafanaserviceaccount() {
-	echo \
-	'{
+	local result='{
 	  "name": "'"${GRAFANA_SERVICEACCOUNT}"'",
 	  "role": "Admin",
 	  "isDisabled": false
-	}' | \
-	jq -e
+	}'
+
+	jq <<< "${result}"
 }
 
 getgrafanaserviceaccount() {
@@ -359,9 +359,9 @@ getgrafanaserviceaccount() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana service account: Account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_WARNING} Grafana service account: Account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
 	fi
 }
 
@@ -377,9 +377,9 @@ creategrafanaserviceaccount() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana service account: Account \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_ERROR} Grafana service account: Failed to create account \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" failed to create" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -395,10 +395,9 @@ getgrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana service account: Found token for account id \"${id}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Service account token found" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_ERROR} Grafana service account: Failed to get token for account id \"${id}\"" >> /proc/1/fd/1
-		exit 1
+		echo -e "${LOG_WARNING} Grafana: Service account token not found" >> /proc/1/fd/1
 	fi
 }
 
@@ -414,9 +413,9 @@ deletegrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana service account: Deleted token \"${tid}\" for account \"${uid}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Service account token deleted" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_WARNING} Grafana service account: Failed to delete token \"${tid}\" for account \"${uid}\"" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} Grafana: Service account token failed to delete" >> /proc/1/fd/1
 	fi
 }
 
@@ -433,9 +432,9 @@ creategrafanaserviceaccounttoken() {
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana service account: Token for \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Service account token for \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_ERROR} Grafana service account: Error creating token for \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Grafana: Error creating token for service account \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -458,16 +457,16 @@ then
 		getgrafanaserviceaccount
 	)
 
+	# Log
+	jq '.serviceAccounts[] | {id, name, login, role, isDisabled}' <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
+
 	grafanaserviceaccount_objects=$(
-		echo "${grafanaserviceaccount}" | \
-		jq -r .totalCount
+		jq '.totalCount' <<< "${grafanaserviceaccount}"
 	)
 
 	# Create service account if it does not exist
 	if [ "$grafanaserviceaccount_objects" -eq 0 ]
 	then
-		echo -e "${LOG_WARNING} Grafana service account: Account not found \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
-
 		grafanaserviceaccount=$(
 			creategrafanaserviceaccount "${grafanaserviceaccount_json}"
 		)
@@ -477,8 +476,6 @@ then
 			jq -r .id
 		)
 	else
-		echo -e "${LOG_SUCCESS} Grafana service account: Account found \"${GRAFANA_SERVICEACCOUNT}\"" >> /proc/1/fd/1
-
 		grafanaserviceaccount_id=$(
 			echo "${grafanaserviceaccount}" | \
 			jq -r .serviceAccounts.[].id
@@ -489,6 +486,9 @@ then
 	grafanaserviceaccount_token=$(
 		getgrafanaserviceaccounttoken "${grafanaserviceaccount_id}"
 	)
+
+	# Log
+	jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1	
 
 	grafanaserviceaccount_token_objects=$(
 		jq length <<< ${grafanaserviceaccount_token}
@@ -502,7 +502,12 @@ then
 			jq -r .[$i].id
 		)
 
-		deletegrafanaserviceaccounttoken "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
+		grafanaserviceaccount_token_deleted=$(
+			deletegrafanaserviceaccounttoken "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
+		)
+
+		# Log
+		jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1	
 	done
 
 	# Create a new access token
@@ -510,25 +515,24 @@ then
 		creategrafanaserviceaccounttoken "${grafanaserviceaccount_json}" "${grafanaserviceaccount_id}"
 	)
 
-	echo "${grafanaserviceaccount_token}" | jq '.key = "<SECUREKEY>"' >> /proc/1/fd/1
+	# Log
+	jq '.key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 
 	# Extract token
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$(
-		echo "${grafanaserviceaccount_token}" | \
-		jq -r .key
+		jq -r .key <<< "${grafanaserviceaccount_token}"
 	)
 else
-	echo -e "${LOG_SUCCESS} Grafana service account: Token provided" >> /proc/1/fd/1
+	echo -e "${LOG_SUCCESS} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
 
 # Grafana datasources - functions
 ############################################################
 
-datasourcejson() {
+setgrafanadatasourcejson() {
 	local bucket=$1
 
-	echo \
-	'{
+	local result='{
 		"name":"'"${bucket}"'",
 		"type":"influxdb",
 		"typeName":"InfluxDB",
@@ -538,36 +542,53 @@ datasourcejson() {
 		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
 		"isDefault":true,
 		"readOnly":false
-	}' | \
-	jq -e
+	}'
+	
+	jq <<< "${result}"
 }
 
-getdatasource() {
+getgrafanadatasource() {
 	local dsname=$1
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
-	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
-	-X GET "http://${GRAFANA_SERVICE}/api/datasources" | \
-	jq -e \
-	--arg name "${dsname}" \
-	--arg type "influxdb" \
-	'.[] | select(.name == $name and .type == $type)'
+	local result=$(
+		curl -s \
+		-H "Accept: application/json" \
+		-H "Content-Type: application/json" \
+		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		-X GET "http://${GRAFANA_SERVICE}/api/datasources"
+	)
 
-	if [ $? -eq 0 ]
+	# TODO: Omit "true/false"
+
+	if ( $(jq -e 'type == "array"' <<< "${result}") )
 	then
-		echo -e "${LOG_SUCCESS} Grafana datasources: Datasource \"${dsname}\" found" >> /proc/1/fd/1
+		local datasource=$(
+			jq -e \
+			--arg name "${dsname}" \
+			--arg type "influxdb" \
+			'.[] | select(.name == $name and .type == $type)' \
+			<<< "${result}"
+		)
+
+		if [ "${datasource}" != "" ]
+		then
+			echo -e "${LOG_SUCCESS} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
+			jq <<< "${datasource}"
+		else
+			echo -e "${LOG_WARNING} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
+			return 1
+		fi
 	else
-		echo -e "${LOG_WARNING} Grafana datasources: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
-	fi	
+		echo -e "${LOG_ERROR} Grafana: Could not connect to Grafana" >> /proc/1/fd/1
+		jq <<< "${result}"
+		# exit 1
+	fi
 }
 
-createdatasource() {
+creategrafanadatasource() {
 	local dsjson=$1
 	local dsname=$(
-		echo "${1}" | \
-		jq -r .name
+		jq -r .name <<< "${1}"
 	)
 
 	curl -s \
@@ -579,9 +600,9 @@ createdatasource() {
 	
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCCESS} Grafana datasources: Datasource \"${dsname}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_ERROR} Grafana datasources: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERROR} Grafana: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -590,36 +611,41 @@ createdatasource() {
 ############################################################
 
 # If datasource Devices does not exist, create it
-datasourcedevices_json=$(
-	datasourcejson "${INFLUXDB_BUCKET_DEVICES}"
+grafanadatasource_devices_json=$(
+	setgrafanadatasourcejson "${INFLUXDB_BUCKET_DEVICES}"
 )
 
-datasourcedevices=$(
-	getdatasource "${INFLUXDB_BUCKET_DEVICES}"
+grafanadatasource_devices=$(
+	getgrafanadatasource "${INFLUXDB_BUCKET_DEVICES}" || \
+	creategrafanadatasource "${grafanadatasource_devices_json}"
 )
 
-[ $datasourcedevices ] || createdatasource "${datasourcedevices_json}"
+# Log
+jq '.datasource | {uid, name, type, url}' <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
 
 # Grafana datasources - Measurements
 ############################################################
 
 # If datasource Measurements does not exist, create it
-datasourcemeasurements_json=$(
-	datasourcejson "${INFLUXDB_BUCKET_MEASUREMENTS}"
+grafanadatasource_measurements_json=$(
+	setgrafanadatasourcejson "${INFLUXDB_BUCKET_MEASUREMENTS}"
 )
 
-datasourcemeasurements=$(
-	getdatasource "${INFLUXDB_BUCKET_MEASUREMENTS}"
+grafanadatasource_measurements=$(
+	getgrafanadatasource "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
+	creategrafanadatasource "${grafanadatasource_measurements_json}"
 )
 
-[ $datasourcemeasurements ] || createdatasource "${datasourcemeasurements_json}"
-
+# Log
+jq '.datasource | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
 # Grafana content
 ############################################################
 
+# TODO: AB HIER
+# TODO: Copy content to persistent storage / if dest exist > do nothing
 # TODO: run once
-# TODO: Test ab hier
+
 
 # Set credentials in grafana content
 # sed -i 's#var user = \\\"\\\"#var user = \\\"'${MQTT_USER}'\\\"#' ./grafana-content/js/mqttconfig.js
@@ -638,6 +664,15 @@ getgrafanadashboard() {
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
 	-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}" | \
 	jq -e
+
+	if [ $? -eq 0 ]
+	then
+		echo -e "${LOG_SUCCESS} Grafana dashboard: Datasource \"${dsname}\" created" >> /proc/1/fd/1
+		echo "Dashboard \"${file}\" uploaded" >> /proc/1/fd/1
+	else
+		echo "Error uploading dashboard \"${file}\"" >> /proc/1/fd/1
+	fi	
+
 }
 
 creategrafanadashboard() {
