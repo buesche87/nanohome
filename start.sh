@@ -48,8 +48,11 @@ LOG_LEVEL="debug"
 LOG_GREEN="\033[1;32m"
 LOG_YELLOW="\033[0;93m"
 LOG_RED="\033[1;31m"
+LOG_BLUE="\033[1;34m"
 LOG_NC="\033[0m"
+
 LOG_SUCCESS="[${LOG_GREEN}Success${LOG_NC}]"
+LOG_INFORMATION="[${LOG_BLUE}Success${LOG_NC}]"
 LOG_WARNING="[${LOG_YELLOW}Warning${LOG_NC}]"
 LOG_ERROR="[${LOG_RED}Error${LOG_NC}]"
 
@@ -67,7 +70,7 @@ checkinfluxconfig() {
 		echo -e "${LOG_SUCCESS} Influx CLI: Config \"${INFLUXDB_CONFIG}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARNING} Influx CLI: Config \"${INFLUXDB_CONFIG}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFORMATION} Influx CLI: Config \"${INFLUXDB_CONFIG}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
