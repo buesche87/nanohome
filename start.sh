@@ -56,29 +56,29 @@ checkinfluxonfig() {
 	if [ "${result}" != "null" ]
 	then
 		echo -e "${LOG_SUCCESS} Influx CLI: Config found \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
-		return 0
+		jq <<< "${result}"
 	else
 		echo -e "${LOG_WARNING} Influx CLI: Config not found \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
-# TODO: result after message
-
 createinfluxconfig() {
-	influx config create \
-	--config-name "${INFLUXDB_CONFIG}" \
-	--host-url "http://${INFLUXDB_SERVICE}" \
-	--org "${INFLUXDB_ORG}" \
-	--token "${INFLUXDB_ADMINTOKEN}" \
-	--active \
-	--json | \
-	jq -e '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
+	local result=$(
+		influx config create \
+		--config-name "${INFLUXDB_CONFIG}" \
+		--host-url "http://${INFLUXDB_SERVICE}" \
+		--org "${INFLUXDB_ORG}" \
+		--token "${INFLUXDB_ADMINTOKEN}" \
+		--active \
+		--json | \
+		jq -e
+	)
 
-	if [ $? -eq 0 ]
+	if [ "${result}" != "" ]
 	then
 		echo -e "${LOG_SUCCESS} InfluxDB: Config created \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
-		return 0
+		jq <<< "${result}"
 	else
 		echo -e "${LOG_ERROR} InfluxDB: Failed to create config \"${INFLUXDB_CONFIG}\"" >> /proc/1/fd/1
 		exit 1
@@ -86,7 +86,12 @@ createinfluxconfig() {
 }
 
 # Check if influx configuration exists, create it if not
-checkinfluxonfig || createinfluxconfig
+influxconfig=$(
+	checkinfluxonfig || createinfluxconfig
+)
+
+# Log
+jq '.token = "<SECURETOKEN>"' <<< "${influxconfig}" >> /proc/1/fd/1
 
 # InfluxDB buckets - functions
 ############################################################
@@ -94,39 +99,42 @@ checkinfluxonfig || createinfluxconfig
 getinfluxbucket() {
 	local bucket=$1
 
-	influx bucket list \
-	--json | \
-	jq -e --arg name "${bucket}" \
-	'.[] | select(.name == $name)'
+	local result=$(
+		influx bucket list \
+		--json | \
+		jq -e --arg name "${bucket}" \
+		'.[] | select(.name == $name)'
+	)
 
-	if [ $? -eq 0 ]
+	if [ "${result}" != "" ]
 	then
 		echo -e "${LOG_SUCCESS} InfluxDB buckets: Bucket \"${bucket}\" found" >> /proc/1/fd/1
-		return 0
+		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARNING} InfluxDB bucket: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} InfluxDB buckets: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
 createinfluxbucket() {
-	local bucket=$1 
+	local bucket=$1
 
-	influx bucket create \
-	--name "${bucket}" \
-	--org "${INFLUXDB_ORG}" \
-	--token "${INFLUXDB_ADMINTOKEN}" \
-	--json | \
-	jq -e
+	local result=$(
+		influx bucket create \
+		--name "${bucket}" \
+		--org "${INFLUXDB_ORG}" \
+		--token "${INFLUXDB_ADMINTOKEN}" \
+		--json | \
+		jq -e
+	)
 
-	if [ $? -eq 0 ]
+	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB buckets: Created bucket \"${bucket}\"" >> /proc/1/fd/1
-		echo "${result}" | jq
-		return 0
+		echo -e "${LOG_SUCCESS} InfluxDB buckets: Bucket \"${bucket}\" created" >> /proc/1/fd/1
+		jq <<< "${result}"
 	else
 		echo -e "${LOG_ERROR} InfluxDB buckets: Failed to create bucket \"${bucket}\"" >> /proc/1/fd/1
-		# exit 1
+		exit 1
 	fi
 }
 
@@ -139,12 +147,12 @@ influxbucket_devices=$(
 	createinfluxbucket "${INFLUXDB_BUCKET_DEVICES}"
 )
 
-echo "${influxbucket_devices}" | jq >> /proc/1/fd/1
+# Log
+jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
 # Get id of devices bucket for later use
 export INFLUXBUCKET_DEVICES_ID=$(
-	echo "${influxbucket_devices}" | \
-	jq -r '.id'
+	jq -r '.id' <<< "${influxbucket_devices}"
 )
 
 # InfluxDB buckets - measurements
@@ -156,12 +164,12 @@ influxbucket_measurements=$(
 	createinfluxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
 )
 
-echo "${influxbucket_measurements}" | jq >> /proc/1/fd/1
+# Log
+jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
 # Get id of measurements bucket for later use
 export INFLUXBUCKET_MEASUREMENTS_ID=$(
-	echo "${influxbucket_measurements}" | \
-	jq -r '.id'
+	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
 # InfluxDB auth - Functions   
@@ -170,66 +178,81 @@ export INFLUXBUCKET_MEASUREMENTS_ID=$(
 getinfluxauthtoken() {
 	local description=$1
 
-	influx auth list --json | \
-	jq -e --arg description "${description}" \
-	'[.[] | select(.description == $description)]'
+	local result=$(
+		influx auth list \
+		--json | \
+		jq -e --arg description "${description}" \
+		'[.[] | select(.description == $description)]'
+	)
 
-	if [ $? -eq 0 ]
+	local resultlength=$(
+		jq length <<< "${result}"
+	)
+
+	if [ "$resultlength" -gt 0 ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Search token \"${description}\" successfull" >> /proc/1/fd/1
+		# echo -e "${LOG_SUCCESS} InfluxDB auth: Token \"${description}\" found" >> /proc/1/fd/1
+		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERROR} InfluxDB auth: Search token \"${description}\" failed" >> /proc/1/fd/1
-		exit 1
+		# echo -e "${LOG_WARNING} InfluxDB auth: Token \"${description}\" not found" >> /proc/1/fd/1
+		echo "[]"
 	fi
 }
 
 checkinfluxauthtokenpermissions() {
 	local token=$1
-	local description=$(
-		echo "${1}" | \
-		jq -r .[].description
+
+	local result=$(
+		jq -e \
+		--arg val1 "${INFLUXBUCKET_DEVICES_ID}" \
+		--arg val2 "${INFLUXBUCKET_MEASUREMENTS_ID}" \
+		'[.[].permissions[]] | contains([$val1, $val2])' \
+		<<< "${token}"
 	)
 
-	jq -e \
-	--arg val1 "${INFLUXBUCKET_DEVICES_ID}" \
-	--arg val2 "${INFLUXBUCKET_MEASUREMENTS_ID}" \
-	'[.[].permissions[]] | contains([$val1, $val2])' \
-	<<< "${token}"
-
-	if [ $? -eq 0 ]
+	if ( $result )
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Got permissions of token \"${description}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
+		return 0
 	else
-		echo -e "${LOG_ERROR} InfluxDB auth: Failed to get permissions of token \"${description}\"" >> /proc/1/fd/1
-		exit 1
+		echo -e "${LOG_WARNING} InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
 deleteinfluxauthtoken() {
 	local id=$1
 
-	influx auth delete --id "${id}" --json | \
-	jq -e
+	local result=$(
+		influx auth delete --id "${id}" --json | \
+		jq -e
+	)
 
-	if [ $? -eq 0 ]
+	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Removed token \"${id}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB auth: Token removed" >> /proc/1/fd/1
+		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARNING} InfluxDB auth: Failed to remove \"${id}\"" >> /proc/1/fd/1
+		echo -e "${LOG_WARNING} InfluxDB auth: Failed to remove token" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
 createinfluxauthtoken() {
-	influx auth create \
-	--description "${INFLUXDB_TOKEN_DESCRIPTION}" \
-	--org "${INFLUXDB_ORG}" \
-	--read-bucket "${INFLUXBUCKET_DEVICES_ID}" \
-	--read-bucket "${INFLUXBUCKET_MEASUREMENTS_ID}" \
-	--json | jq -e
+	local result=$(
+		influx auth create \
+		--description "${INFLUXDB_TOKEN_DESCRIPTION}" \
+		--org "${INFLUXDB_ORG}" \
+		--read-bucket "${INFLUXBUCKET_DEVICES_ID}" \
+		--read-bucket "${INFLUXBUCKET_MEASUREMENTS_ID}" \
+		--json | \
+		jq -e
+	)
 
-	if [ $? -eq 0 ]
+	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Created token \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCCESS} InfluxDB auth: Token \"${INFLUXDB_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
+		jq <<< "${result}"
 	else
 		echo -e "${LOG_ERROR} InfluxDB auth: Failed to create token \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 		exit 1
@@ -250,7 +273,7 @@ influxauth_token_objects=$(
 # If there are multiple tokens, delete them - we will recreate one later
 if [ "$influxauth_token_objects" -gt 1 ]
 then
-	echo -e "InfluxDB auth:${LOG_YELLOW} Found multiple tokens \"${INFLUXDB_TOKEN_DESCRIPTION}\" ${LOG_NC}" >> /proc/1/fd/1
+	echo -e "${LOG_WARNING} InfluxDB auth: Found multiple token \"${INFLUXDB_TOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 
 	for (( i = 0; i < influxauth_token_objects; i++ ))
 	do
@@ -259,37 +282,38 @@ then
 			jq -r .[$i].id
 		)
 
-		deleteinfluxauthtoken "${influxauth_token_id}"
-	done
+		influxauth_deletedtoken=$(
+			deleteinfluxauthtoken "${influxauth_token_id}"
+		)
 
+		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauth_deletedtoken}" >> /proc/1/fd/1
+
+	done
 	influxauth_token_objects=0
 fi
 
-# If there is just one token, check if it has the right permissions
+# If there is just one token, check if it has the right permissions, delete it if not
 if [ "$influxauth_token_objects" -eq 1 ]
 then
-	# Delete it if not
-	if ( ! checkinfluxauthtokenpermissions "${influxauth_token}" )
+	if ( checkinfluxauthtokenpermissions "${influxauth_token}" )
 	then
-		echo -e "${LOG_WARNING} InfluxDB auth: Found token \"${INFLUXDB_TOKEN_DESCRIPTION}\" with missing permissions" >> /proc/1/fd/1
-
-		influxauth_token_id=$(
-			echo "${influxauth_token}" | \
-			jq -r .id
-		)
-
-		deleteinfluxauthtoken "${influxauth_token_id}"
-		influxauth_token_objects=0
-	else
-		echo -e "${LOG_SUCCESS} InfluxDB auth: Found token \"${INFLUXDB_TOKEN_DESCRIPTION}\" with correct permissions" >> /proc/1/fd/1
-
-		# Extract token from auth json
 		export INFLUXDB_ROTOKEN=$(
-			echo "${influxauth_token}" | \
-			jq -r '.[].token'
+			jq -r '.[].token' <<< "${influxauth_token}"
 		)
 
-		echo "${influxauth_token}" | jq '.[].token = "<SECURETOKEN>"' >> /proc/1/fd/1
+		jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauth_token}" >> /proc/1/fd/1
+	else
+		influxauth_token_id=$(
+			jq -r '.[].id' <<< "${influxauth_token}"
+		)
+
+		influxauth_deletedtoken=$(
+			deleteinfluxauthtoken "${influxauth_token_id}"
+		)
+
+		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauth_deletedtoken}" >> /proc/1/fd/1
+
+		influxauth_token_objects=0
 	fi
 fi
 
@@ -308,12 +332,13 @@ then
 		jq -r '.token'
 	)
 
-	echo "${influxauth_token}" | jq '.token = "<SECURETOKEN>"' >> /proc/1/fd/1
+	jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauth_token}" >> /proc/1/fd/1
 fi
-
 
 # Grafana service account - Functions 
 ############################################################
+
+# TODO: Ab hier
 
 setgrafanaserviceaccount() {
 	echo \
