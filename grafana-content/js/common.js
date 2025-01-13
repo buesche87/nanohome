@@ -26,11 +26,7 @@ function checkJsonIndex(payload) {
 
 // Check if element defined
 function checkElement(element) {
-	if (typeof element != "undefined" && element != null) {
-		return true;
-	} else {
-		return false;
-	}
+	return typeof element !== "undefined" && element !== null;
 }
 
 // Send command with mqtt_shell

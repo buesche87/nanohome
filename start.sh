@@ -9,18 +9,18 @@
 # NanoHome Environment         
 ############################################################
 
-export ROOTPATH="/opt/nanohome"
+export NANOHOME_ROOTPATH="/opt/nanohome"
 export GRAFANA_FOLDER_NAME="nanohome"
 export GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
-export GRAFANA_DASHBOARD_FILE_HOME="./templates/home.json"
+export GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
 export GRAFANA_DASHBOARD_UID_DEVICES="fe47pva0wy8lcb"
-export GRAFANA_DASHBOARD_FILE_DEVICES="./templates/devices.json"
+export GRAFANA_DASHBOARD_FILE_DEVICES="${NANOHOME_ROOTPATH}/grafana-templates/devices.json"
 export GRAFANA_DASHBOARD_UID_TIMER="ae489b6q64nwgf"
-export GRAFANA_DASHBOARD_FILE_TIMER="./templates/timer.json"
+export GRAFANA_DASHBOARD_FILE_TIMER="${NANOHOME_ROOTPATH}/grafana-templates/timer.json"
 export GRAFANA_DASHBOARD_UID_STANDBY="adjak60hekvswd"
-export GRAFANA_DASHBOARD_FILE_STANDBY="./templates/standby.json"
+export GRAFANA_DASHBOARD_FILE_STANDBY="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
 export GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
-export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="./templates/measurements.json"
+export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 export GRAFANA_DATASOURCE_DEVICES="Devices"
 export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
@@ -63,6 +63,7 @@ LOG_ERRO="[${LOG_RED}Error${LOG_NOC}]"
 ############################################################
 # Check if influx configuration exists, create it if not
 
+# i.O.
 check_influxconfig() {
 
 	local result=$(
@@ -80,6 +81,7 @@ check_influxconfig() {
 	fi
 }
 
+# i.O.
 create_influxconfig() {
 
 	local result=$(
@@ -89,8 +91,7 @@ create_influxconfig() {
 		--org "${INFLUXDB_ORG}" \
 		--token "${INFLUXDB_ADMINTOKEN}" \
 		--active \
-		--json | \
-		jq -e
+		--json
 	)
 
 	if [ "${result}" != "" ]
@@ -115,9 +116,10 @@ jq '.token = "<SECURETOKEN>"' <<< "${influxconfig}" \
 ############################################################
 # Check if buckets exists, create it if not
 
+# i.O.
 get_influxbucket() {
-
 	local bucket=$1
+
 	local result=$(
 		influx bucket list \
 		--json | \
@@ -135,16 +137,16 @@ get_influxbucket() {
 	fi
 }
 
+# i.O.
 create_influxbucket() {
-
 	local bucket=$1
+
 	local result=$(
 		influx bucket create \
 		--name "${bucket}" \
 		--org "${INFLUXDB_ORG}" \
 		--token "${INFLUXDB_ADMINTOKEN}" \
-		--json | \
-		jq -e
+		--json
 	)
 
 	if [ "${result}" != "" ]
@@ -153,7 +155,8 @@ create_influxbucket() {
 		jq <<< "${result}"
 	else
 		echo -e "${LOG_ERRO} InfluxDB: Bucket \"${bucket}\" failed to create" >> /proc/1/fd/1
-		exit 1
+		jq <<< "${result}"
+		#exit 1
 	fi
 }
 
@@ -192,67 +195,67 @@ jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" \
 # If multiple found, delte and recreate them
 # If none found, create oone
 
+# i.O.
 get_influxauthtoken() {
-
 	local description=$1
+
 	local answer=$(
 		influx auth list \
-		--json | \
-		jq -e --arg description "${description}" \
-		'[.[] | select(.description == $description)]'
+		--json
 	)
 
 	local result=$(
-		jq length <<< "${answer}"
+		jq -e --arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
+		'[.[] | select(.description == $description)]' \
+		<<< "${answer}"
 	)
 
-	if [ "$result" -gt 0 ]
-	then
-		jq <<< "${answer}"
-	else
-		echo "[]"
-	fi
+	jq <<< "${result}"
 }
 
+# i.O.
 check_influxauthtoken_permissions() {
+	local current_influxauth_token=$1
 
-	local token=$1
 	local result=$(
 		jq -e \
 		--arg val1 "${INFLUXBUCKET_DEVICES_ID}" \
 		--arg val2 "${INFLUXBUCKET_MEASUREMENTS_ID}" \
 		'[.[].permissions[]] | contains([$val1, $val2])' \
-		<<< "${token}"
+		<<< "${current_influxauth_token}"
 	)
 
 	if ( $result )
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
-		jq <<< "${result}"
+		return 0
 	else
 		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
+# i.O.
 delete_influxauthtoken() {
+	local current_influxauth_token_id=$1
 
-	local id=$1
 	local result=$(
-		influx auth delete --id "${id}" --json | \
-		jq -e
+		influx auth delete \
+		--id "${current_influxauth_token_id}" \
+		--json
 	)
 
-	if [ "${result}" != "" ]
+	if [ "${result}" ]
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token removed" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" removed" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token failed to remove" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" failed to remove" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
+# i.O.
 create_influxauthtoken() {
 
 	local result=$(
@@ -261,11 +264,10 @@ create_influxauthtoken() {
 		--org "${INFLUXDB_ORG}" \
 		--read-bucket "${INFLUXBUCKET_DEVICES_ID}" \
 		--read-bucket "${INFLUXBUCKET_MEASUREMENTS_ID}" \
-		--json | \
-		jq -e
+		--json
 	)
 
-	if [ "${result}" != "" ]
+	if [ "${result}" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -275,12 +277,12 @@ create_influxauthtoken() {
 	fi	
 }
 
-influxauth_token=$(
-	get_influxauthtoken "${INFLUXDB_SATOKEN_DESCRIPTION}"
+current_influxauth_token=$(
+	get_influxauthtoken
 )
 
 influxauth_token_objects=$(
-	jq length <<< "${influxauth_token}"
+	jq length <<< "${current_influxauth_token}"
 )
 
 # One token found
@@ -289,11 +291,11 @@ then
 	if ( check_influxauthtoken_permissions "${current_influxauth_token}" )
 	then
 		export INFLUXDB_ROTOKEN=$(
-			jq -r '.[].token' <<< "${influxauth_token}"
+			jq -r '.[].token' <<< "${current_influxauth_token}"
 		)
 
 		[ $LOG_DEBUG ] && \
-		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${current_influxauth_token}" \
+		jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${current_influxauth_token}" \
 		>> /proc/1/fd/1
 	else
 		current_influxauth_token_id=$(
@@ -320,7 +322,7 @@ then
 	for (( i = 0; i < influxauth_token_objects; i++ ))
 	do
 		current_influxauth_token_id=$(
-			jq -r .[$i].id <<< "${influxauth_token}"
+			jq -r .[$i].id <<< "${current_influxauth_token}"
 		)
 
 		deleted_influxauth_token=$(
@@ -366,33 +368,53 @@ grafanaapiheaders=(
 	-H "Content-Type:application/json"
 )
 
-# TODO: Check connection with credentials
-
-grafanaserviceaccount_json=\
-'{
+grafanaserviceaccount_json='{
 	"name": "'"${GRAFANA_SERVICEACCOUNT}"'",
 	"role": "Admin",
 	"isDisabled": false
 }'
 
 # i.O.
-get_grafanaserviceaccount() {
+check_grafanaapiconnection() {
 
-	local account=$1
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${account}"
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
 	)
+
+	local result=$(
+		jq -e 'has("name")' <<< "${answer}"
+	)	
+
+	if ( $result )
+	then
+		echo -e "${LOG_SUCC} Grafana: Basic auth connection successful" >> /proc/1/fd/1
+		return 0
+	else
+		echo -e "${LOG_ERRO} Grafana: Basic auth connection failed" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		exit 1
+	fi
+}
+
+# i.O.
+get_grafanaserviceaccount() {
+
+	local answer=$(
+		curl "${grafanaapiheaders[@]}" \
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}"
+	)
+
 	local result=$(
 		jq -e '.serviceAccounts[].name' <<< "${answer}"
 	)
 
 	if [ -n "${result}" ]
 	then
-		echo -e "${LOG_SUCC} Grafana: Service account \"${account}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
 		jq '.serviceAccounts[]' <<< "${answer}"
 	else
-		echo -e "${LOG_WARN} Grafana: Service account \"${account}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi
@@ -493,6 +515,8 @@ create_grafanaserviceaccount_token() {
 	fi
 }
 
+check_grafanaapiconnection
+
 if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
 	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
@@ -555,14 +579,35 @@ fi
 ############################################################
 # If datasource does not exist, create it
 
-# TODO: Check connection with token
-
 grafanaapiheaders_token=(
 	-s
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
+
+# i.O.
+check_grafanaapiconnection_token() {
+
+	local answer=$(
+		curl "${grafanaapiheaders_token[@]}" \
+		-X GET "http://${GRAFANA_SERVICE}/api/org"
+	)
+
+	local result=$(
+		jq -e 'has("name")' <<< "${answer}"
+	)	
+
+	if ( $result )
+	then
+		echo -e "${LOG_SUCC} Grafana: Token connection successful" >> /proc/1/fd/1
+		return 0
+	else
+		echo -e "${LOG_ERRO} Grafana: Token connection failed" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		exit 1
+	fi
+}
 
 # i.O.
 set_grafanadatasource_json() {
@@ -635,6 +680,8 @@ create_grafanadatasource() {
 	fi
 }
 
+check_grafanaapiconnection_token
+
 # Devices
 grafanadatasource_devices_json=$(
 	set_grafanadatasource_json "${GRAFANA_DATASOURCE_DEVICES}"
@@ -663,14 +710,104 @@ grafanadatasource_measurements=$(
 jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadatasource_measurements}" \
 >> /proc/1/fd/1
 
+
+
+# TEST AB HIER
+
+
+
+
 # Grafana: Content
 ############################################################
+# Check if content on bind mounted volume exists, if not
+# - Modify mqtt credentials for mqtt js client
+# - Copy grafana public content to bind mounted volume
 
-# TODO: Copy content to persistent storage / if dest exist > do nothing
+grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
+grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
-# Set credentials in grafana content
-# sed -i 's#var user = \\\"\\\"#var user = \\\"'${MQTT_USER}'\\\"#' ./grafana-content/js/mqttconfig.js
-# sed -i 's#var pwd = \\\"\\\"#var pwd = \\\"'${MQTT_PASSWORD}'\\\"#' ./grafana-content/js/mqttconfig.js
+# TODO: Test
+modify_grafanacontent() {
+	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/mqttconfig.js"
+	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/mqttconfig.js"
+
+	if [ $? -eq 0 ]
+	then
+		echo -e "${LOG_SUCC} Grafana: Content credentials set" >> /proc/1/fd/1
+	else
+		echo -e "${LOG_ERRO} Grafana: Failed setting content credentials" >> /proc/1/fd/1
+		# exit 1
+	fi	
+}
+
+# TODO: Test
+copy_grafanacontent() {
+	mkdir "$grafanacontent_destination"
+	cp -r "${grafanacontent_source}" "${grafanacontent_destination}"
+
+	if [ $? -eq 0 ]
+	then
+		echo -e "${LOG_SUCC} Grafana: Content copied to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
+	else
+		echo -e "${LOG_ERRO} Grafana: Failed copying content to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
+		# exit 1
+	fi
+}
+
+modify_grafanacontent
+copy_grafanacontent
+
+
+# # Grafana: Templates
+# ############################################################
+# # Copy grafana-templates to bind mounted volume
+# 
+# grafanatemplates_source="${NANOHOME_ROOTPATH}/grafana-templates"
+# grafanatemplates_destination="${NANOHOME_ROOTPATH}/data/templates"
+# 
+# # TODO: Test
+# copy_grafanatemplates() {
+# 	mkdir "$grafanatemplates_destination"
+# 	cp -r "${grafanatemplates_source}" "${grafanatemplates_destination}"
+# 
+# 	if [ $? -eq 0 ]
+# 	then
+# 		echo -e "${LOG_SUCC} Grafana: Templates copied to \"${grafanatemplates_destination}\"" >> /proc/1/fd/1
+# 	else
+# 		echo -e "${LOG_WARN} Grafana: Failed copying templates to \"${grafanatemplates_destination}\"" >> /proc/1/fd/1
+# 		# exit 1
+# 	fi
+# }
+# 
+# copy_grafanatemplates
+# 
+# 
+# # Grafana: Dashbaords
+# ############################################################
+# # Copy grafana-dashboards to bind mounted volume
+# 
+# grafanadashboards_source="${NANOHOME_ROOTPATH}/grafana-dashboards"
+# grafanadashboards_destination="${NANOHOME_ROOTPATH}/data/dashboards"
+# 
+# 
+# 
+# # TODO: Test
+# copy_grafanadashboards() {
+# 	mkdir "$grafanadashboards_destination"
+# 	cp -r "${grafanadashboards_source}" "${grafanadashboards_destination}"
+# 
+# 	if [ $? -eq 0 ]
+# 	then
+# 		echo -e "${LOG_SUCC} Grafana: Content copied to \"${grafanadashboards_destination}\"" >> /proc/1/fd/1
+# 	else
+# 		echo -e "${LOG_WARN} Grafana: Failed copying content to \"${grafanadashboards_destination}\"" >> /proc/1/fd/1
+# 		# exit 1
+# 	fi
+# }
+# 
+# copy_grafanadashboards
+
+
 
 
 # Grafana: Dashboard folder
@@ -722,12 +859,23 @@ grafanafolder=$(
 	create_grafanafolder
 )
 
+export GRAFANA_FOLDER_UID=$(
+	jq -r '.uid' <<< "${grafanafolder}"
+)
+
+
 [ $LOG_DEBUG ] && \
 jq '. | {uid, title, url}' <<< "${grafanafolder}" \
 >> /proc/1/fd/1
 
 # Grafana: Dashboards
 ############################################################
+# Check if dashbaord exists, if not
+# - Load dshboards and prepare json for upload
+# - Upload dashboards
+
+
+
 # TODO: error
 # {
 #   "message": "bad request data",
@@ -735,13 +883,12 @@ jq '. | {uid, title, url}' <<< "${grafanafolder}" \
 # }
 # TODO: json anpassen, damit es hochgeladen werden kann
 
-get_grafanadashboard() {
+check_grafanadashboard() {
 
 	local uid=$1
 	local result=$(
 		curl "${grafanaapiheaders_token[@]}" \
-		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}" | \
-		jq -e
+		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}"
 	)
 
 	local result_length=$(
@@ -759,58 +906,34 @@ get_grafanadashboard() {
 }
 
 # TODO
-load_grafanadashboard_json() {
+prepare_grafanadashboard_json() {
+	local file=$1
 
-	local dashboard=$1
-	local result=$(
-		# TODO
+	local file=$1
+
+	local filecontent=$(
+		jq "${file}"
 	)
 
-	
-
-	if [ $? -eq 0 ]
-	then
-		echo -e "${LOG_SUCC} Grafana: Dashboard json \"${dashboard}\" loaded" >> /proc/1/fd/1
-		jq <<< "${result}"
-	else
-		echo -e "${LOG_ERRO} Grafana: Loading dashboard json \"${dashboard}\" failed" >> /proc/1/fd/1
-		return 1
-	fi	
-}
-
-# TODO
-merge_grafanadashboard_html() {
-
-	local dashboard=$1
-	local result=$(
-		# TODO
-	)
-
-	if [ $? -eq 0 ]
-	then
-		echo -e "${LOG_SUCC} Grafana: Dashboard html \"${dashboard}\" loaded" >> /proc/1/fd/1
-		jq <<< "${result}"
-	else
-		echo -e "${LOG_ERRO} Grafana: Loading dashboard html \"${dashboard}\" failed" >> /proc/1/fd/1
-		return 1
-	fi	
-}
-
-# TODO
-set_grafanadashboard_json() {
-	
-	local title=$1
-	local folderuid=$2
-	local json=$3
-
-	local result='{
-		"dashboard": "'"${json}"'",
-		"folderUid": "'"${folderuid}"'",
+	local jsondata_modified='{
+		"dashboard": "'"${filecontent}"'",
+		"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
 		"message": "Initial upload",
 		"overwrite": true
 	}'
 
-	jq <<< "${result}"
+	$result=$(
+		jq -e <<< "${jsondata_modified}"
+	)
+
+	if [ $? -eq 0 ]
+	then
+		echo -e "${LOG_SUCC} Grafana: Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
+		jq <<< "${result}"
+	else
+		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\" for upload" >> /proc/1/fd/1
+		return 1
+	fi	
 }
 
 # TODO
@@ -835,39 +958,47 @@ create_grafanadashboard() {
 	fi	
 }
 
+
+
 ## Home
 #  grafanadashboard_home=$(
-# 	get_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}" || \
+# 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}"
+#	load_grafanadashboard_json "${GRAFANA_DASHBOARD_FILE_HOME}"
+#
+#
+#
 # 	create_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}"
 # )
-#
+
 ## Devices
 # grafanadashboard_devices=$(
-#	get_grafanadashboard "${GRAFANA_DEVICES_UID}" || \
+#	check_grafanadashboard "${GRAFANA_DEVICES_UID}" || \
 #	create_grafanadashboard "${GRAFANA_DEVICES_FILE}"
 #)
 #
 ## Timer
 # grafanadashboard_timer=$(
-#	get_grafanadashboard "${GRAFANA_TIMER_UID}" || \
+#	check_grafanadashboard "${GRAFANA_TIMER_UID}" || \
 #	create_grafanadashboard "${GRAFANA_TIMER_FILE}"
 #)
 #
 ## Standby
 # grafanadashboard_standby=$(
-#	get_grafanadashboard "${GRAFANA_STANDBY_UID}" || \
+#	check_grafanadashboard "${GRAFANA_STANDBY_UID}" || \
 #	create_grafanadashboard "${GRAFANA_STANDBY_FILE}"
 #)
 #
 ## Measurements
 # grafanadashboard_measurements=$(
-#	get_grafanadashboard "${GRAFANA_MEASUREMENTS_UID}" || \
+#	check_grafanadashboard "${GRAFANA_MEASUREMENTS_UID}" || \
 #	create_grafanadashboard "${GRAFANA_MEASUREMENTS_FILE}"
 #)
 
 # Mosquitto: 
 ############################################################
 # TODO: Passwörter
+
+
 
 
 

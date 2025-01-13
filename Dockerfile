@@ -23,8 +23,8 @@ RUN ln -sf /opt/nanohome/bin/* /usr/local/bin/
 COPY services /opt/nanohome/services
 RUN chmod +x /opt/nanohome/services/*
 
-COPY templates /opt/nanohome/templates
 COPY grafana-content /opt/nanohome/grafana-content
+COPY grafana-templates /opt/nanohome/grafana-templates
 
 # Defaults
 COPY start.sh /start.sh

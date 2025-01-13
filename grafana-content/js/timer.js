@@ -1,13 +1,6 @@
 // Variables
-var cmdInputTopic   = "input_command";
-var cmdOutputTopic  = "output_command";
 var deviceAttribute = "deviceData";
 var timerAttribute  = "timerData";
-
-// MQTT connection
-var fastsubscribe   = 250;
-var normalsubscribe = 500;
-var longsubscribe   = 1000;
 
 /*
  ---------------------------------------------------------------

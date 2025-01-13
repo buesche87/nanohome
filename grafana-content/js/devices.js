@@ -1,16 +1,3 @@
-// Dashboard variables
-var dashboardTopic         = "nanohome/config/dashboard";
-var connectedTopic         = "+/status/+/connected";
-var connectedTopicLegacy   = "shellies/+/+/+/connected";
-var descriptionTopic       = "+/status/+/description";
-var descriptionTopicLegacy = "shellies/+/+/+/description";
-var statusTopicRoot        = "shellystatus"
-
-// MQTT connection
-var fastsubscribe   = 250;
-var normalsubscribe = 500;
-var longsubscribe   = 1000;
-
 // ID prefixes of elements on dashboard
 var devmgrDescriptionPrefix = "description_";
 var devmgrComponentPrefix = "component_";
@@ -51,7 +38,7 @@ function getdetailsInfo(device) {
 			setStatusLegacy(device);
 		} else {
 			let payload = '{"id":999, "src":"' + deviceTopics.status + '", "method":"Shelly.GetStatus"}';
-			let subscribetopic = statusTopicRoot + device + "/status/rpc";
+			let subscribetopic = statusOutTopicRoot + device + "/status/rpc";
 			mqttSubscribe(subscribetopic, normalsubscribe);
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}
@@ -165,7 +152,7 @@ function onMessageArrived(message) {
 	}
 
 	// Set device status
-	if (topicSplit[0] == statusTopicRoot) {
+	if (topicSplit[0] == statusOutTopicRoot) {
 		fillNetworkElement(topicSplit[1], payload);
 		console.log("status retreived");
 	}
@@ -438,7 +425,7 @@ function getDeviceTopics(device, deviceDetails) {
 	} else {
 		return {
 			rpc:          device + "/rpc",
-			status:       statusTopicRoot +  device + "/status",
+			status:       statusOutTopicRoot +  device + "/status",
 			connected:    device + "/status/" + deviceDetails.component + "/connected",
 			description:  device + "/status/" + deviceDetails.component + "/description",
 			details:      "nanohome/" + deviceDetails.description + "/device",
