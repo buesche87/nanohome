@@ -157,7 +157,7 @@ create_influxbucket() {
 	fi
 }
 
-## Devices
+# Devices
 influxbucket_devices=$(
 	get_influxbucket "${INFLUXDB_BUCKET_DEVICES}" || \
 	create_influxbucket "${INFLUXDB_BUCKET_DEVICES}"
@@ -171,7 +171,7 @@ export INFLUXBUCKET_DEVICES_ID=$(
 jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" \
 >> /proc/1/fd/1
 
-## Measurements
+# Measurements
 influxbucket_measurements=$(
 	get_influxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
 	create_influxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
@@ -275,7 +275,6 @@ create_influxauthtoken() {
 	fi	
 }
 
-
 influxauth_token=$(
 	get_influxauthtoken "${INFLUXDB_SATOKEN_DESCRIPTION}"
 )
@@ -284,7 +283,7 @@ influxauth_token_objects=$(
 	jq length <<< "${influxauth_token}"
 )
 
-# One
+# One token found
 if [ "$influxauth_token_objects" -eq 1 ]
 then
 	if ( check_influxauthtoken_permissions "${current_influxauth_token}" )
@@ -313,7 +312,7 @@ then
 	fi
 fi
 
-# Multiple
+# Multiple tokens found
 if [ "$influxauth_token_objects" -gt 1 ]
 then
 	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
@@ -336,7 +335,7 @@ then
 	influxauth_token_objects=0
 fi
 
-# None
+# No token found
 if [ "$influxauth_token_objects" -eq 0 ]
 then
 	echo -e "${LOG_WARN} InfluxDB: No suitable auth token found" >> /proc/1/fd/1
@@ -367,16 +366,12 @@ grafanaapiheaders=(
 	-H "Content-Type:application/json"
 )
 
-set_grafanaserviceaccount() {
-
-	local result='{
-	  "name": "'"${GRAFANA_SERVICEACCOUNT}"'",
-	  "role": "Admin",
-	  "isDisabled": false
-	}'
-
-	jq <<< "${result}"
-}
+grafanaserviceaccount_json=\
+'{
+	"name": "'"${GRAFANA_SERVICEACCOUNT}"'",
+	"role": "Admin",
+	"isDisabled": false
+}'
 
 get_grafanaserviceaccount() {
 
@@ -467,9 +462,6 @@ then
 	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
 
 	# Check if sa exists
-	grafanaserviceaccount_json=$(
-		set_grafanaserviceaccount
-	)
 	grafanaserviceaccount=$(
 		get_grafanaserviceaccount
 	)
@@ -528,6 +520,7 @@ then
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$(
 		jq -r .key <<< "${grafanaserviceaccount_token}"
 	)
+
 	[ $LOG_DEBUG ] && \
 	jq '.key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" \
 	>> /proc/1/fd/1
