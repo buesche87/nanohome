@@ -46,7 +46,7 @@ export NANOHOME_MQTT_LONGSUBSCRIBE="1000"
 # Script logging      
 ############################################################
 
-LOG_ACTIVE=true
+LOG_DEBUG=true
 
 LOG_BLU="\033[1;36m"
 LOG_GRN="\033[1;32m"
@@ -107,7 +107,7 @@ influxconfig=$(
 	check_influxconfig || create_influxconfig
 )
 
-[ $LOG_ACTIVE ] && \
+[ $LOG_DEBUG ] && \
 jq '.token = "<SECURETOKEN>"' <<< "${influxconfig}" \
 >> /proc/1/fd/1
 
@@ -167,7 +167,7 @@ export INFLUXBUCKET_DEVICES_ID=$(
 	jq -r '.id' <<< "${influxbucket_devices}"
 )
 
-[ $LOG_ACTIVE ] && \
+[ $LOG_DEBUG ] && \
 jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" \
 >> /proc/1/fd/1
 
@@ -181,7 +181,7 @@ export INFLUXBUCKET_MEASUREMENTS_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
-[ $LOG_ACTIVE ] && \
+[ $LOG_DEBUG ] && \
 jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" \
 >> /proc/1/fd/1
 
@@ -293,7 +293,7 @@ then
 			jq -r '.[].token' <<< "${influxauth_token}"
 		)
 
-		[ $LOG_ACTIVE ] && \
+		[ $LOG_DEBUG ] && \
 		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${current_influxauth_token}" \
 		>> /proc/1/fd/1
 	else
@@ -307,7 +307,7 @@ then
 
 		influxauth_token_objects=0
 
-		[ $LOG_ACTIVE ] && \
+		[ $LOG_DEBUG ] && \
 		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${deleted_influxauth_token}" \
 		>> /proc/1/fd/1
 	fi
@@ -328,7 +328,7 @@ then
 			delete_influxauthtoken "${current_influxauth_token_id}"
 		)
 
-		[ $LOG_ACTIVE ] && \
+		[ $LOG_DEBUG ] && \
 		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${deleted_influxauth_token}" \
 		>> /proc/1/fd/1
 	done
@@ -349,7 +349,7 @@ then
 		jq -r '.token' <<< "${new_influxauth_token}"
 	)
 
-	[ $LOG_ACTIVE ] && \
+	[ $LOG_DEBUG ] && \
 	jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${new_influxauth_token}" \
 	>> /proc/1/fd/1
 fi
@@ -360,6 +360,12 @@ fi
 # Check if service account and token exist
 # Create a service account if needed
 # Recreate auth token
+
+grafanaapiheaders=(
+	-s
+	-H "Accept: application/json"
+	-H "Content-Type:application/json"
+)
 
 set_grafanaserviceaccount() {
 
@@ -374,9 +380,7 @@ set_grafanaserviceaccount() {
 
 get_grafanaserviceaccount() {
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
+	curl "${grafanaapiheaders[@]}" \
 	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}" | \
 	jq -e
 
@@ -392,9 +396,7 @@ create_grafanaserviceaccount() {
 
 	local sa=$1
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
+	curl "${grafanaapiheaders[@]}" \
 	-d "${sa}" \
 	-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts" | \
 	jq -e
@@ -412,9 +414,7 @@ get_grafanaserviceaccount_token() {
 
 	local id=$1
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
+	curl "${grafanaapiheaders[@]}" \
 	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${id}/tokens" | \
 	jq -e
 
@@ -431,9 +431,7 @@ delete_grafanaserviceaccount_token() {
 	local uid=$1
 	local tid=$2
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
+	curl "${grafanaapiheaders[@]}" \
 	-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens/${tid}" | \
 	jq -e
 
@@ -450,9 +448,7 @@ create_grafanaserviceaccount_token() {
 	local sa=$1
 	local uid=$2
 
-	curl -s \
-	-H "Accept: application/json" \
-	-H "Content-Type: application/json" \
+	curl "${grafanaapiheaders[@]}" \
 	-d "${sa}" \
 	-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens" | \
 	jq -e
@@ -480,7 +476,7 @@ then
 	grafanaserviceaccount_objects=$(
 		jq '.totalCount' <<< "${grafanaserviceaccount}"
 	)
-	[ $LOG_ACTIVE ] && \
+	[ $LOG_DEBUG ] && \
 	jq '.serviceAccounts[] | {id, name, login, role, isDisabled}' <<< "${grafanaserviceaccount}" \
 	>> /proc/1/fd/1
 
@@ -507,7 +503,7 @@ then
 	grafanaserviceaccount_token_objects=$(
 		jq length <<< ${grafanaserviceaccount_token}
 	)
-	[ $LOG_ACTIVE ] && \
+	[ $LOG_DEBUG ] && \
 	jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token}" \
 	>> /proc/1/fd/1
 
@@ -520,7 +516,7 @@ then
 		grafanaserviceaccount_token_deleted=$(
 			delete_grafanaserviceaccount_token "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
-		[ $LOG_ACTIVE ] && \
+		[ $LOG_DEBUG ] && \
 		jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token}" \
 		>> /proc/1/fd/1
 	done
@@ -532,18 +528,13 @@ then
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$(
 		jq -r .key <<< "${grafanaserviceaccount_token}"
 	)
-	[ $LOG_ACTIVE ] && \
+	[ $LOG_DEBUG ] && \
 	jq '.key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" \
 	>> /proc/1/fd/1
 else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
 
-grafanaapiheaders=$(
-	echo -e '-H "Accept: application/json" \'
-	echo -e '-H "Content-Type:application/json" \'
-	echo -e '-H "Authorization: Bearer '"${GRAFANA_SERVICEACCOUNT_TOKEN}"' \'
-)
 
 # Grafana: Datasources
 ############################################################
@@ -551,6 +542,13 @@ grafanaapiheaders=$(
 
 # TODO: Maybe - jq > unterscheiden create / found 
 # TODO: Omit "true/false"
+
+grafanaapiheaders_token=(
+	-s
+	-H "Accept: application/json"
+	-H "Content-Type:application/json"
+	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
+)
 
 set_grafanadatasource_json() {
 
@@ -576,10 +574,7 @@ get_grafanadatasource() {
 
 	local dsname=$1
 	local result=$(
-		curl -s \
-		-H "Accept: application/json" \
-		-H "Content-Type: application/json" \
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		curl "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/datasources"
 	)
 
@@ -614,12 +609,9 @@ create_grafanadatasource() {
 		jq -r .name <<< "${1}"
 	)
 
-	curl -s \
-		-H "Accept: application/json" \
-		-H "Content-Type:application/json" \
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
-		-X POST -d "${dsjson}" "http://${GRAFANA_SERVICE}/api/datasources" | \
-		jq -e
+	curl "${grafanaapiheaders_token[@]}" \
+	-X POST -d "${dsjson}" "http://${GRAFANA_SERVICE}/api/datasources" | \
+	jq -e
 	
 	if [ $? -eq 0 ]
 	then
@@ -640,7 +632,7 @@ grafanadatasource_devices=$(
 	create_grafanadatasource "${grafanadatasource_devices_json}"
 )
 
-[ $LOG_ACTIVE ] && \
+[ $LOG_DEBUG ] && \
 jq '. | {uid, name, type, url}' <<< "${grafanadatasource_devices}" \
 >> /proc/1/fd/1
 
@@ -654,7 +646,7 @@ grafanadatasource_measurements=$(
 	create_grafanadatasource "${grafanadatasource_measurements_json}"
 )
 
-[ $LOG_ACTIVE ] && \
+[ $LOG_DEBUG ] && \
 jq '. | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" \
 >> /proc/1/fd/1
 
@@ -678,10 +670,7 @@ jq '. | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" \
 get_grafanafolder() {
 
 	local result=$(
-		curl -s \
-		-H "Accept: application/json" \
-		-H "Content-Type:application/json" \
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		curl "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder" | \
 		jq -e
 	)
@@ -720,7 +709,7 @@ grafanafolder=$(
 	create_grafanafolder
 )
 
-[ $LOG_ACTIVE ] && \
+[ $LOG_DEBUG ] && \
 jq '. | {uid, title, type, url}' <<< "${grafanafolder}" \
 >> /proc/1/fd/1
 
@@ -737,10 +726,7 @@ get_grafanadashboard() {
 
 	local uid=$1
 	local result=$(
-		curl -s \
-		-H "Accept: application/json" \
-		-H "Content-Type: application/json" \
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		curl "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}" | \
 		jq -e
 	)
