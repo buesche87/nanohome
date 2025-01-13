@@ -195,20 +195,20 @@ jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" \
 get_influxauthtoken() {
 
 	local description=$1
-	local result=$(
+	local answer=$(
 		influx auth list \
 		--json | \
 		jq -e --arg description "${description}" \
 		'[.[] | select(.description == $description)]'
 	)
 
-	local resultlength=$(
-		jq length <<< "${result}"
+	local result=$(
+		jq length <<< "${answer}"
 	)
 
-	if [ "$resultlength" -gt 0 ]
+	if [ "$result" -gt 0 ]
 	then
-		jq <<< "${result}"
+		jq <<< "${answer}"
 	else
 		echo "[]"
 	fi
@@ -366,6 +366,8 @@ grafanaapiheaders=(
 	-H "Content-Type:application/json"
 )
 
+# TODO: Check connection with credentials
+
 grafanaserviceaccount_json=\
 '{
 	"name": "'"${GRAFANA_SERVICEACCOUNT}"'",
@@ -373,86 +375,120 @@ grafanaserviceaccount_json=\
 	"isDisabled": false
 }'
 
+# i.O.
 get_grafanaserviceaccount() {
 
-	curl "${grafanaapiheaders[@]}" \
-	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}" | \
-	jq -e
+	local account=$1
+	local answer=$(
+		curl "${grafanaapiheaders[@]}" \
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${account}"
+	)
+	local result=$(
+		jq -e '.serviceAccounts[].name' <<< "${answer}"
+	)
 
-	if [ $? -eq 0 ]
+	if [ -n "${result}" ]
 	then
-		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Service account \"${account}\" found" >> /proc/1/fd/1
+		jq '.serviceAccounts[]' <<< "${answer}"
 	else
-		echo -e "${LOG_WARN} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana: Service account \"${account}\" not found" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
+# i.O.
 create_grafanaserviceaccount() {
 
-	local sa=$1
+	local answer=$(
+		curl "${grafanaapiheaders[@]}" \
+		-d "${grafanaserviceaccount_json}" \
+		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts"
+	)
 
-	curl "${grafanaapiheaders[@]}" \
-	-d "${sa}" \
-	-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts" | \
-	jq -e
+	local result=$(
+		jq -e 'has("name")' <<< "${answer}"
+	)
 
-	if [ $? -eq 0 ]
+	if ( $result )
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" failed to create" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
 }
 
+# i.O.
 get_grafanaserviceaccount_token() {
 
-	local id=$1
+	local said=$1
+	local answer=$(
+		curl "${grafanaapiheaders[@]}" \
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
+	)
+	local result=$(
+		jq -e '.[].name' <<< "${answer}"
+	)
 
-	curl "${grafanaapiheaders[@]}" \
-	-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${id}/tokens" | \
-	jq -e
-
-	if [ $? -eq 0 ]
+	if [ "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_WARN} Grafana: Service account token not found" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
+# i.O.
 delete_grafanaserviceaccount_token() {
 
-	local uid=$1
-	local tid=$2
+	local grafanaserviceaccount_id=$1
+	local grafanaserviceaccount_token_id=$2
+	local answer=$(
+		curl "${grafanaapiheaders[@]}" \
+		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens/${grafanaserviceaccount_token_id}"
+	)
+	local result=$(
+		jq -e '.message == "Service account token deleted"' <<< "${answer}"
+	)
 
-	curl "${grafanaapiheaders[@]}" \
-	-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens/${tid}" | \
-	jq -e
-
-	if [ $? -eq 0 ]
+	if ( $result )
 	then
 		echo -e "${LOG_SUCC} Grafana: Existing service account token deleted" >> /proc/1/fd/1
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_WARN} Grafana: Existing service account token failed to delete" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
+# i.O.
 create_grafanaserviceaccount_token() {
 
-	local sa=$1
-	local uid=$2
+	local grafanaserviceaccount_id=$1
+	local answer=$(
+		curl "${grafanaapiheaders[@]}" \
+		-d "${grafanaserviceaccount_json}" \
+		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens"
+	)
+	local result=$(
+		jq -e '.name' <<< "${answer}"
+	)
 
-	curl "${grafanaapiheaders[@]}" \
-	-d "${sa}" \
-	-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${uid}/tokens" | \
-	jq -e
-
-	if [ $? -eq 0 ]
+	if [ "${result}" != "null" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: New service account token created" >> /proc/1/fd/1
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating new service account token" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -461,45 +497,30 @@ if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
 	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
 
-	# Check if sa exists
+	# Service account
 	grafanaserviceaccount=$(
-		get_grafanaserviceaccount
+		get_grafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}" || \
+		create_grafanaserviceaccount
 	)
-	grafanaserviceaccount_objects=$(
-		jq '.totalCount' <<< "${grafanaserviceaccount}"
+
+	grafanaserviceaccount_id=$(
+		jq -r .id <<< "${grafanaserviceaccount}"
 	)
+
 	[ $LOG_DEBUG ] && \
-	jq '.serviceAccounts[] | {id, name, login, role, isDisabled}' <<< "${grafanaserviceaccount}" \
+	jq '. | {name, login, role}' <<< "${grafanaserviceaccount}" \
 	>> /proc/1/fd/1
 
-	# Create sa if not existent, get its id
-	if [ "$grafanaserviceaccount_objects" -eq 0 ]
-	then
-		grafanaserviceaccount=$(
-			create_grafanaserviceaccount "${grafanaserviceaccount_json}"
-		)
-
-		grafanaserviceaccount_id=$(
-			jq -r .id <<< "${grafanaserviceaccount}"
-		)
-	else
-		grafanaserviceaccount_id=$(
-			jq -r .id <<< "${grafanaserviceaccount}"
-		)
-	fi
-
-	# Get token
+	# Token
 	grafanaserviceaccount_token=$(
 		get_grafanaserviceaccount_token "${grafanaserviceaccount_id}"
 	)
+
 	grafanaserviceaccount_token_objects=$(
 		jq length <<< ${grafanaserviceaccount_token}
 	)
-	[ $LOG_DEBUG ] && \
-	jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token}" \
-	>> /proc/1/fd/1
 
-	# Delete token
+	# Delete existing tokens
 	for (( i = 0; i < grafanaserviceaccount_token_objects; i++ ))
 	do
 		grafanaserviceaccount_token_id=$(
@@ -508,6 +529,7 @@ then
 		grafanaserviceaccount_token_deleted=$(
 			delete_grafanaserviceaccount_token "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
+		
 		[ $LOG_DEBUG ] && \
 		jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token}" \
 		>> /proc/1/fd/1
@@ -515,8 +537,9 @@ then
 
 	# Create a new token
 	grafanaserviceaccount_token=$(
-		create_grafanaserviceaccount_token "${grafanaserviceaccount_json}" "${grafanaserviceaccount_id}"
+		create_grafanaserviceaccount_token "${grafanaserviceaccount_id}"
 	)
+
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$(
 		jq -r .key <<< "${grafanaserviceaccount_token}"
 	)
@@ -528,13 +551,11 @@ else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
 
-
 # Grafana: Datasources
 ############################################################
 # If datasource does not exist, create it
 
-# TODO: Maybe - jq > unterscheiden create / found 
-# TODO: Omit "true/false"
+# TODO: Check connection with token
 
 grafanaapiheaders_token=(
 	-s
@@ -543,11 +564,11 @@ grafanaapiheaders_token=(
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
 
+# i.O.
 set_grafanadatasource_json() {
 
 	local bucket=$1
-	local result=\
-	'{
+	local result='{
 		"name":"'"${bucket}"'",
 		"type":"influxdb",
 		"typeName":"InfluxDB",
@@ -562,39 +583,30 @@ set_grafanadatasource_json() {
 	jq <<< "${result}"
 }
 
-# TODO
+# i.O.
 get_grafanadatasource() {
 
 	local dsname=$1
-	local result=$(
+	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
-		-X GET "http://${GRAFANA_SERVICE}/api/datasources"
+		-X GET "http://${GRAFANA_SERVICE}/api/datasources/name/${dsname}"
+	)
+	local result=$(
+		jq -e '.type == "influxdb"' <<< "${answer}"
 	)
 
-	if ( $(jq -e 'type == "array"' <<< "${result}") )
+	if ( $result )
 	then
-		local datasource=$(
-			jq -e \
-			--arg name "${dsname}" \
-			--arg type "influxdb" \
-			'.[] | select(.name == $name and .type == $type)' \
-			<<< "${result}"
-		)
-		if [ "${datasource}" != "" ]
-		then
-			echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
-			jq <<< "${datasource}"
-		else
-			echo -e "${LOG_WARN} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
-			return 1
-		fi
+		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
+		jq <<< "${answer}"
 	else
-		echo -e "${LOG_ERRO} Grafana: Could not connect to Grafana" >> /proc/1/fd/1
-		jq <<< "${result}"
-		exit 1
+		echo -e "${LOG_WARN} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
+# i.O.
 create_grafanadatasource() {
 
 	local dsjson=$1
@@ -602,16 +614,24 @@ create_grafanadatasource() {
 		jq -r .name <<< "${1}"
 	)
 
-	curl "${grafanaapiheaders_token[@]}" \
-	-X POST -d "${dsjson}" "http://${GRAFANA_SERVICE}/api/datasources" | \
-	jq -e
+	local answer=$(
+		curl "${grafanaapiheaders_token[@]}" \
+		-X POST -d "${dsjson}" "http://${GRAFANA_SERVICE}/api/datasources" | \
+		jq -e
+	)
+
+	local result=$(
+		jq -e '.message == "Datasource added"' <<< "${answer}"
+	)
 	
-	if [ $? -eq 0 ]
+	if ( $result )
 	then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
+		jq -e '.datasource' <<< "${answer}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
-		exit 1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
@@ -626,7 +646,7 @@ grafanadatasource_devices=$(
 )
 
 [ $LOG_DEBUG ] && \
-jq '. | {uid, name, type, url}' <<< "${grafanadatasource_devices}" \
+jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadatasource_devices}" \
 >> /proc/1/fd/1
 
 # Measurements
@@ -640,7 +660,7 @@ grafanadatasource_measurements=$(
 )
 
 [ $LOG_DEBUG ] && \
-jq '. | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" \
+jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadatasource_measurements}" \
 >> /proc/1/fd/1
 
 # Grafana: Content
@@ -657,34 +677,33 @@ jq '. | {uid, name, type, url}' <<< "${grafanadatasource_measurements}" \
 ############################################################
 # Create the dashboard folder if it does not exist
 
-# TODO: Extract folder from array or search specific folder
-# TODO: Testing
-
+# i.O.
 get_grafanafolder() {
 
-	local result=$(
+	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
-		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder" | \
-		jq -e
+		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder"
 	)
 
-	if [ "${result}" != "" ]
+	local result=$(
+		jq -e ".[] | select(.title==\"${GRAFANA_FOLDER_NAME}\")" <<< "${answer}"
+	)
+
+	if [ "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERRO} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" not found" >> /proc/1/fd/1
-		exit 1
+		echo -e "${LOG_WARN} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" not found" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
+# i.O.
 create_grafanafolder() {
 
 	local result=$(
-		curl -s \
-		-H "Accept: application/json" \
-		-H "Content-Type:application/json" \
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+		curl "${grafanaapiheaders_token[@]}" \
 		-X POST -d '{"title": "'"${GRAFANA_FOLDER_NAME}"'"}' "http://${GRAFANA_SERVICE}/api/folders"
 	)
 
@@ -694,6 +713,7 @@ create_grafanafolder() {
 		jq <<< "${result}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating folder \"${GRAFANA_FOLDER_NAME}\"" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
@@ -703,7 +723,7 @@ grafanafolder=$(
 )
 
 [ $LOG_DEBUG ] && \
-jq '. | {uid, title, type, url}' <<< "${grafanafolder}" \
+jq '. | {uid, title, url}' <<< "${grafanafolder}" \
 >> /proc/1/fd/1
 
 # Grafana: Dashboards
@@ -745,6 +765,8 @@ load_grafanadashboard_json() {
 	local result=$(
 		# TODO
 	)
+
+	
 
 	if [ $? -eq 0 ]
 	then
