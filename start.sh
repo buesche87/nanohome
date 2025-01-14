@@ -791,7 +791,7 @@ modify_grafanacontent() {
 
 # i.O.
 move_grafanacontent() {
-
+	rm -rf "${grafanacontent_destination}"/*
 	mv -f "${grafanacontent_source}"/* "${grafanacontent_destination}"
 
 	if [ $? -eq 0 ]
