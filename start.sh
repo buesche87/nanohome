@@ -732,7 +732,7 @@ create_grafanadatasource() {
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
-		return 1
+		exit 1
 	fi
 }
 
@@ -785,7 +785,7 @@ modify_grafanacontent() {
 		echo -e "${LOG_SUCC} Grafana: Content credentials set" >> /proc/1/fd/1
 	else
 		echo -e "${LOG_ERRO} Grafana: Failed setting content credentials" >> /proc/1/fd/1
-		# exit 1
+		exit 1
 	fi	
 }
 
@@ -800,7 +800,7 @@ move_grafanacontent() {
 		rm -rf "${grafanacontent_source}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Failed moving content to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
-		return 1
+		exit 1
 	fi
 }
 
@@ -854,7 +854,7 @@ create_grafanafolder() {
 		jq <<< "${result}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating folder \"${GRAFANA_FOLDER_NAME}\"" >> /proc/1/fd/1
-		return 1
+		exit 1
 	fi
 }
 
@@ -929,7 +929,7 @@ prepare_grafanadashboard() {
 	else
 		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\" for upload" >> /proc/1/fd/1
 		jq <<< "${result}" >> /proc/1/fd/1
-		return 1
+		exit 1
 	fi	
 }
 
@@ -953,7 +953,7 @@ create_grafanadashboard() {
 	else
 		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
-		return 1
+		exit 1
 	fi	
 }
 
