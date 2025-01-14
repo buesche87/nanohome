@@ -118,7 +118,7 @@ influxconfig_create() {
 		--json
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -143,7 +143,7 @@ influxconfig_validate() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Connection successful" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -181,7 +181,7 @@ influxbucket_search() {
 		<<< ${answer}
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -204,7 +204,7 @@ influxbucket_create() {
 		--json
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -298,7 +298,7 @@ influxauthtoken_delete() {
 		--json
 	)
 
-	if [ "${result}" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" removed" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -320,7 +320,7 @@ influxauthtoken_create() {
 		--json
 	)
 
-	if [ "${result}" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
