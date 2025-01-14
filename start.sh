@@ -686,7 +686,7 @@ grafanadatasource_search() {
 		jq -e '.type == "influxdb"' <<< "${answer}"
 	)
 
-	if ( $result )
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
 		jq <<< "${answer}"
@@ -734,7 +734,7 @@ grafanadatasource_create() {
 		jq -e '.message == "Datasource added"' <<< "${answer}"
 	)
 	
-	if ( $result )
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
 		jq -e '.datasource' <<< "${answer}"
@@ -845,7 +845,7 @@ grafanadashfolder_search() {
 		jq -e ".[] | select(.title==\"${GRAFANA_FOLDER_NAME}\")" <<< "${answer}"
 	)
 
-	if [ "${result}" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -863,7 +863,7 @@ grafanadashfolder_create() {
 		-X POST -d '{"title": "'"${GRAFANA_FOLDER_NAME}"'"}' "http://${GRAFANA_SERVICE}/api/folders"
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -904,7 +904,7 @@ grafanadashboard_find() {
 		jq -e '.[] | {id, name}' <<< "${answer}"
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Dashboard \"${uid}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -936,7 +936,7 @@ grafanadashboard_prepare() {
 		<<< "${jsondata}"
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -960,7 +960,7 @@ grafanadashboard_create() {
 		jq -e '. | select(.status == "success")' <<< "${answer}"
 	)
 
-	if [ "${result}" != "" ]
+	if [ -n "${result}" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
 		jq <<< "${result}"
