@@ -59,7 +59,7 @@ LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
 LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
 LOG_ERRO="[${LOG_RED}Error${LOG_NOC}]"
 
-
+# TODO
 result_handler() {
 
 	local type=$1
@@ -410,6 +410,15 @@ then
 	jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${new_influxauth_token}" \
 	>> /proc/1/fd/1
 fi
+
+# Grafana: Config
+############################################################
+# Move modified grafana.ini to persistent storage
+
+grafanaconfig_source=""
+grafanaconfig_destination=""
+
+[ -f ]
 
 # Grafana: Service account 
 ############################################################
@@ -766,11 +775,6 @@ grafanadatasource_measurements=$(
 jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadatasource_measurements}" \
 >> /proc/1/fd/1
 
-
-
-# TEST AB HIER
-
-
 # Grafana: Content
 ############################################################
 # Check if content on bind mounted volume exists, if not
@@ -795,22 +799,29 @@ modify_grafanacontent() {
 }
 
 # TODO: Test
-copy_grafanacontent() {
-	mkdir -p "$grafanacontent_destination"
-	cp -r "${grafanacontent_source}" "${grafanacontent_destination}"
+move_grafanacontent() {
+
+	mv -f "${grafanacontent_source}/*" "${grafanacontent_destination}"
 
 	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCC} Grafana: Content copied to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Content moved to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
+		rm -rf "${grafanacontent_source}"
 	else
-		echo -e "${LOG_ERRO} Grafana: Failed copying content to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
-		# exit 1
+		echo -e "${LOG_ERRO} Grafana: Failed moving content to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
+		return 1
 	fi
 }
 
-modify_grafanacontent
-copy_grafanacontent
+if [ -d "${grafanacontent_source}" ]
+then
+	echo -e "${LOG_INFO} Grafana: Creating content \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 
+	modify_grafanacontent
+	move_grafanacontent
+else
+	echo -e "${LOG_INFO} Grafana: Content \"${grafanacontent_destination}\" already created" >> /proc/1/fd/1
+fi
 
 # Grafana: Dashboard folder
 ############################################################

@@ -16,6 +16,7 @@ services:
       - mosquitto
     volumes:
       - /mnt/data/appdata/nanohome/config:/opt/nanohome/config
+      - /mnt/data/appdata/nanohome/data:/opt/nanohome/data
       - /mnt/data/appdata/nanohome/log:/opt/nanohome/log
     working_dir: /opt/nanohome
     env_file: .env
@@ -34,24 +35,24 @@ services:
     volumes:
       - /mnt/data/appdata/influxdb/data:/var/lib/influxdb2
       - /mnt/data/appdata/influxdb/config:/etc/influxdb2
-    env_file: .env
-
-
+    env_file:
+      - /docker_data/grafana_conf/config.monitoring
+  
   grafana:
     image: grafana/grafana:latest
     hostname: grafana
     container_name: grafana
     restart: unless-stopped
-    environment:
-     - GF_INSTALL_PLUGINS=grafana-clock-panel
     networks:
       - nanohome
     ports:
-     - 3000:3000
+      - 3000:3000
     volumes:
       - /mnt/data/appdata/grafana/data:/var/lib/grafana
-      - /mnt/data/appdata/grafana/content:/usr/share/grafana/public/nanohome
-
+      - /mnt/data/appdata/grafana/ssl:/certs
+      - /mnt/data/appdata/nanohome/data/grafana:/usr/share/grafana/public/nanohome
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clock-panel, volkovlabs-variable-panel
 
   mosquitto:
     image: eclipse-mosquitto:latest
@@ -64,10 +65,9 @@ services:
      - 1883:1883
      - 1884:1884
     volumes:
-      - /mnt/data/appdata/mosquitto/log:/mosquitto/log
       - /mnt/data/appdata/mosquitto/config:/mosquitto/config
       - /mnt/data/appdata/mosquitto/data:/mosquitto/data
-
+      - /mnt/data/appdata/mosquitto/log:/mosquitto/log
 
 
 volumes: # define any named volumes used by the services
