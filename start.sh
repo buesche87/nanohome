@@ -259,7 +259,7 @@ influxauthtoken_search() {
 	local result=$(
 		jq -e \
 		--arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
-		'[.[] | select(.description == $description)] and ' \
+		'[.[] | select(.description == $description)]' \
 		<<< "${answer}"
 	)
 
