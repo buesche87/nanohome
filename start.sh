@@ -411,15 +411,6 @@ then
 	>> /proc/1/fd/1
 fi
 
-# Grafana: Config
-############################################################
-# Move modified grafana.ini to persistent storage
-
-grafanaconfig_source=""
-grafanaconfig_destination=""
-
-[ -f ]
-
 # Grafana: Service account 
 ############################################################
 # If no access token specified in env file
@@ -439,7 +430,7 @@ grafanaserviceaccount_json='{
 	"isDisabled": false
 }'
 
-# i.O.
+# TODO: Wenn Result leer ist / wenn Result "null" enthält
 check_grafanaapiconnection() {
 
 	local answer=$(
@@ -451,7 +442,7 @@ check_grafanaapiconnection() {
 		jq -e 'has("name")' <<< "${answer}"
 	)	
 
-	if ( $result )
+	if [ "${result}" = "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Basic auth connection successful" >> /proc/1/fd/1
 		return 0
