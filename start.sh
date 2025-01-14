@@ -417,6 +417,7 @@ fi
 # Recreate auth token
 
 grafanaapiheaders=(
+	-s
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 )
