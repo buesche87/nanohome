@@ -659,10 +659,10 @@ grafanaapiauthtoken_test() {
 
 	if ( $result )
 	then
-		echo -e "${LOG_SUCC} Grafana: Auth token valid" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: API auth token valid" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Connection with auth token failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Connection with API auth token failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
@@ -761,7 +761,7 @@ jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadataso
 
 # Measurements
 grafanadatasource_measurements_json=$(
-	grafanadatasource_create "${GRAFANA_DATASOURCE_MEASUREMENTS}"
+	grafanadatasource_prepare "${GRAFANA_DATASOURCE_MEASUREMENTS}"
 )
 
 grafanadatasource_measurements=$(
