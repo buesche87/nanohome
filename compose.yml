@@ -49,6 +49,7 @@ services:
       - 3000:3000
     volumes:
       - /mnt/data/appdata/grafana/data:/var/lib/grafana
+      - /mnt/data/appdata/grafana/log:/var/log/grafana
       - /mnt/data/appdata/grafana/ssl:/certs
       - /mnt/data/appdata/nanohome/data/grafana:/usr/share/grafana/public/nanohome
     environment:
@@ -69,9 +70,8 @@ services:
       - /mnt/data/appdata/mosquitto/data:/mosquitto/data
       - /mnt/data/appdata/mosquitto/log:/mosquitto/log
 
-
-volumes: # define any named volumes used by the services
-  db_data: # name of the volume for persisting database data
+# volumes: # define any named volumes used by the services
+#  db_data: # name of the volume for persisting database data
 
 networks:
   nanohome:
