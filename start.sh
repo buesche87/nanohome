@@ -54,10 +54,10 @@ LOG_YLW="\033[1;93m"
 LOG_RED="\033[1;31m"
 LOG_NOC="\033[0m"
 
-LOG_INFO="[${LOG_BLU}Info${LOG_NOC}]"
+LOG_INFO="[${LOG_BLU}Info   ${LOG_NOC}]"
 LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
 LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
-LOG_ERRO="[${LOG_RED}Error${LOG_NOC}]"
+LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
 
 # TODO
 result_handler() {
