@@ -801,7 +801,7 @@ modify_grafanacontent() {
 # TODO: Test
 move_grafanacontent() {
 
-	mv -f "${grafanacontent_source}/*" "${grafanacontent_destination}"
+	mv -f "${grafanacontent_source}/*" "${grafanacontent_destination}/"
 
 	if [ $? -eq 0 ]
 	then
