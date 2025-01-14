@@ -8,7 +8,7 @@ RUN mkdir -p /opt/nanohome/data
 RUN mkdir -p /opt/nanohome/log
 
 # influx-cli
-RUN wget -qO- https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz | tar -xvf - -C "/usr/local/bin/" "influx"
+RUN wget -qO- https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz | tar -xzf - -C "/usr/local/bin/" "influx"
 # RUN mkdir -p ./influx-cli
 # RUN wget https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz -O ./influx-cli/influx-cli.tar.gz
 # RUN tar xvzf ./influx-cli/influx-cli.tar.gz -C ./influx-cli
