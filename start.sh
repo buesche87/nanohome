@@ -796,7 +796,7 @@ modify_grafanacontent() {
 
 # TODO: Test
 copy_grafanacontent() {
-	mkdir "$grafanacontent_destination"
+	mkdir -p "$grafanacontent_destination"
 	cp -r "${grafanacontent_source}" "${grafanacontent_destination}"
 
 	if [ $? -eq 0 ]
@@ -903,9 +903,6 @@ check_grafanadashboard() {
 prepare_grafanadashboard() {
 
 	local file=$1
-
-	local file="${GRAFANA_DASHBOARD_FILE_DEVICES}"
-
 	local filecontent=$(
 		jq '.' "${file}"
 	)
@@ -934,23 +931,20 @@ prepare_grafanadashboard() {
 	fi	
 }
 
-# TODO - result
+# i.O.
 create_grafanadashboard() {
 
 	local jsondata=$1
-
-	local jsondata="${result}"
-
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
 		-X POST -d "${jsondata}" "http://${GRAFANA_SERVICE}/api/dashboards/db"
 	)
 
 	local result=$(
-		jq -e '.message' <<< "${answer}"
+		jq -e '. | select(.status == "success")' <<< "${answer}"
 	)
 
-	if [ "${result}" != "null" ]
+	if [ "${result}" != "" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
 		jq <<< "${result}"
@@ -966,10 +960,19 @@ grafanadashboard_home_exists=$(
 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}"
 )
 
-if [ "${grafanadashboard_home_exists}" != "null" ]
+if [ "${grafanadashboard_home_exists}" == "" ]
 then
-	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}"
-	create_grafanadashboard "${grafanadashboard_devices}"
+	grafanadashboard_home_json=$(
+		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}"
+	)
+
+	grafanadashboard_home=$(
+		create_grafanadashboard "${grafanadashboard_home_json}"
+	)
+
+	[ $LOG_DEBUG ] && \
+	jq '.' <<< "${grafanadashboard_home}" \
+	>> /proc/1/fd/1
 fi
 
 # Devices
@@ -977,10 +980,19 @@ grafanadashboard_devices_exists=$(
 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_DEVICES}"
 )
 
-if [ "${grafanadashboard_devices_exists}" != "null" ]
+if [ "${grafanadashboard_devices_exists}" == "" ]
 then
-	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_DEVICES}"
-	create_grafanadashboard "${grafanadashboard_devices}"
+	grafanadashboard_devices_json=$(
+		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_DEVICES}"
+	)
+
+	grafanadashboard_devices=$(
+		create_grafanadashboard "${grafanadashboard_devices_json}"
+	)
+
+	[ $LOG_DEBUG ] && \
+	jq '.' <<< "${grafanadashboard_devices}" \
+	>> /proc/1/fd/1	
 fi
 
 # Timer
@@ -988,10 +1000,19 @@ grafanadashboard_timer_exists=$(
 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_TIMER}"
 )
 
-if [ "${grafanadashboard_timer_exists}" != "null" ]
+if [ "${grafanadashboard_timer_exists}" == "" ]
 then
-	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_TIMER}"
-	create_grafanadashboard "${grafanadashboard_timer}"
+	grafanadashboard_timer_json=$(
+		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_TIMER}"
+	)
+
+	grafanadashboard_timer=$(	
+		create_grafanadashboard "${grafanadashboard_timer_json}"
+	)
+
+	[ $LOG_DEBUG ] && \
+	jq '.' <<< "${grafanadashboard_timer}" \
+	>> /proc/1/fd/1
 fi
 
 # Standby
@@ -999,10 +1020,19 @@ grafanadashboard_standby_exists=$(
 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_STANDBY}"
 )
 
-if [ "${grafanadashboard_standby_exists}" != "null" ]
+if [ "${grafanadashboard_standby_exists}" == "" ]
 then
-	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_STANDBY}"
-	create_grafanadashboard "${grafanadashboard_standby}"
+	grafanadashboard_standby_json=$(
+		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_STANDBY}"
+	)
+
+	grafanadashboard_standby=$(	
+		create_grafanadashboard "${grafanadashboard_standby_json}"
+	)
+
+	[ $LOG_DEBUG ] && \
+	jq '.' <<< "${grafanadashboard_standby}" \
+	>> /proc/1/fd/1
 fi
 
 # Measurements
@@ -1010,10 +1040,19 @@ grafanadashboard_measurements_exists=$(
 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
 )
 
-if [ "${grafanadashboard_measurements_exists}" != "null" ]
+if [ "${grafanadashboard_measurements_exists}" == "" ]
 then
-	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
-	create_grafanadashboard "${grafanadashboard_measurements}"
+	grafanadashboard_measurements_json=$(
+		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
+	)
+
+	grafanadashboard_measurements=$(	
+		create_grafanadashboard "${grafanadashboard_measurements_json}"
+	)
+
+	[ $LOG_DEBUG ] && \
+	jq '.' <<< "${grafanadashboard_measurements}" \
+	>> /proc/1/fd/1
 fi
 
 
