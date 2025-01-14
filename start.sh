@@ -962,55 +962,60 @@ create_grafanadashboard() {
 }
 
 # Home
-grafanadashboard_home=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}" || \
+grafanadashboard_home_exists=$(
+	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}"
+)
+
+if [ "${grafanadashboard_home_exists}" != "null" ]
+then
 	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}"
-)
-
-# Todo > create nur wenn check fehlschlägt
-create_grafanadashboard "${grafanadashboard_devices}"
+	create_grafanadashboard "${grafanadashboard_devices}"
+fi
 
 # Devices
-grafanadashboard_devices=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_DEVICES}" || \
+grafanadashboard_devices_exists=$(
+	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_DEVICES}"
+)
+
+if [ "${grafanadashboard_devices_exists}" != "null" ]
+then
 	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_DEVICES}"
-)
-
-# Todo > create nur wenn check fehlschlägt
-create_grafanadashboard "${grafanadashboard_devices}"
-
-## Home
-#  grafanadashboard_home=$(
-# 	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}" || \
-#	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}" && \
-# 	create_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}"
-# )
-
-# Devices
-# grafanadashboard_devices=$(
-#	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_DEVICES}" || \
-#	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_DEVICES}" && \
-#   create_grafanadashboard "${GRAFANA_DASHBOARD_FILE_DEVICES}"
-#)
-
+	create_grafanadashboard "${grafanadashboard_devices}"
+fi
 
 # Timer
-# grafanadashboard_timer=$(
-#	check_grafanadashboard "${GRAFANA_TIMER_UID}" || \
-#	create_grafanadashboard "${GRAFANA_TIMER_FILE}"
-#)
-#
-## Standby
-# grafanadashboard_standby=$(
-#	check_grafanadashboard "${GRAFANA_STANDBY_UID}" || \
-#	create_grafanadashboard "${GRAFANA_STANDBY_FILE}"
-#)
-#
-## Measurements
-# grafanadashboard_measurements=$(
-#	check_grafanadashboard "${GRAFANA_MEASUREMENTS_UID}" || \
-#	create_grafanadashboard "${GRAFANA_MEASUREMENTS_FILE}"
-#)
+grafanadashboard_timer_exists=$(
+	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_TIMER}"
+)
+
+if [ "${grafanadashboard_timer_exists}" != "null" ]
+then
+	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_TIMER}"
+	create_grafanadashboard "${grafanadashboard_timer}"
+fi
+
+# Standby
+grafanadashboard_standby_exists=$(
+	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_STANDBY}"
+)
+
+if [ "${grafanadashboard_standby_exists}" != "null" ]
+then
+	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_STANDBY}"
+	create_grafanadashboard "${grafanadashboard_standby}"
+fi
+
+# Measurements
+grafanadashboard_measurements_exists=$(
+	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
+)
+
+if [ "${grafanadashboard_measurements_exists}" != "null" ]
+then
+	prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
+	create_grafanadashboard "${grafanadashboard_measurements}"
+fi
+
 
 # Mosquitto: 
 ############################################################
