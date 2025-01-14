@@ -1,3 +1,5 @@
-config.cfg
 .env
+config.cfg
+install.sh
 resources
+Z_CHEATSHEET.sh

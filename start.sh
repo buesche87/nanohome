@@ -83,34 +83,34 @@ result_handler() {
 # Check if influx configuration exists, create it if not
 
 # i.O.
-check_influxconfig() {
+influxconfig_exists() {
 
 	local answer=$(
 		influx config list --json
 	)
 
 	local result=$(
-		jq -e ."${INFLUXDB_CONFIG}" \
+		jq -e \
+		."${INFLUXDB_CONFIG_NAME}" \
 		<<< ${answer}
 	)
 
 	if [ "${result}" != "null" ]
 	then
-		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" found" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUXDB_CONFIG}\" not found" >> /proc/1/fd/1
-		jq <<< "${result}" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
 # i.O.
-create_influxconfig() {
+influxconfig_create() {
 
 	local result=$(
 		influx config create \
-		--config-name "${INFLUXDB_CONFIG}" \
+		--config-name "${INFLUXDB_CONFIG_NAME}" \
 		--host-url "http://${INFLUXDB_SERVICE}" \
 		--org "${INFLUXDB_ORG}" \
 		--token "${INFLUXDB_ADMINTOKEN}" \
@@ -120,17 +120,17 @@ create_influxconfig() {
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" created" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERRO} Influx CLI: Config \"${INFLUXDB_CONFIG}\" failed to create" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${result}" >> /proc/1/fd/1
 		exit 1
 	fi
 }
 
 # i.O.
-test_influxconfig() {
+influxconfig_validate() {
 
 	local answer=$(
 		influx org list \
@@ -138,39 +138,38 @@ test_influxconfig() {
 	)
 
 	local result=$(
-		jq -e '.[] | {id, name}' \
+		jq -e \
+		'.[] | {id, name, createdAt}' \
 		<<< "${answer}"
 	)
 
 	if [ "${result}" != "" ]
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Connection successful" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Influx CLI: Connection successful" >> /proc/1/fd/1
 		jq <<< "${result}"
 	else
-		echo -e "${LOG_ERRO} InfluxDB: Connection failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Influx CLI: Connection failed" >> /proc/1/fd/1
 		jq <<< "${result}" >> /proc/1/fd/1
 		exit 1
 	fi	
 }
 
 influxconfig=$(
-	check_influxconfig || create_influxconfig
+	influxconfig_exists || influxconfig_create
 )
 
-test_influxconfig
+influxconfig_validate
 
-[ $LOG_DEBUG ] && \
-jq '.token = "<SECURETOKEN>"' <<< "${influxconfig}" \
->> /proc/1/fd/1
+[ $LOG_DEBUG ] && jq '.token = "<SECURETOKEN>"' <<< "${influxconfig}" >> /proc/1/fd/1
 
 # InfluxDB: Buckets
 ############################################################
 # Check if buckets exists, create it if not
 
 # i.O.
-get_influxbucket() {
-
+influxbucket_exists() {
 	local bucket=$1
+
 	local answer=$(
 		influx bucket list \
 		--json
@@ -188,13 +187,13 @@ get_influxbucket() {
 		jq <<< "${result}"
 	else
 		echo -e "${LOG_WARN} InfluxDB: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
-		jq <<< "${result}" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
 # i.O.
-create_influxbucket() {
+influxbucket_create() {
 	local bucket=$1
 
 	local result=$(
@@ -218,31 +217,29 @@ create_influxbucket() {
 
 # Devices
 influxbucket_devices=$(
-	get_influxbucket "${INFLUXDB_BUCKET_DEVICES}" || \
-	create_influxbucket "${INFLUXDB_BUCKET_DEVICES}"
+	influxbucket_exists "${INFLUXDB_BUCKET_DEVICES}" || \
+	influxbucket_create "${INFLUXDB_BUCKET_DEVICES}"
 )
 
 export INFLUXBUCKET_DEVICES_ID=$(
-	jq -r '.id' <<< "${influxbucket_devices}"
+	jq -r '.id' \
+	<<< "${influxbucket_devices}"
 )
 
 [ $LOG_DEBUG ] && \
-jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" \
->> /proc/1/fd/1
+jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
 # Measurements
 influxbucket_measurements=$(
-	get_influxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
-	create_influxbucket "${INFLUXDB_BUCKET_MEASUREMENTS}"
+	influxbucket_exists "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
+	influxbucket_create "${INFLUXDB_BUCKET_MEASUREMENTS}"
 )
 
 export INFLUXBUCKET_MEASUREMENTS_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
-[ $LOG_DEBUG ] && \
-jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" \
->> /proc/1/fd/1
+[ $LOG_DEBUG ] && jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
 # InfluxDB: Auth token for Grafana datasource
 ############################################################
@@ -252,7 +249,7 @@ jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" \
 # If none found, create oone
 
 # i.O.
-get_influxauthtoken() {
+influxauthtoken_search() {
 	local description=$1
 
 	local answer=$(
@@ -261,8 +258,9 @@ get_influxauthtoken() {
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
-		'[.[] | select(.description == $description)]' \
+		jq -e \
+		--arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
+		'[.[] | select(.description == $description)] and ' \
 		<<< "${answer}"
 	)
 
@@ -270,15 +268,15 @@ get_influxauthtoken() {
 }
 
 # i.O.
-check_influxauthtoken_permissions() {
-	local current_influxauth_token=$1
+influxauthtoken_check() {
+	local influxauthtoken_current=$1
 
 	local result=$(
 		jq -e \
 		--arg val1 "${INFLUXBUCKET_DEVICES_ID}" \
 		--arg val2 "${INFLUXBUCKET_MEASUREMENTS_ID}" \
 		'[.[].permissions[]] | contains([$val1, $val2])' \
-		<<< "${current_influxauth_token}"
+		<<< "${influxauthtoken_current}"
 	)
 
 	if ( $result )
@@ -292,12 +290,12 @@ check_influxauthtoken_permissions() {
 }
 
 # i.O.
-delete_influxauthtoken() {
-	local current_influxauth_token_id=$1
+influxauthtoken_delete() {
+	local influxauthtoken_current_id=$1
 
 	local result=$(
 		influx auth delete \
-		--id "${current_influxauth_token_id}" \
+		--id "${influxauthtoken_current_id}" \
 		--json
 	)
 
@@ -312,7 +310,7 @@ delete_influxauthtoken() {
 }
 
 # i.O.
-create_influxauthtoken() {
+influxauthtoken_create() {
 
 	local result=$(
 		influx auth create \
@@ -333,76 +331,76 @@ create_influxauthtoken() {
 	fi	
 }
 
-current_influxauth_token=$(
-	get_influxauthtoken
+influxauthtoken_current=$(
+	influxauthtoken_search
 )
 
-influxauth_token_objects=$(
-	jq length <<< "${current_influxauth_token}"
+influxauthtoken_objects=$(
+	jq length <<< "${influxauthtoken_current}"
 )
 
 # One token found
-if [ "$influxauth_token_objects" -eq 1 ]
+if [ "$influxauthtoken_objects" -eq 1 ]
 then
-	if ( check_influxauthtoken_permissions "${current_influxauth_token}" )
+	if ( influxauthtoken_check "${influxauthtoken_current}" )
 	then
-		export INFLUXDB_ROTOKEN=$(
-			jq -r '.[].token' <<< "${current_influxauth_token}"
+		export INFLUXDB_AUTHTOKEN=$(
+			jq -r '.[].token' <<< "${influxauthtoken_current}"
 		)
 
 		[ $LOG_DEBUG ] && \
-		jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${current_influxauth_token}" \
+		jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauthtoken_current}" \
 		>> /proc/1/fd/1
 	else
-		current_influxauth_token_id=$(
-			jq -r '.[].id' <<< "${current_influxauth_token}"
+		influxauthtoken_current_id=$(
+			jq -r '.[].id' <<< "${influxauthtoken_current}"
 		)
 
-		deleted_influxauth_token=$(
-			delete_influxauthtoken "${current_influxauth_token_id}"
+		influxauthtoken_deleted=$(
+			influxauthtoken_delete "${influxauthtoken_current_id}"
 		)
 
-		influxauth_token_objects=0
+		influxauthtoken_objects=0
 
 		[ $LOG_DEBUG ] && \
-		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${deleted_influxauth_token}" \
+		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauthtoken_deleted}" \
 		>> /proc/1/fd/1
 	fi
 fi
 
 # Multiple tokens found
-if [ "$influxauth_token_objects" -gt 1 ]
+if [ "$influxauthtoken_objects" -gt 1 ]
 then
 	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 
-	for (( i = 0; i < influxauth_token_objects; i++ ))
+	for (( i = 0; i < influxauthtoken_objects; i++ ))
 	do
-		current_influxauth_token_id=$(
-			jq -r .[$i].id <<< "${current_influxauth_token}"
+		influxauthtoken_current_id=$(
+			jq -r .[$i].id <<< "${influxauthtoken_current}"
 		)
 
-		deleted_influxauth_token=$(
-			delete_influxauthtoken "${current_influxauth_token_id}"
+		influxauthtoken_deleted=$(
+			influxauthtoken_delete "${influxauthtoken_current_id}"
 		)
 
 		[ $LOG_DEBUG ] && \
-		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${deleted_influxauth_token}" \
+		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauthtoken_deleted}" \
 		>> /proc/1/fd/1
 	done
 
-	influxauth_token_objects=0
+	influxauthtoken_objects=0
 fi
 
 # No token found
-if [ "$influxauth_token_objects" -eq 0 ]
+if [ "$influxauthtoken_objects" -eq 0 ]
 then
 	echo -e "${LOG_WARN} InfluxDB: No suitable auth token found" >> /proc/1/fd/1
 
 	new_influxauth_token=$(
-		create_influxauthtoken "${INFLUXBUCKET_DEVICES_ID}" "${INFLUXBUCKET_MEASUREMENTS_ID}"
+		influxauthtoken_create "${INFLUXBUCKET_DEVICES_ID}" "${INFLUXBUCKET_MEASUREMENTS_ID}"
 	)
 
-	export INFLUXDB_ROTOKEN=$(
+	export INFLUXDB_AUTHTOKEN=$(
 		jq -r '.token' <<< "${new_influxauth_token}"
 	)
 
@@ -419,7 +417,6 @@ fi
 # Recreate auth token
 
 grafanaapiheaders=(
-	-s
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 )
@@ -431,10 +428,11 @@ grafanaserviceaccount_json='{
 }'
 
 # TODO: Wenn Result leer ist / wenn Result "null" enthält
-check_grafanaapiconnection() {
+grafanaapibasicauth_test() {
 
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
+		--progress-bar \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
 	)
 
@@ -444,17 +442,17 @@ check_grafanaapiconnection() {
 
 	if [ "${result}" = "true" ]
 	then
-		echo -e "${LOG_SUCC} Grafana: Basic auth connection successful" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Basic auth successful" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Basic auth connection failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Basic auth failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
-		exit 1
+		# exit 1
 	fi
 }
 
 # i.O.
-get_grafanaserviceaccount() {
+grafanaserviceaccount_find() {
 
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
@@ -477,7 +475,7 @@ get_grafanaserviceaccount() {
 }
 
 # i.O.
-create_grafanaserviceaccount() {
+grafanaserviceaccount_create() {
 
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
@@ -501,7 +499,7 @@ create_grafanaserviceaccount() {
 }
 
 # i.O.
-get_grafanaserviceaccount_token() {
+grafanaserviceaccounttoken_find() {
 
 	local said=$1
 	local answer=$(
@@ -524,7 +522,7 @@ get_grafanaserviceaccount_token() {
 }
 
 # i.O.
-delete_grafanaserviceaccount_token() {
+grafanaserviceaccounttoken_delete() {
 
 	local grafanaserviceaccount_id=$1
 	local grafanaserviceaccount_token_id=$2
@@ -548,7 +546,7 @@ delete_grafanaserviceaccount_token() {
 }
 
 # i.O.
-create_grafanaserviceaccount_token() {
+grafanaserviceaccounttoken_create() {
 
 	local grafanaserviceaccount_id=$1
 	local answer=$(
@@ -571,7 +569,7 @@ create_grafanaserviceaccount_token() {
 	fi
 }
 
-check_grafanaapiconnection
+grafanaapibasicauth_test
 
 if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
@@ -579,8 +577,8 @@ then
 
 	# Service account
 	grafanaserviceaccount=$(
-		get_grafanaserviceaccount "${GRAFANA_SERVICEACCOUNT}" || \
-		create_grafanaserviceaccount
+		grafanaserviceaccount_find "${GRAFANA_SERVICEACCOUNT}" || \
+		grafanaserviceaccount_create
 	)
 
 	grafanaserviceaccount_id=$(
@@ -593,7 +591,7 @@ then
 
 	# Token
 	grafanaserviceaccount_token=$(
-		get_grafanaserviceaccount_token "${grafanaserviceaccount_id}"
+		grafanaserviceaccounttoken_find "${grafanaserviceaccount_id}"
 	)
 
 	grafanaserviceaccount_token_objects=$(
@@ -607,7 +605,7 @@ then
 			jq -r .[$i].id <<< "${grafanaserviceaccount_token}"
 		)
 		grafanaserviceaccount_token_deleted=$(
-			delete_grafanaserviceaccount_token "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
+			grafanaserviceaccounttoken_delete "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
 		
 		[ $LOG_DEBUG ] && \
@@ -617,7 +615,7 @@ then
 
 	# Create a new token
 	grafanaserviceaccount_token=$(
-		create_grafanaserviceaccount_token "${grafanaserviceaccount_id}"
+		grafanaserviceaccounttoken_create "${grafanaserviceaccount_id}"
 	)
 
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$(
@@ -643,7 +641,7 @@ grafanaapiheaders_token=(
 )
 
 # i.O.
-check_grafanaapiconnection_token() {
+grafanaapitokenauth_test() {
 
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
@@ -666,7 +664,7 @@ check_grafanaapiconnection_token() {
 }
 
 # i.O.
-set_grafanadatasource_json() {
+grafanadatasourcejson_create() {
 
 	local bucket=$1
 	local result='{
@@ -676,7 +674,7 @@ set_grafanadatasource_json() {
 		"access":"proxy",
 		"url":"http://'"${INFLUXDB_SERVICE}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
-		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_ROTOKEN}"'"},
+		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_AUTHTOKEN}"'"},
 		"isDefault":true,
 		"readOnly":false
 	}'
@@ -685,7 +683,7 @@ set_grafanadatasource_json() {
 }
 
 # i.O.
-get_grafanadatasource() {
+grafanadatasourcejson_search() {
 
 	local dsname=$1
 	local answer=$(
@@ -708,7 +706,7 @@ get_grafanadatasource() {
 }
 
 # i.O.
-create_grafanadatasource() {
+grafanadatasourcejson_create() {
 
 	local dsjson=$1
 	local dsname=$(
@@ -736,16 +734,16 @@ create_grafanadatasource() {
 	fi
 }
 
-check_grafanaapiconnection_token
+grafanaapitokenauth_test
 
 # Devices
 grafanadatasource_devices_json=$(
-	set_grafanadatasource_json "${GRAFANA_DATASOURCE_DEVICES}"
+	grafanadatasourcejson_create "${GRAFANA_DATASOURCE_DEVICES}"
 )
 
 grafanadatasource_devices=$(
-	get_grafanadatasource "${GRAFANA_DATASOURCE_DEVICES}" || \
-	create_grafanadatasource "${grafanadatasource_devices_json}"
+	grafanadatasourcejson_search "${GRAFANA_DATASOURCE_DEVICES}" || \
+	grafanadatasourcejson_create "${grafanadatasource_devices_json}"
 )
 
 [ $LOG_DEBUG ] && \
@@ -754,12 +752,12 @@ jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadataso
 
 # Measurements
 grafanadatasource_measurements_json=$(
-	set_grafanadatasource_json "${GRAFANA_DATASOURCE_MEASUREMENTS}"
+	grafanadatasourcejson_create "${GRAFANA_DATASOURCE_MEASUREMENTS}"
 )
 
 grafanadatasource_measurements=$(
-	get_grafanadatasource "${GRAFANA_DATASOURCE_MEASUREMENTS}" || \
-	create_grafanadatasource "${grafanadatasource_measurements_json}"
+	grafanadatasourcejson_search "${GRAFANA_DATASOURCE_MEASUREMENTS}" || \
+	grafanadatasourcejson_create "${grafanadatasource_measurements_json}"
 )
 
 [ $LOG_DEBUG ] && \
@@ -776,7 +774,7 @@ grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
 # i.O.
-modify_grafanacontent() {
+grafanacontent_modify() {
 	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/mqttconfig.js"
 	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/mqttconfig.js"
 
@@ -790,7 +788,7 @@ modify_grafanacontent() {
 }
 
 # i.O.
-move_grafanacontent() {
+grafanacontent_move() {
 	rm -rf "${grafanacontent_destination}"/*
 	mv -f "${grafanacontent_source}"/* "${grafanacontent_destination}"
 
@@ -808,8 +806,8 @@ if [ -d "${grafanacontent_source}" ]
 then
 	echo -e "${LOG_INFO} Grafana: Creating content \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 
-	modify_grafanacontent
-	move_grafanacontent
+	grafanacontent_modify
+	grafanacontent_move
 else
 	echo -e "${LOG_INFO} Grafana: Content \"${grafanacontent_destination}\" already created" >> /proc/1/fd/1
 fi
@@ -819,7 +817,7 @@ fi
 # Create the dashboard folder if it does not exist
 
 # i.O.
-get_grafanafolder() {
+grafanadashfolder_search() {
 
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
@@ -841,7 +839,7 @@ get_grafanafolder() {
 }
 
 # i.O.
-create_grafanafolder() {
+grafanadashfolder_create() {
 
 	local result=$(
 		curl "${grafanaapiheaders_token[@]}" \
@@ -858,17 +856,17 @@ create_grafanafolder() {
 	fi
 }
 
-grafanafolder=$(
-	get_grafanafolder || \
-	create_grafanafolder
+grafanadashfolder=$(
+	grafanadashfolder_search || \
+	grafanadashfolder_create
 )
 
 export GRAFANA_FOLDER_UID=$(
-	jq -r '.uid' <<< "${grafanafolder}"
+	jq -r '.uid' <<< "${grafanadashfolder}"
 )
 
 [ $LOG_DEBUG ] && \
-jq '. | {uid, title, url}' <<< "${grafanafolder}" \
+jq '. | {uid, title, url}' <<< "${grafanadashfolder}" \
 >> /proc/1/fd/1
 
 # Grafana: Dashboards
@@ -878,7 +876,7 @@ jq '. | {uid, title, url}' <<< "${grafanafolder}" \
 # - Upload dashboards
 
 # i.O.
-check_grafanadashboard() {
+grafanadashboard_find() {
 
 	local uid=$1
 	local answer=$(
@@ -902,7 +900,7 @@ check_grafanadashboard() {
 }
 
 # i.O.
-prepare_grafanadashboard() {
+grafanadashboard_prepare() {
 
 	local file=$1
 	local filecontent=$(
@@ -934,7 +932,7 @@ prepare_grafanadashboard() {
 }
 
 # i.O.
-create_grafanadashboard() {
+grafanadashboard_create() {
 
 	local jsondata=$1
 	local answer=$(
@@ -959,17 +957,17 @@ create_grafanadashboard() {
 
 # Home
 grafanadashboard_home_exists=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_HOME}"
+	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"
 )
 
 if [ "${grafanadashboard_home_exists}" == "" ]
 then
 	grafanadashboard_home_json=$(
-		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_HOME}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}"
 	)
 
 	grafanadashboard_home=$(
-		create_grafanadashboard "${grafanadashboard_home_json}"
+		grafanadashboard_create "${grafanadashboard_home_json}"
 	)
 
 	[ $LOG_DEBUG ] && \
@@ -979,17 +977,17 @@ fi
 
 # Devices
 grafanadashboard_devices_exists=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_DEVICES}"
+	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"
 )
 
 if [ "${grafanadashboard_devices_exists}" == "" ]
 then
 	grafanadashboard_devices_json=$(
-		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_DEVICES}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_DEVICES}"
 	)
 
 	grafanadashboard_devices=$(
-		create_grafanadashboard "${grafanadashboard_devices_json}"
+		grafanadashboard_create "${grafanadashboard_devices_json}"
 	)
 
 	[ $LOG_DEBUG ] && \
@@ -999,17 +997,17 @@ fi
 
 # Timer
 grafanadashboard_timer_exists=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_TIMER}"
+	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"
 )
 
 if [ "${grafanadashboard_timer_exists}" == "" ]
 then
 	grafanadashboard_timer_json=$(
-		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_TIMER}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_TIMER}"
 	)
 
 	grafanadashboard_timer=$(	
-		create_grafanadashboard "${grafanadashboard_timer_json}"
+		grafanadashboard_create "${grafanadashboard_timer_json}"
 	)
 
 	[ $LOG_DEBUG ] && \
@@ -1019,17 +1017,17 @@ fi
 
 # Standby
 grafanadashboard_standby_exists=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_STANDBY}"
+	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}"
 )
 
 if [ "${grafanadashboard_standby_exists}" == "" ]
 then
 	grafanadashboard_standby_json=$(
-		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_STANDBY}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_STANDBY}"
 	)
 
 	grafanadashboard_standby=$(	
-		create_grafanadashboard "${grafanadashboard_standby_json}"
+		grafanadashboard_create "${grafanadashboard_standby_json}"
 	)
 
 	[ $LOG_DEBUG ] && \
@@ -1039,17 +1037,17 @@ fi
 
 # Measurements
 grafanadashboard_measurements_exists=$(
-	check_grafanadashboard "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
+	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
 )
 
 if [ "${grafanadashboard_measurements_exists}" == "" ]
 then
 	grafanadashboard_measurements_json=$(
-		prepare_grafanadashboard "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
 	)
 
 	grafanadashboard_measurements=$(	
-		create_grafanadashboard "${grafanadashboard_measurements_json}"
+		grafanadashboard_create "${grafanadashboard_measurements_json}"
 	)
 
 	[ $LOG_DEBUG ] && \
