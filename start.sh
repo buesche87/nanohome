@@ -784,7 +784,7 @@ jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadataso
 grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
-# TODO: Test
+# i.O.
 modify_grafanacontent() {
 	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/mqttconfig.js"
 	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/mqttconfig.js"
@@ -798,7 +798,7 @@ modify_grafanacontent() {
 	fi	
 }
 
-# TODO: Test
+# i.O.
 move_grafanacontent() {
 
 	mv "${grafanacontent_source}"/* "${grafanacontent_destination}"
