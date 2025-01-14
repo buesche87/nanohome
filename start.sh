@@ -80,10 +80,10 @@ result_handler() {
 
 # InfluxDB: Config
 ############################################################
-# Check if influx configuration exists, create it if not
+# if no influx cli configuration exists create one
 
 # i.O.
-influxconfig_exists() {
+influxconfig_search() {
 
 	local answer=$(
 		influx config list --json
@@ -155,7 +155,7 @@ influxconfig_validate() {
 }
 
 influxconfig=$(
-	influxconfig_exists || influxconfig_create
+	influxconfig_search || influxconfig_create
 )
 
 influxconfig_validate
@@ -164,10 +164,10 @@ influxconfig_validate
 
 # InfluxDB: Buckets
 ############################################################
-# Check if buckets exists, create it if not
+# if bucket does not exist create it
 
 # i.O.
-influxbucket_exists() {
+influxbucket_search() {
 	local bucket=$1
 
 	local answer=$(
@@ -217,7 +217,7 @@ influxbucket_create() {
 
 # Devices
 influxbucket_devices=$(
-	influxbucket_exists "${INFLUXDB_BUCKET_DEVICES}" || \
+	influxbucket_search "${INFLUXDB_BUCKET_DEVICES}" || \
 	influxbucket_create "${INFLUXDB_BUCKET_DEVICES}"
 )
 
@@ -231,7 +231,7 @@ jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
 # Measurements
 influxbucket_measurements=$(
-	influxbucket_exists "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
+	influxbucket_search "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
 	influxbucket_create "${INFLUXDB_BUCKET_MEASUREMENTS}"
 )
 
@@ -241,12 +241,11 @@ export INFLUXBUCKET_MEASUREMENTS_ID=$(
 
 [ $LOG_DEBUG ] && jq '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
-# InfluxDB: Auth token for Grafana datasource
+# InfluxDB: Auth token (for Grafana datasource)
 ############################################################
-# Search for active token
-# If found, check for correct permissions
-# If multiple found, delte and recreate them
-# If none found, create oone
+# if no active auth token with correct permissions found create it
+# if multiple auth tokens with description "${INFLUXDB_SATOKEN_DESCRIPTION}" found
+# delete them and recreate one
 
 # i.O.
 influxauthtoken_search() {
@@ -268,7 +267,7 @@ influxauthtoken_search() {
 }
 
 # i.O.
-influxauthtoken_check() {
+influxauthtoken_test() {
 	local influxauthtoken_current=$1
 
 	local result=$(
@@ -342,7 +341,7 @@ influxauthtoken_objects=$(
 # One token found
 if [ "$influxauthtoken_objects" -eq 1 ]
 then
-	if ( influxauthtoken_check "${influxauthtoken_current}" )
+	if ( influxauthtoken_test "${influxauthtoken_current}" )
 	then
 		export INFLUXDB_AUTHTOKEN=$(
 			jq -r '.[].token' <<< "${influxauthtoken_current}"
@@ -409,12 +408,9 @@ then
 	>> /proc/1/fd/1
 fi
 
-# Grafana: Service account 
+# Grafana: Basic Auth connection
 ############################################################
-# If no access token specified in env file
-# Check if service account and token exist
-# Create a service account if needed
-# Recreate auth token
+# test connection to "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
 
 grafanaapiheaders=(
 	-s
@@ -428,7 +424,7 @@ grafanaserviceaccount_json='{
 	"isDisabled": false
 }'
 
-# TODO: Wenn Result leer ist / wenn Result "null" enthält
+# TODO
 grafanaapibasicauth_test() {
 
 	local answer=$(
@@ -448,9 +444,18 @@ grafanaapibasicauth_test() {
 	else
 		echo -e "${LOG_ERRO} Grafana: Basic auth failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
-		# exit 1
+		exit 1
 	fi
 }
+
+grafanaapibasicauth_test
+
+# Grafana: Service account 
+############################################################
+# if no access token specified in env file
+# - check if service account and token exist
+# - create a service account if needed
+# - recreate auth token
 
 # i.O.
 grafanaserviceaccount_find() {
@@ -570,8 +575,6 @@ grafanaserviceaccounttoken_create() {
 	fi
 }
 
-grafanaapibasicauth_test
-
 if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
 	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
@@ -630,9 +633,10 @@ else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
 
-# Grafana: Datasources
+# Grafana: API connection
 ############################################################
-# If datasource does not exist, create it
+# test connection to "http://${GRAFANA_SERVICE}/api/org"
+# with "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 
 grafanaapiheaders_token=(
 	-s
@@ -642,7 +646,7 @@ grafanaapiheaders_token=(
 )
 
 # i.O.
-grafanaapitokenauth_test() {
+grafanaapiauthtoken_test() {
 
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
@@ -655,36 +659,23 @@ grafanaapitokenauth_test() {
 
 	if ( $result )
 	then
-		echo -e "${LOG_SUCC} Grafana: Token connection successful" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Auth token valid" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Token connection failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Connection with auth token failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
 }
 
-# i.O.
-grafanadatasourcejson_create() {
+grafanaapiauthtoken_test
 
-	local bucket=$1
-	local result='{
-		"name":"'"${bucket}"'",
-		"type":"influxdb",
-		"typeName":"InfluxDB",
-		"access":"proxy",
-		"url":"http://'"${INFLUXDB_SERVICE}"'",
-		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
-		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_AUTHTOKEN}"'"},
-		"isDefault":true,
-		"readOnly":false
-	}'
-
-	jq <<< "${result}"
-}
+# Grafana: Datasources
+############################################################
+# if datasource does not exist create it
 
 # i.O.
-grafanadatasourcejson_search() {
+grafanadatasource_search() {
 
 	local dsname=$1
 	local answer=$(
@@ -707,7 +698,26 @@ grafanadatasourcejson_search() {
 }
 
 # i.O.
-grafanadatasourcejson_create() {
+grafanadatasource_prepare() {
+
+	local bucket=$1
+	local result='{
+		"name":"'"${bucket}"'",
+		"type":"influxdb",
+		"typeName":"InfluxDB",
+		"access":"proxy",
+		"url":"http://'"${INFLUXDB_SERVICE}"'",
+		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
+		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_AUTHTOKEN}"'"},
+		"isDefault":true,
+		"readOnly":false
+	}'
+
+	jq <<< "${result}"
+}
+
+# i.O.
+grafanadatasource_create() {
 
 	local dsjson=$1
 	local dsname=$(
@@ -735,16 +745,14 @@ grafanadatasourcejson_create() {
 	fi
 }
 
-grafanaapitokenauth_test
-
 # Devices
 grafanadatasource_devices_json=$(
-	grafanadatasourcejson_create "${GRAFANA_DATASOURCE_DEVICES}"
+	grafanadatasource_prepare "${GRAFANA_DATASOURCE_DEVICES}"
 )
 
 grafanadatasource_devices=$(
-	grafanadatasourcejson_search "${GRAFANA_DATASOURCE_DEVICES}" || \
-	grafanadatasourcejson_create "${grafanadatasource_devices_json}"
+	grafanadatasource_search "${GRAFANA_DATASOURCE_DEVICES}" || \
+	grafanadatasource_create "${grafanadatasource_devices_json}"
 )
 
 [ $LOG_DEBUG ] && \
@@ -753,12 +761,12 @@ jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadataso
 
 # Measurements
 grafanadatasource_measurements_json=$(
-	grafanadatasourcejson_create "${GRAFANA_DATASOURCE_MEASUREMENTS}"
+	grafanadatasource_create "${GRAFANA_DATASOURCE_MEASUREMENTS}"
 )
 
 grafanadatasource_measurements=$(
-	grafanadatasourcejson_search "${GRAFANA_DATASOURCE_MEASUREMENTS}" || \
-	grafanadatasourcejson_create "${grafanadatasource_measurements_json}"
+	grafanadatasource_search "${GRAFANA_DATASOURCE_MEASUREMENTS}" || \
+	grafanadatasource_create "${grafanadatasource_measurements_json}"
 )
 
 [ $LOG_DEBUG ] && \
@@ -767,9 +775,17 @@ jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadataso
 
 # Grafana: Content
 ############################################################
-# Check if content on bind mounted volume exists, if not
-# - Modify mqtt credentials for mqtt js client
-# - Copy grafana public content to bind mounted volume
+# if source folder grafana-content exists
+# modify mqtt credentials ins mqttconfig.js
+# move content to "${NANOHOME_ROOTPATH}/data/grafana"
+#
+# ! grafana docker:
+#    - "/usr/share/grafana/public/nanohome"
+#       must be mounted to "${NANOHOME_ROOTPATH}/data/grafana"
+#    - "disable_sanitize_html = true" must be set in grafana.ini
+#    - plugins needed
+#      - grafana-clock-panel
+#      - volkovlabs-variable-panel
 
 grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
@@ -815,7 +831,7 @@ fi
 
 # Grafana: Dashboard folder
 ############################################################
-# Create the dashboard folder if it does not exist
+# if dashboard folder "nanohome" does not exist create it
 
 # i.O.
 grafanadashfolder_search() {
@@ -872,9 +888,8 @@ jq '. | {uid, title, url}' <<< "${grafanadashfolder}" \
 
 # Grafana: Dashboards
 ############################################################
-# Check if dashbaord exists, if not
-# - Load dshboards and prepare json for upload
-# - Upload dashboards
+# if dashbaord does not exist
+# load dshboard-json, prepare and upload it
 
 # i.O.
 grafanadashboard_find() {
@@ -1056,19 +1071,20 @@ then
 	>> /proc/1/fd/1
 fi
 
-
 # Mosquitto: 
 ############################################################
-# TODO: Passwörter
-
-
+# if connection to mosquitto fails exit
+# ! mosquitto docker:
+#   - settings in mosquitto.conf must be adjusted
+#   - passwd file "/etc/mosquitto/passwd" must exist and be modified with
+#     - mosquitto_passwd -U /etc/mosquitto/passwd
+#     - mosquitto_passwd -b /etc/mosquitto/passwd "${MQTT_USER}" "${MQTT_PASSWORD}"
 
 
 
 # Nanohome: Config
 ############################################################
-# 
-
+# configure nanohome environment
 # TODO: Crontab-File mit Header ausrüsten
 
 
