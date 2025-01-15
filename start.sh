@@ -369,7 +369,7 @@ if [ "$influxauthtoken_objects" -eq 1 ]
 then
 	if ( influxauthtoken_test "${influxauthtoken_current}" )
 	then
-		export =$(
+		export INLUX_TOKEN =$(
 			jq -r '.[].token' <<< "${influxauthtoken_current}"
 		)
 
@@ -421,7 +421,7 @@ then
 		influxauthtoken_create "${INFLUX_BUCKET_DEVICES_ID}" "${INFLUX_BUCKET_DEVICES_ID}"
 	)
 
-	export =$(
+	export INFLUX_TOKEN=$(
 		jq -r '.token' <<< "${influxauthtoken_new}"
 	)
 
