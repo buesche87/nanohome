@@ -732,7 +732,7 @@ grafanadatasource_search() {
 
 	local output=$(
 		jq -e --arg name "${dsname}" \
-		'. | .name == $name | {uid, name, type, url}' \
+		'. | select (.name == $name) | {uid, name, type, url}' \
 		<<< "${answer}"
 	)
 
