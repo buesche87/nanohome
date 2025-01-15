@@ -524,7 +524,7 @@ grafanaserviceaccount_find() {
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
-		jq '.serviceAccounts[]' <<< "${answer}"
+		jq <<< "${output}"
 	else
 		echo -e "${LOG_WARN} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -580,16 +580,17 @@ grafanaserviceaccounttoken_find() {
 		<<< "${answer}"
 	)
 
-	local output=$(
-		jq -e --arg title "${foldername}" \
-		'.[] | {id, name, created}' \
-		<<< "${answer}"
-	)
+	# Es muss ein array zurückgegeben werden
+	#local output=$(
+	#	jq -e --arg title "${foldername}" \
+	#	'.[] | {id, name, created}' \
+	#	<<< "${answer}"
+	#)
 
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
-		jq <<< "${output}"
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_WARN} Grafana: Service account token not found" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
