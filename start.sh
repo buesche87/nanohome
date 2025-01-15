@@ -228,6 +228,7 @@ influxbucket_create() {
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_ERRO} InfluxDB: Bucket \"${bucket}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
