@@ -699,7 +699,7 @@ grafanaapiauthtoken_test() {
 	)
 
 	local result=$(
-		jq -e 'has("name")' <<< "${answer}"
+		jq -e '. | has("name")' <<< "${answer}"
 	)	
 
 	if [ "${result}" == "true" ]
@@ -761,7 +761,7 @@ grafanadatasource_prepare() {
 		"type":"influxdb",
 		"typeName":"InfluxDB",
 		"access":"proxy",
-		"url":"http://'"${INFLUX_SERVICE}"'",
+		"url":"'"${INFLUX_HOST}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
 		"secureJsonData":{"httpHeaderValue1":"Token '"${}"'"},
 		"isDefault":true,
