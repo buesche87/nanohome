@@ -462,7 +462,6 @@ grafanaapibasicauth_test() {
 		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Basic auth failed" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
 }
