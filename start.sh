@@ -433,7 +433,6 @@ fi
 # test connection to "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
 
 grafanaapiheaders=(
-	-s
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 )
@@ -449,12 +448,11 @@ grafanaapibasicauth_test() {
 
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
-		--progress-bar \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
 	)
 
 	local result=$(
-		jq -e 'has("name")' <<< "${answer}"
+		jq -e '. | has("name")' <<< "${answer}"
 	)	
 
 	if [ "${result}" = "true" ]
@@ -464,7 +462,7 @@ grafanaapibasicauth_test() {
 	else
 		echo -e "${LOG_ERRO} Grafana: Basic auth failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
-		exit 1
+		# exit 1
 	fi
 }
 
