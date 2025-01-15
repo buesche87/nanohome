@@ -753,7 +753,7 @@ grafanadatasource_search() {
 
 	local output=$(
 		jq -e --arg name "${dsname}" \
-		'. | {uid, name, type, url, jsonData, secureJsonFields}' \
+		'. | {uid, name, type, url}' \
 		<<< "${answer}"
 	)
 
@@ -808,7 +808,7 @@ grafanadatasource_create() {
 
 	local output=$(
 		jq -e --arg name "${dsname}" \
-		'.datasource | {uid, name, type, url, jsonData, secureJsonFields}' \
+		'.datasource | {uid, name, type, url}' \
 		<<< "${answer}"
 	)
 
