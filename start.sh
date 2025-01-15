@@ -82,6 +82,7 @@ influxconfig_search() {
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" found" >> /proc/1/fd/1
 		jq '.token = "<SECURETOKEN>"' <<< ${answer}
+		return 0
 	else
 		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUX_CONFIG}\" not found" >> /proc/1/fd/1
 		return 1
@@ -109,6 +110,7 @@ influxconfig_create() {
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" created" >> /proc/1/fd/1
 		jq '.token = "<SECURETOKEN>"' <<< ${answer}
+		return 0
 	else
 		echo -e "${LOG_ERRO} Influx CLI: Config \"${INFLUX_CONFIG}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -131,6 +133,7 @@ influxconfig_validate() {
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
+		return 0
 	else
 		echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUX_HOST} failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -175,6 +178,7 @@ influxbucket_search() {
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_WARN} InfluxDB: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
 		return 1
@@ -740,6 +744,7 @@ grafanadatasource_search() {
 	then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_WARN} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -795,6 +800,7 @@ grafanadatasource_create() {
 	then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating datasource \"${dsname}\"" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -853,6 +859,7 @@ grafanacontent_modify() {
 	if [ $? -eq 0 ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Content credentials set" >> /proc/1/fd/1
+		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Failed setting content credentials" >> /proc/1/fd/1
 		exit 1
@@ -915,6 +922,7 @@ grafanadashfolder_search() {
 	then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${foldername}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_WARN} Grafana: Folder \"${foldername}\" not found" >> /proc/1/fd/1
 		return 1
@@ -946,6 +954,7 @@ grafanadashfolder_create() {
 	then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${foldername}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating folder \"${foldername}\"" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -995,6 +1004,7 @@ grafanadashboard_find() {
 	then
 		echo -e "${LOG_SUCC} Grafana: Dashboard \"${uid}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_WARN} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
 		return 1
@@ -1051,6 +1061,7 @@ grafanadashboard_create() {
 	then
 		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
 		jq <<< "${result}"
+		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
