@@ -82,7 +82,7 @@ result_handler() {
 ############################################################
 # if no influx cli configuration exists create one
 
-# i.O.
+# TODO: output
 influxconfig_search() {
 
 	local answer=$(
@@ -105,7 +105,7 @@ influxconfig_search() {
 	fi
 }
 
-# i.O.
+# TODO: output
 influxconfig_create() {
 
 	local result=$(
@@ -129,7 +129,7 @@ influxconfig_create() {
 	fi
 }
 
-# i.O.
+# TODO: output
 influxconfig_validate() {
 
 	local answer=$(
@@ -160,13 +160,14 @@ influxconfig_validated=$(
 	influxconfig_validate
 )
 
+# TODO: log
 [ $LOG_DEBUG ] && jq '.token = "<SECURETOKEN>"' <<< "${influxconfig}" >> /proc/1/fd/1
 
 # InfluxDB: Buckets
 ############################################################
 # if bucket does not exist create it
 
-# i.O.
+# TODO: output
 influxbucket_search() {
 	local bucket=$1
 
@@ -192,7 +193,7 @@ influxbucket_search() {
 	fi
 }
 
-# i.O.
+# TODO: output
 influxbucket_create() {
 	local bucket=$1
 
@@ -226,6 +227,7 @@ export INFLUXBUCKET_DEVICES_ID=$(
 	<<< "${influxbucket_devices}"
 )
 
+# TODO: log
 [ $LOG_DEBUG ] && \
 jq '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
@@ -247,7 +249,7 @@ export INFLUXBUCKET_MEASUREMENTS_ID=$(
 # if multiple auth tokens with description "${INFLUXDB_SATOKEN_DESCRIPTION}" found
 # delete them and recreate one
 
-# i.O.
+# TODO: output
 influxauthtoken_search() {
 	local description=$1
 
@@ -265,7 +267,7 @@ influxauthtoken_search() {
 	jq <<< "${result}"
 }
 
-# i.O.
+# TODO: output
 influxauthtoken_test() {
 	local influxauthtoken_current=$1
 
@@ -287,7 +289,7 @@ influxauthtoken_test() {
 	fi
 }
 
-# i.O.
+# TODO: output
 influxauthtoken_delete() {
 	local influxauthtoken_current_id=$1
 
@@ -307,7 +309,7 @@ influxauthtoken_delete() {
 	fi
 }
 
-# i.O.
+# TODO: output
 influxauthtoken_create() {
 
 	local result=$(
@@ -336,6 +338,8 @@ influxauthtoken_current=$(
 influxauthtoken_objects=$(
 	jq length <<< "${influxauthtoken_current}"
 )
+
+# TODO: log
 
 # One token found
 if [ "$influxauthtoken_objects" -eq 1 ]
@@ -456,7 +460,7 @@ grafanaapibasicauth_test
 # - create a service account if needed
 # - recreate auth token
 
-# i.O.
+# TODO: output
 grafanaserviceaccount_find() {
 
 	local answer=$(
@@ -481,7 +485,7 @@ grafanaserviceaccount_find() {
 	fi
 }
 
-# i.O.
+# TODO: output
 grafanaserviceaccount_create() {
 
 	local answer=$(
@@ -507,7 +511,7 @@ grafanaserviceaccount_create() {
 	fi
 }
 
-# i.O.
+# TODO: output
 grafanaserviceaccounttoken_find() {
 
 	local said=$1
@@ -534,7 +538,7 @@ grafanaserviceaccounttoken_find() {
 	fi
 }
 
-# i.O.
+# TODO: output
 grafanaserviceaccounttoken_delete() {
 
 	local grafanaserviceaccount_id=$1
@@ -560,7 +564,7 @@ grafanaserviceaccounttoken_delete() {
 	fi
 }
 
-# i.O.
+# TODO: output
 grafanaserviceaccounttoken_create() {
 
 	local grafanaserviceaccount_id=$1
@@ -656,7 +660,7 @@ grafanaapiheaders_token=(
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
 
-# i.O.
+# TODO: output
 grafanaapiauthtoken_test() {
 
 	local answer=$(
@@ -685,7 +689,7 @@ grafanaapiauthtoken_test
 ############################################################
 # if datasource does not exist create it
 
-# i.O.
+# TODO: output
 grafanadatasource_search() {
 
 	local dsname=$1
@@ -711,7 +715,7 @@ grafanadatasource_search() {
 	fi
 }
 
-# i.O.
+# TODO: output
 grafanadatasource_prepare() {
 
 	local bucket=$1
@@ -730,7 +734,7 @@ grafanadatasource_prepare() {
 	jq <<< "${result}"
 }
 
-# i.O.
+# TODO: output
 grafanadatasource_create() {
 
 	local dsjson=$1
@@ -770,6 +774,7 @@ grafanadatasource_devices=$(
 	grafanadatasource_create "${grafanadatasource_devices_json}"
 )
 
+# TODO: log
 [ $LOG_DEBUG ] && \
 jq '. | {uid, name, type, url, jsonData, secureJsonFields}' <<< "${grafanadatasource_devices}" \
 >> /proc/1/fd/1
@@ -929,11 +934,11 @@ export GRAFANA_FOLDER_UID=$(
 # if dashbaord does not exist
 # load dshboard-json, prepare and upload it
 
-# i.O.
+# TODO: output
 grafanadashboard_find() {
 
 	local uid=$1
-	
+
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}"
@@ -956,7 +961,7 @@ grafanadashboard_find() {
 	fi	
 }
 
-# i.O.
+# TODO: output
 grafanadashboard_prepare() {
 
 	local file=$1
@@ -988,7 +993,7 @@ grafanadashboard_prepare() {
 	fi	
 }
 
-# i.O.
+# TODO: output
 grafanadashboard_create() {
 
 	local jsondata=$1
@@ -1017,6 +1022,7 @@ grafanadashboard_home_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"
 )
 
+# TODO: log
 if [ "${grafanadashboard_home_exists}" == "" ]
 then
 	grafanadashboard_home_json=$(
@@ -1037,6 +1043,7 @@ grafanadashboard_devices_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"
 )
 
+# TODO: log
 if [ "${grafanadashboard_devices_exists}" == "" ]
 then
 	grafanadashboard_devices_json=$(
@@ -1057,6 +1064,7 @@ grafanadashboard_timer_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"
 )
 
+# TODO: log
 if [ "${grafanadashboard_timer_exists}" == "" ]
 then
 	grafanadashboard_timer_json=$(
@@ -1077,6 +1085,7 @@ grafanadashboard_standby_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}"
 )
 
+# TODO: log
 if [ "${grafanadashboard_standby_exists}" == "" ]
 then
 	grafanadashboard_standby_json=$(
@@ -1097,6 +1106,7 @@ grafanadashboard_measurements_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
 )
 
+# TODO: log
 if [ "${grafanadashboard_measurements_exists}" == "" ]
 then
 	grafanadashboard_measurements_json=$(
