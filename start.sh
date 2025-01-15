@@ -721,7 +721,7 @@ grafanadatasource_search() {
 	local dsname=$1
 	local answer=$(
 		curl -s "${grafanaapiheaders_token[@]}" \
-		-X GET "http://${GRAFANA_SERVICE}/api/datasources/name/${dsname}"
+		-X GET "${GRAFANA_HOST}/api/datasources/name/${dsname}"
 	)
 
 	local result=$(
@@ -732,7 +732,7 @@ grafanadatasource_search() {
 
 	local output=$(
 		jq -e --arg name "${dsname}" \
-		'. | {uid, name, type, url}' \
+		'. | .name == $name | {uid, name, type, url}' \
 		<<< "${answer}"
 	)
 
@@ -776,7 +776,7 @@ grafanadatasource_create() {
 
 	local answer=$(
 		curl -s "${grafanaapiheaders_token[@]}" \
-		-X POST -d "${dsjson}" "http://${GRAFANA_SERVICE}/api/datasources"
+		-X POST -d "${dsjson}" "${GRAFANA_HOST}/api/datasources"
 	)
 
 	local result=$(
