@@ -73,17 +73,17 @@ influxconfig_search() {
 	)
 
 	local result=$(
-		jq --arg name "${INFLUX_CONFIG_NAME}" \
+		jq --arg name "${INFLUX_CONFIG}" \
 		'. | has($name)' \
 		<<< "${answer}"
 	)
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG_NAME}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" found" >> /proc/1/fd/1
 		jq '.token = "<SECURETOKEN>"' <<< ${answer}
 	else
-		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUX_CONFIG_NAME}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUX_CONFIG}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -93,7 +93,7 @@ influxconfig_create() {
 
 	local answer=$(
 		influx config create \
-		--config-name "${INFLUX_CONFIG_NAME}" \
+		--config-name "${INFLUX_CONFIG}" \
 		--host-url "${INFLUX_HOST}" \
 		--org "${INFLUX_ORG}" \
 		--token "${INFLUX_TOKEN}" \
@@ -107,10 +107,10 @@ influxconfig_create() {
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG_NAME}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" created" >> /proc/1/fd/1
 		jq '.token = "<SECURETOKEN>"' <<< ${answer}
 	else
-		echo -e "${LOG_ERRO} Influx CLI: Config \"${INFLUX_CONFIG_NAME}\" failed to create" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Influx CLI: Config \"${INFLUX_CONFIG}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
