@@ -369,7 +369,7 @@ if [ "$influxauthtoken_objects" -eq 1 ]
 then
 	if ( influxauthtoken_test "${influxauthtoken_current}" )
 	then
-		export INLUX_TOKEN =$(
+		export INLUX_TOKEN=$(
 			jq -r '.[].token' <<< "${influxauthtoken_current}"
 		)
 
