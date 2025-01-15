@@ -63,6 +63,8 @@ LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
 ############################################################
 # if no influx cli configuration exists create one
 
+
+
 # TODO: TEST
 influxconfig_search() {
 
@@ -178,7 +180,7 @@ influxbucket_search() {
 
 	local result=$(
 		jq -e --arg name "${bucket}" \
-		'.[] | select(.name == $name) .name == $name' \
+		'.[] | select(.name == $name) | .name == $name' \
 		<<< "${answer}"
 	)
 
