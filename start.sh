@@ -580,13 +580,6 @@ grafanaserviceaccounttoken_find() {
 		<<< "${answer}"
 	)
 
-	# Es muss ein array zurückgegeben werden
-	#local output=$(
-	#	jq -e --arg title "${foldername}" \
-	#	'.[] | {id, name, created}' \
-	#	<<< "${answer}"
-	#)
-
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
@@ -615,7 +608,7 @@ grafanaserviceaccounttoken_delete() {
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Existing service account token deleted" >> /proc/1/fd/1
-		jq <<< "${result}"
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_WARN} Grafana: Existing service account token failed to delete" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -638,16 +631,10 @@ grafanaserviceaccounttoken_create() {
 		jq -e 'has("name")' <<< "${answer}"
 	)
 
-	local output=$(
-		jq -e --arg title "${foldername}" \
-		'. | {id, name, key} | .key = "<SECUREKEY>"' \
-		<<< "${answer}"
-	)
-
 	if [ "${result}" = "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: New service account token created" >> /proc/1/fd/1
-		jq <<< "${output}"
+		jq <<< "${answer}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Error creating new service account token" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -690,7 +677,7 @@ then
 			grafanaserviceaccounttoken_delete "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
 		
-		[ $LOG_DEBUG ] && jq '.[$i] | {id, name, created}' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
+		[ $LOG_DEBUG ] && jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token_deleted}" >> /proc/1/fd/1
 	done
 
 	# Create a new token | TODO: TEST
@@ -703,7 +690,7 @@ then
 	)
 
 	# TODO: TEST
-	[ $LOG_DEBUG ] && jq <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
+	[ $LOG_DEBUG ] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
