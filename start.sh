@@ -10,7 +10,7 @@
 ############################################################
 
 export NANOHOME_ROOTPATH="/opt/nanohome"
-export GRAFANA_FOLDER_NAME="nanohome"
+export GRAFANA_DASHFOLDER_NAME="nanohome"
 export GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
 export GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
 export GRAFANA_DASHBOARD_UID_DEVICES="fe47pva0wy8lcb"
@@ -24,7 +24,7 @@ export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templat
 export GRAFANA_DATASOURCE_DEVICES="Devices"
 export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
-export INFLUXDB_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
+export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
 export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
 export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input:*,longpush:*"
@@ -970,8 +970,8 @@ grafanadashfolder_create() {
 }
 
 grafanadashfolder=$(
-	grafanadashfolder_search "${GRAFANA_FOLDER_NAME}" || \
-	grafanadashfolder_create "${GRAFANA_FOLDER_NAME}"
+	grafanadashfolder_search "${GRAFANA_DASHFOLDER_NAME}" || \
+	grafanadashfolder_create "${GRAFANA_DASHFOLDER_NAME}"
 )
 
 export GRAFANA_FOLDER_UID=$(
