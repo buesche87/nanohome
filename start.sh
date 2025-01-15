@@ -116,46 +116,27 @@ influxconfig_create() {
 	fi
 }
 
-# # TODO: TEST
-# influxconfig_validate() {
-# 
-# 	local answer=$(
-# 		influx org list \
-# 		--json
-# 	)
-# 
-# 	local result=$(
-# 		jq -e '.[] | has("name")' <<< "${answer}"
-# 	)
-# 
-# 	if [ "${result}" == "true" ]
-# 	then
-# 		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
-# 	else
-# 		echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUX_HOST} failed" >> /proc/1/fd/1
-# 		jq <<< "${answer}" >> /proc/1/fd/1
-# 		exit 1
-# 	fi	
-# }
-
-
 # TODO: TEST
 influxconfig_validate() {
 
 	local answer=$(
-		influx org list --json
+		influx org list \
+		--json
 	)
 
-	if [ $? -eq 0 ]
+	local result=$(
+		jq -e '.[] | has("name")' <<< "${answer}"
+	)
+
+	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
-		jq -e '.[] | has("name")' <<< "${answer}"
 	else
 		echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUX_HOST} failed" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
-	fi
+	fi	
 }
-
 influxconfig=$(
 	influxconfig_search || influxconfig_create
 )
