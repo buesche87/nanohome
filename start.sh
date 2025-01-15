@@ -257,8 +257,7 @@ influxauthtoken_search() {
 	)
 
 	local result=$(
-		jq -e \
-		--arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
+		jq -e --arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
 		'[.[] | select(.description == $description)]' \
 		<<< "${answer}"
 	)
@@ -424,7 +423,7 @@ grafanaserviceaccount_json='{
 	"isDisabled": false
 }'
 
-# TEST
+# i.O.
 grafanaapibasicauth_test() {
 
 	local answer=$(
@@ -669,7 +668,7 @@ grafanaapiauthtoken_test() {
 		jq -e 'has("name")' <<< "${answer}"
 	)	
 
-	[ "${result}" == "true" ]
+	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: API auth token valid" >> /proc/1/fd/1
 		return 0
@@ -849,8 +848,11 @@ fi
 ############################################################
 # if dashboard folder "nanohome" does not exist create it
 
+###### HIER GUT ############
+
 # i.O.
 grafanadashfolder_search() {
+	local foldername=$1
 
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
@@ -858,57 +860,69 @@ grafanadashfolder_search() {
 	)
 
 	local result=$(
-		jq -e --arg title "${GRAFANA_FOLDER_NAME}" \
-		'.[].title == $title' \
+		jq -e --arg title "${foldername}" \
+		'.[] | select(.title == $title) | .title == $title' \
+		<<< "${answer}"
+	)
+
+	local output=$(
+		jq -e --arg title "${foldername}" \
+		'.[] | select(.title == $title) | {uid, title, url}' \
 		<<< "${answer}"
 	)
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" found" >> /proc/1/fd/1
-		jq <<< "${result}"
+		echo -e "${LOG_SUCC} Grafana: Folder \"${foldername}\" found" >> /proc/1/fd/1
+		jq <<< "${output}"
 	else
-		echo -e "${LOG_WARN} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana: Folder \"${foldername}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
 # i.O.
 grafanadashfolder_create() {
+	local foldername=$1
 
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
-		-X POST -d '{"title": "${GRAFANA_FOLDER_NAME}"}' "http://${GRAFANA_SERVICE}/api/folders"
+		-X POST -d '{"title": "'"${foldername}"'"}' "http://${GRAFANA_SERVICE}/api/folders"
 	)
 
 	local result=$(
-		jq -e --arg title "${GRAFANA_FOLDER_NAME}" \
+		jq -e --arg title "${foldername}" \
 		'.title == $title' \
+		<<< "${answer}"
+	)
+
+	local output=$(
+		jq -e --arg title "${foldername}" \
+		'. | {uid, title, url}' \
 		<<< "${answer}"
 	)
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} Grafana: Folder \"${GRAFANA_FOLDER_NAME}\" created" >> /proc/1/fd/1
-		jq <<< "${result}"
+		echo -e "${LOG_SUCC} Grafana: Folder \"${foldername}\" created" >> /proc/1/fd/1
+		jq <<< "${output}"
 	else
-		echo -e "${LOG_ERRO} Grafana: Error creating folder \"${GRAFANA_FOLDER_NAME}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Error creating folder \"${foldername}\"" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
 }
 
 grafanadashfolder=$(
-	grafanadashfolder_search || \
-	grafanadashfolder_create
+	grafanadashfolder_search "${GRAFANA_FOLDER_NAME}" || \
+	grafanadashfolder_create "${GRAFANA_FOLDER_NAME}"
 )
 
 export GRAFANA_FOLDER_UID=$(
 	jq -r '.uid' <<< "${grafanadashfolder}"
 )
 
-[ $LOG_DEBUG ] && \
-jq '. | {uid, title, url}' <<< "${grafanadashfolder}" \
->> /proc/1/fd/1
+[ $LOG_DEBUG ] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
 # Grafana: Dashboards
 ############################################################
@@ -919,6 +933,7 @@ jq '. | {uid, title, url}' <<< "${grafanadashfolder}" \
 grafanadashboard_find() {
 
 	local uid=$1
+	
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}"
