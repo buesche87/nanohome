@@ -479,7 +479,7 @@ grafanaapibasicauth_test
 grafanaserviceaccount_find() {
 
 	local answer=$(
-		curl "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}"
 	)
 
@@ -510,7 +510,7 @@ grafanaserviceaccount_find() {
 grafanaserviceaccount_create() {
 
 	local answer=$(
-		curl "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders[@]}" \
 		-d "${grafanaserviceaccount_json}" \
 		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts"
 	)
@@ -544,7 +544,7 @@ grafanaserviceaccounttoken_find() {
 	local said=$1
 
 	local answer=$(
-		curl "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
 	)
 
@@ -572,7 +572,7 @@ grafanaserviceaccounttoken_delete() {
 	local grafanaserviceaccount_token_id=$2
 
 	local answer=$(
-		curl "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders[@]}" \
 		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens/${grafanaserviceaccount_token_id}"
 	)
 	local result=$(
@@ -596,7 +596,7 @@ grafanaserviceaccounttoken_create() {
 	local grafanaserviceaccount_id=$1
 
 	local answer=$(
-		curl "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders[@]}" \
 		-d "${grafanaserviceaccount_json}" \
 		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens"
 	)
@@ -675,7 +675,6 @@ fi
 # with "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 
 grafanaapiheaders_token=(
-	-s
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
@@ -686,6 +685,7 @@ grafanaapiauthtoken_test() {
 
 	local answer=$(
 		curl "${grafanaapiheaders_token[@]}" \
+		--progress-bar \
 		-X GET "http://${GRAFANA_SERVICE}/api/org"
 	)
 
@@ -715,7 +715,7 @@ grafanadatasource_search() {
 
 	local dsname=$1
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/datasources/name/${dsname}"
 	)
 
@@ -770,7 +770,7 @@ grafanadatasource_create() {
 	)
 
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafanaapiheaders_token[@]}" \
 		-X POST -d "${dsjson}" "http://${GRAFANA_SERVICE}/api/datasources"
 	)
 
@@ -890,7 +890,7 @@ grafanadashfolder_search() {
 	local foldername=$1
 
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder"
 	)
 
@@ -921,7 +921,7 @@ grafanadashfolder_create() {
 	local foldername=$1
 
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafanaapiheaders_token[@]}" \
 		-X POST -d '{"title": "'"${foldername}"'"}' "http://${GRAFANA_SERVICE}/api/folders"
 	)
 
@@ -970,7 +970,7 @@ grafanadashboard_find() {
 	local uid=$1
 
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}"
 	)
 
@@ -1034,7 +1034,7 @@ grafanadashboard_create() {
 	local jsondata=$1
 
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafanaapiheaders_token[@]}" \
 		-X POST -d "${jsondata}" "http://${GRAFANA_SERVICE}/api/dashboards/db"
 	)
 
