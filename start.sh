@@ -448,6 +448,7 @@ grafanaapibasicauth_test() {
 
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
+		--progress-bar \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
 	)
 
