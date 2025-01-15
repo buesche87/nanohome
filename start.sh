@@ -54,29 +54,10 @@ LOG_YLW="\033[1;93m"
 LOG_RED="\033[1;31m"
 LOG_NOC="\033[0m"
 
-LOG_INFO="[${LOG_BLU}Info   ${LOG_NOC}]"
+LOG_INFO="[${LOG_BLU}Verbose${LOG_NOC}]"
 LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
 LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
 LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
-
-# TODO
-result_handler() {
-
-	local type=$1
-	local result=$2
-	local message=$3
-
-	if [ "${result}" != "null" ]
-	then
-		echo -e "${LOG_SUCC} ${message}" >> /proc/1/fd/1
-		jq <<< "${result}"
-	else
-		echo -e "${type} ${message}" >> /proc/1/fd/1
-		jq <<< "${result}" >> /proc/1/fd/1
-		return 1
-	fi
-}
-
 
 # InfluxDB: Config
 ############################################################
@@ -115,7 +96,7 @@ influxconfig_create() {
 	local answer=$(
 		influx config create \
 		--config-name "${INFLUXDB_CONFIG_NAME}" \
-		--host-url "http://${INFLUXDB_SERVICE}" \
+		--host-url "${INFLUXDB_SERVICE}" \
 		--org "${INFLUXDB_ORG}" \
 		--token "${INFLUXDB_ADMINTOKEN}" \
 		--active \
@@ -141,27 +122,48 @@ influxconfig_create() {
 	fi
 }
 
+# # TODO: TEST
+# influxconfig_validate() {
+# 
+# 	local answer=$(
+# 		influx org list \
+# 		--json
+# 	)
+# 
+# 	local result=$(
+# 		jq -e '.[] | has("name")' <<< "${answer}"
+# 	)
+# 
+# 	if [ "${result}" == "true" ]
+# 	then
+# 		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUXDB_SERVICE}" >> /proc/1/fd/1
+# 	else
+# 		echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUXDB_SERVICE} failed" >> /proc/1/fd/1
+# 		jq <<< "${answer}" >> /proc/1/fd/1
+# 		exit 1
+# 	fi	
+# }
+
+
 # TODO: TEST
 influxconfig_validate() {
 
 	local answer=$(
-		influx org list \
-		--json
+		influx org list --json
 	)
 
-	local result=$(
-		jq -e '.[] | has("name")' <<< "${answer}"
-	)
-
-	if [ "${result}" == "true" ]
+	if [ $? -eq 0 ]
 	then
-		echo -e "${LOG_SUCC} Influx CLI: Connection successful" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUXDB_SERVICE}" >> /proc/1/fd/1
+		jq -e '.[] | has("name")' <<< "${answer}"
 	else
-		echo -e "${LOG_ERRO} Influx CLI: Connection failed" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUXDB_SERVICE} failed" >> /proc/1/fd/1
 		exit 1
-	fi	
+	fi
 }
+
+
+
 
 influxconfig=$(
 	influxconfig_search || influxconfig_create
@@ -203,7 +205,6 @@ influxbucket_search() {
 		jq <<< "${output}"
 	else
 		echo -e "${LOG_WARN} InfluxDB: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -777,7 +778,7 @@ grafanadatasource_prepare() {
 		"type":"influxdb",
 		"typeName":"InfluxDB",
 		"access":"proxy",
-		"url":"http://'"${INFLUXDB_SERVICE}"'",
+		"url":"'"${INFLUXDB_SERVICE}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
 		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_AUTHTOKEN}"'"},
 		"isDefault":true,
@@ -1018,7 +1019,6 @@ grafanadashboard_find() {
 		jq <<< "${output}"
 	else
 		echo -e "${LOG_WARN} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi	
 }
