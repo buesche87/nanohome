@@ -76,14 +76,10 @@ influxconfig_search() {
 		<<< "${answer}"
 	)
 
-	local output=$(
-		jq '.token = "<SECURETOKEN>"' <<< ${answer}
-	)
-
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" found" >> /proc/1/fd/1
-		jq <<< "${output}"
+		jq '.token = "<SECURETOKEN>"' <<< ${answer}
 	else
 		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" not found" >> /proc/1/fd/1
 		return 1
@@ -107,14 +103,10 @@ influxconfig_create() {
 		jq -e '. | has("token")' <<< "${answer}"
 	)
 
-	local output=$(
-		jq '.token = "<SECURETOKEN>"' <<< ${answer}
-	)
-
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" created" >> /proc/1/fd/1
-		jq <<< "${output}"
+		jq '.token = "<SECURETOKEN>"' <<< ${answer}
 	else
 		echo -e "${LOG_ERRO} Influx CLI: Config \"${INFLUXDB_CONFIG_NAME}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
