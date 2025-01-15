@@ -583,7 +583,6 @@ grafanaserviceaccounttoken_delete() {
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Existing service account token deleted" >> /proc/1/fd/1
-		jq <<< "${answer}"
 	else
 		echo -e "${LOG_WARN} Grafana: Existing service account token failed to delete" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -645,14 +644,19 @@ then
 	# Delete existing tokens | TODO: TEST
 	for (( i = 0; i < grafanaserviceaccount_token_objects; i++ ))
 	do
+		grafanaserviceaccount_token_current=$(
+			jq .[$i] <<< "${grafanaserviceaccount_token}"
+		)
+
 		grafanaserviceaccount_token_id=$(
 			jq -r .[$i].id <<< "${grafanaserviceaccount_token}"
 		)
+
 		grafanaserviceaccount_token_deleted=$(
 			grafanaserviceaccounttoken_delete "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
 		
-		[ $LOG_DEBUG ] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_deleted}" >> /proc/1/fd/1
+		[ $LOG_DEBUG ] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
 	done
 
 	# Create a new token | TODO: TEST
