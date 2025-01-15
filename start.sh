@@ -582,14 +582,14 @@ grafanaserviceaccounttoken_find() {
 
 	local output=$(
 		jq -e --arg title "${foldername}" \
-		'. | {id, name, created}' \
+		'.[] | {id, name, created}' \
 		<<< "${answer}"
 	)
 
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
-		return 0
+		jq <<< "${output}"
 	else
 		echo -e "${LOG_WARN} Grafana: Service account token not found" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
