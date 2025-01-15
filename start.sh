@@ -430,7 +430,7 @@ fi
 
 # Grafana: Basic Auth connection
 ############################################################
-# test connection to "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
+# test connection to "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
 
 grafanaapiheaders=(
 	-H "Accept: application/json"
@@ -449,7 +449,7 @@ grafanaapibasicauth_test() {
 	local answer=$(
 		curl "${grafanaapiheaders[@]}" \
 		--progress-bar \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/org"
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
 	)
 
 	local result=$(
@@ -480,7 +480,7 @@ grafanaserviceaccount_find() {
 
 	local answer=$(
 		curl -s "${grafanaapiheaders[@]}" \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}"
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}"
 	)
 
 	local result=$(
@@ -512,7 +512,7 @@ grafanaserviceaccount_create() {
 	local answer=$(
 		curl -s "${grafanaapiheaders[@]}" \
 		-d "${grafanaserviceaccount_json}" \
-		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts"
+		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts"
 	)
 
 	local result=$(
@@ -545,7 +545,7 @@ grafanaserviceaccounttoken_find() {
 
 	local answer=$(
 		curl -s "${grafanaapiheaders[@]}" \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
 	)
 
 	local result=$(
@@ -573,8 +573,9 @@ grafanaserviceaccounttoken_delete() {
 
 	local answer=$(
 		curl -s "${grafanaapiheaders[@]}" \
-		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens/${grafanaserviceaccount_token_id}"
+		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens/${grafanaserviceaccount_token_id}"
 	)
+
 	local result=$(
 		jq -e '.message == "Service account token deleted"' <<< "${answer}"
 	)
@@ -598,7 +599,7 @@ grafanaserviceaccounttoken_create() {
 	local answer=$(
 		curl -s "${grafanaapiheaders[@]}" \
 		-d "${grafanaserviceaccount_json}" \
-		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_ADMINPASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens"
+		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens"
 	)
 
 	local result=$(
