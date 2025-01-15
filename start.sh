@@ -761,7 +761,7 @@ grafanadatasource_prepare() {
 		"type":"influxdb",
 		"typeName":"InfluxDB",
 		"access":"proxy",
-		"url":"'"${INFLUX_HOST}"'",
+		"url":"http://'"${INFLUX_SERVICE}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
 		"secureJsonData":{"httpHeaderValue1":"Token '"${}"'"},
 		"isDefault":true,
