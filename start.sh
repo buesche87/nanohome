@@ -651,7 +651,7 @@ then
 			grafanaserviceaccounttoken_delete "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
 		
-		[ $LOG_DEBUG ] && jq '.[] | {id, name, created}' <<< "${grafanaserviceaccount_token_deleted}" >> /proc/1/fd/1
+		[ $LOG_DEBUG ] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_deleted}" >> /proc/1/fd/1
 	done
 
 	# Create a new token | TODO: TEST
