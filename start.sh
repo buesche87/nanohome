@@ -763,11 +763,12 @@ grafanadatasource_prepare() {
 		"access":"proxy",
 		"url":"'"${INFLUX_HOST}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
-		"secureJsonData":{"httpHeaderValue1":"Token '"${}"'"},
+		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUX_TOKEN}"'"},
 		"isDefault":true,
 		"readOnly":false
 	}'
 
+	echo "${result}"
 	jq <<< "${result}"
 }
 
