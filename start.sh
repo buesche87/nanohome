@@ -23,9 +23,9 @@ export GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
 export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 export GRAFANA_DATASOURCE_DEVICES="Devices"
 export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
-export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
+export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUXDB_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
-export INFLUXDB_SATOKEN_DESCRIPTION="nanohome grafana ro-token"
+export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
 export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input:*,longpush:*"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
@@ -94,7 +94,7 @@ influxconfig_create() {
 		--config-name "${INFLUXDB_CONFIG_NAME}" \
 		--host-url "${INFLUXDB_SERVICE}" \
 		--org "${INFLUXDB_ORG}" \
-		--token "${INFLUXDB_ADMINTOKEN}" \
+		--token "${INFLUX_TOKEN}" \
 		--active \
 		--json
 	)
@@ -154,9 +154,6 @@ influxconfig_validate() {
 	fi
 }
 
-
-
-
 influxconfig=$(
 	influxconfig_search || influxconfig_create
 )
@@ -209,7 +206,7 @@ influxbucket_create() {
 		influx bucket create \
 		--name "${bucket}" \
 		--org "${INFLUXDB_ORG}" \
-		--token "${INFLUXDB_ADMINTOKEN}" \
+		--token "${INFLUX_TOKEN}" \
 		--json
 	)
 
@@ -238,11 +235,11 @@ influxbucket_create() {
 
 # Devices
 influxbucket_devices=$(
-	influxbucket_search "${INFLUXDB_BUCKET_DEVICES}" || \
-	influxbucket_create "${INFLUXDB_BUCKET_DEVICES}"
+	influxbucket_search "${INFLUX_BUCKET_DEVICES}" || \
+	influxbucket_create "${INFLUX_BUCKET_DEVICES}"
 )
 
-export INFLUXBUCKET_DEVICES_ID=$(
+export INFLUX_BUCKET_DEVICES_ID=$(
 	jq -r '.id'	<<< "${influxbucket_devices}"
 )
 
@@ -250,11 +247,11 @@ export INFLUXBUCKET_DEVICES_ID=$(
 
 # Measurements
 influxbucket_measurements=$(
-	influxbucket_search "${INFLUXDB_BUCKET_MEASUREMENTS}" || \
-	influxbucket_create "${INFLUXDB_BUCKET_MEASUREMENTS}"
+	influxbucket_search "${INFLUX_BUCKET_MEASUREMENTS}" || \
+	influxbucket_create "${INFLUX_BUCKET_MEASUREMENTS}"
 )
 
-export INFLUXBUCKET_MEASUREMENTS_ID=$(
+export INFLUX_BUCKET_DEVICES_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
@@ -262,9 +259,9 @@ export INFLUXBUCKET_MEASUREMENTS_ID=$(
 
 # InfluxDB: Auth token (for Grafana datasource)
 ############################################################
-# if no active auth token with correct permissions found create it
-# if multiple auth tokens with description "${INFLUXDB_SATOKEN_DESCRIPTION}" found
-# delete them and recreate one
+# if no active auth token with permissions to nanohome buckts found
+# or if multiple auth tokens with description "${INFLUX_TOKEN_DESCRIPTION}" found
+# delete them and recreate one before 
 
 # i.O.
 influxauthtoken_search() {
@@ -276,7 +273,7 @@ influxauthtoken_search() {
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
+		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
 		'[.[] | select(.description == $description)]' \
 		<<< "${answer}"
 	)
@@ -290,18 +287,18 @@ influxauthtoken_test() {
 
 	local result=$(
 		jq -e \
-		--arg val1 "${INFLUXBUCKET_DEVICES_ID}" \
-		--arg val2 "${INFLUXBUCKET_MEASUREMENTS_ID}" \
+		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
+		--arg val2 "${INFLUX_BUCKET_DEVICES_ID}" \
 		'[.[].permissions[]] | contains([$val1, $val2])' \
 		<<< "${influxauthtoken_current}"
 	)
 
 	if ( $result )
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -318,7 +315,7 @@ influxauthtoken_delete() {
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
+		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
 		'.description == $description' \
 		<<< "${answer}"
 	)
@@ -330,10 +327,10 @@ influxauthtoken_delete() {
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" removed" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" removed" >> /proc/1/fd/1
 		jq <<< "${output}"
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" failed to remove" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" failed to remove" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi
@@ -344,15 +341,15 @@ influxauthtoken_create() {
 
 	local answer=$(
 		influx auth create \
-		--description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
-		--org "${INFLUXDB_ORG}" \
-		--read-bucket "${INFLUXBUCKET_DEVICES_ID}" \
-		--read-bucket "${INFLUXBUCKET_MEASUREMENTS_ID}" \
+		--description "${INFLUX_TOKEN_DESCRIPTION}" \
+		--org "${INFLUX_ORG}" \
+		--read-bucket "${INFLUX_BUCKET_DEVICES_ID}" \
+		--read-bucket "${INFLUX_BUCKET_DEVICES_ID}" \
 		--json
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUXDB_SATOKEN_DESCRIPTION}" \
+		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
 		'.description == $description' \
 		<<< "${answer}"
 	)
@@ -364,10 +361,10 @@ influxauthtoken_create() {
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
 	else
-		echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi	
@@ -386,7 +383,7 @@ if [ "$influxauthtoken_objects" -eq 1 ]
 then
 	if ( influxauthtoken_test "${influxauthtoken_current}" )
 	then
-		export INFLUXDB_AUTHTOKEN=$(
+		export =$(
 			jq -r '.[].token' <<< "${influxauthtoken_current}"
 		)
 
@@ -411,7 +408,7 @@ fi
 # Multiple tokens found
 if [ "$influxauthtoken_objects" -gt 1 ]
 then
-	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUXDB_SATOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
+	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 
 	for (( i = 0; i < influxauthtoken_objects; i++ ))
 	do
@@ -435,10 +432,10 @@ then
 	echo -e "${LOG_WARN} InfluxDB: No suitable auth token found" >> /proc/1/fd/1
 
 	influxauthtoken_new=$(
-		influxauthtoken_create "${INFLUXBUCKET_DEVICES_ID}" "${INFLUXBUCKET_MEASUREMENTS_ID}"
+		influxauthtoken_create "${INFLUX_BUCKET_DEVICES_ID}" "${INFLUX_BUCKET_DEVICES_ID}"
 	)
 
-	export INFLUXDB_AUTHTOKEN=$(
+	export =$(
 		jq -r '.token' <<< "${influxauthtoken_new}"
 	)
 
@@ -772,7 +769,7 @@ grafanadatasource_prepare() {
 		"access":"proxy",
 		"url":"'"${INFLUXDB_SERVICE}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
-		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUXDB_AUTHTOKEN}"'"},
+		"secureJsonData":{"httpHeaderValue1":"Token '"${}"'"},
 		"isDefault":true,
 		"readOnly":false
 	}'
