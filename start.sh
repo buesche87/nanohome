@@ -589,7 +589,7 @@ grafanaserviceaccounttoken_find() {
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
-		jq <<< "${output}"
+		return 0
 	else
 		echo -e "${LOG_WARN} Grafana: Service account token not found" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
