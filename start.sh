@@ -224,6 +224,8 @@ influxbucket_create() {
 		<<< ${answer}
 	)
 
+	echo "Debug: result=${result}, output=${output}, answer=${answer}"
+
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" created" >> /proc/1/fd/1
