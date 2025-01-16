@@ -344,6 +344,7 @@ if [ "$influxauthtoken_objects" -eq 0 ]
 then
 	influxauthtoken=$(influxauthtoken_create)
 else if [ "$influxauthtoken_objects" -gt 1 ]
+then
 	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found. Please delete" >> /proc/1/fd/1
 	exit 1
 fi
