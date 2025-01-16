@@ -4,7 +4,7 @@
 # things
 # here
 
-exec bash
+
 
 # NanoHome Environment         
 ############################################################
@@ -1122,3 +1122,4 @@ crond -f &
 #/bin/bash /opt/nanohome/services/standby_shelly_plus &
 
 
+# exec bash
