@@ -63,9 +63,7 @@ LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
 ############################################################
 # if no influx cli configuration exists create one
 
-
-
-# TODO: TEST
+# i.O.
 influxconfig_search() {
 
 	local answer=$(
@@ -89,7 +87,7 @@ influxconfig_search() {
 	fi
 }
 
-# TODO: TEST
+# i.O.
 influxconfig_create() {
 
 	local answer=$(
@@ -118,7 +116,7 @@ influxconfig_create() {
 	fi
 }
 
-# TODO: TEST
+# i.O.
 influxconfig_validate() {
 
 	local answer=$(
@@ -140,21 +138,23 @@ influxconfig_validate() {
 		exit 1
 	fi	
 }
+
 influxconfig=$(
 	influxconfig_search || influxconfig_create
 )
 
 influxconfig_validate
 
-# TODO: log
+# i.O.
 [ $LOG_DEBUG ] && jq <<< "${influxconfig}" >> /proc/1/fd/1
 
 # InfluxDB: Buckets
 ############################################################
 # if bucket does not exist create it
 
-# TODO: TEST
+# i.O.
 influxbucket_search() {
+
 	local bucket=$1
 
 	local answer=$(
@@ -170,7 +170,7 @@ influxbucket_search() {
 
 	local output=$(
 		jq -e --arg name "${bucket}" \
-		'.[] | select(.name == $name) | {id, name, createdAt}' \
+		'.[] | select(.name == $name)' \
 		<<< ${answer}
 	)
 
@@ -180,13 +180,14 @@ influxbucket_search() {
 		jq <<< "${output}"
 		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} InfluxDB: Bucket \"${bucket}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
-# TODO: TEST
+# i.O.
 influxbucket_create() {
+
 	local bucket=$1
 
 	local answer=$(
@@ -205,11 +206,9 @@ influxbucket_create() {
 
 	local output=$(
 		jq -e --arg name "${bucket}" \
-		'. | select(.name == $name) | {id, name, createdAt}' \
+		'select(.name == $name)' \
 		<<< ${answer}
 	)
-
-	echo "Debug: result=${result}, output=${output}, answer=${answer}"
 
 	if [ "${result}" == "true" ]
 	then
@@ -233,7 +232,7 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 	jq -r '.id'	<<< "${influxbucket_devices}"
 )
 
-[ $LOG_DEBUG ] && jq <<< "${influxbucket_devices}" >> /proc/1/fd/1
+[ $LOG_DEBUG ] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
 # Measurements
 influxbucket_measurements=$(
