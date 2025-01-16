@@ -241,7 +241,7 @@ influxbucket_measurements=$(
 	influxbucket_create "${INFLUX_BUCKET_MEASUREMENTS}"
 )
 
-export INFLUX_BUCKET_DEVICES_ID=$(
+export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
@@ -308,7 +308,7 @@ influxauthtoken_validate() {
 		jq -e \
 		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
 		--arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
-		'[.[].permissions[]] | contains([$val1, $val2])' \
+		'.[].permissions[] | contains([$val1, $val2])' \
 		<<< "${influxauthtoken_current}"
 	)
 
@@ -322,23 +322,22 @@ influxauthtoken_validate() {
 	fi
 }
 
-influxauthtoken=$(
+influxauthtoken_found=$(
 	influxauthtoken_search
 )
 
 influxauthtoken_objects=$(
-	jq length <<< "${influxauthtoken}"
+	jq length <<< "${influxauthtoken_found}"
 )
 
 # One token found - check permissions
-if [ "$influxauthtoken_objects" -eq 1 ] && ( ! influxauthtoken_test "${influxauthtoken}" )
+if [ "$influxauthtoken_objects" -eq 1 ] && ( influxauthtoken_validate "${influxauthtoken_found}" )
 then
+	influxauthtoken=$(
+		jq '.[]' <<< $influxauthtoken_found
+	)
+else
 	echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions. Delete it first" >> /proc/1/fd/1
-
-	[ $LOG_DEBUG ] && \
-	jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' \
-	<<< "${influxauthtoken}" >> /proc/1/fd/1
-
 	exit 1
 fi
 
