@@ -253,9 +253,9 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 # or if multiple auth tokens with description "${INFLUX_TOKEN_DESCRIPTION}" found
 # delete them and recreate one before 
 
-# i.O.
-influxauthtoken_find() {
-	
+# TODO: TEST
+influxauthtoken_search() {
+
 	local answer=$(
 		influx auth list \
 		--json
@@ -263,25 +263,11 @@ influxauthtoken_find() {
 
 	local result=$(
 		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
-		'.[] | select(.description == $description)' \
-		<<< "${answer}"
-	)
-
-	local output=$(
-		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
 		'[.[] | select(.description == $description)]' \
 		<<< "${answer}"
 	)
 
-	if [ "${result}" != "" ]
-	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
-		jq <<< "${output}"
-		return 0
-	else
-		echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" not found" >> /proc/1/fd/1
-		return 1
-	fi
+	jq <<< "${result}"
 }
 
 # TODO: TEST
@@ -298,7 +284,7 @@ influxauthtoken_create() {
 
 	local result=$(
 		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
-		'. | description == $description' \
+		'.description == $description' \
 		<<< "${answer}"
 	)
 
@@ -306,7 +292,6 @@ influxauthtoken_create() {
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${answer}"
-		return 0
 	else
 		echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -314,17 +299,17 @@ influxauthtoken_create() {
 	fi	
 }
 
-# i.O.
+# TODO: TEST
 influxauthtoken_validate() {
 
-	local influxauthtoken=$1
+	local influxauthtoken_current=$1
 
 	local result=$(
 		jq -e \
 		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
 		--arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
 		'[.[].permissions[]] | contains([$val1, $val2])' \
-		<<< "${influxauthtoken}"
+		<<< "${influxauthtoken_current}"
 	)
 
 	if ( $result )
@@ -333,31 +318,39 @@ influxauthtoken_validate() {
 		return 0
 	else
 		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
-		exit 1
+		return 1
 	fi
 }
 
 influxauthtoken=$(
-	influxauthtoken_find
+	influxauthtoken_search
 )
 
 influxauthtoken_objects=$(
 	jq length <<< "${influxauthtoken}"
 )
 
-
-if [ "$influxauthtoken_objects" -eq 0 ]
+# One token found - check permissions
+if [ "$influxauthtoken_objects" -eq 1 ] && ( ! influxauthtoken_test "${influxauthtoken}" )
 then
-	influxauthtoken=$(influxauthtoken_create)
-fi
+	echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions. Delete it first" >> /proc/1/fd/1
 
-if [ "$influxauthtoken_objects" -gt 1 ]
-then
-	echo -e "${LOG_ERRO} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found. Please delete them first" >> /proc/1/fd/1
+	[ $LOG_DEBUG ] && \
+	jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' \
+	<<< "${influxauthtoken}" >> /proc/1/fd/1
+
 	exit 1
 fi
 
-influxauthtoken_validate "${influxauthtoken}"
+# No token found
+[ "$influxauthtoken_objects" -eq 0 ] && influxauthtoken=$(influxauthtoken_create)
+
+# Multiple tokens found
+if [ "$influxauthtoken_objects" -gt 1 ]
+then
+	echo -e "${LOG_ERRO} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found. Delete them first" >> /proc/1/fd/1
+	exit 1
+fi
 
 export INLUX_TOKEN=$(
 	jq -r '.token' <<< "${influxauthtoken}"
