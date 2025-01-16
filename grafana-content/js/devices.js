@@ -39,6 +39,7 @@ function getdetailsInfo(device) {
 		} else {
 			let payload = '{"id":999, "src":"' + deviceTopics.status + '", "method":"Shelly.GetStatus"}';
 			let subscribetopic = statusOutTopicRoot + device + "/status/rpc";
+
 			mqttSubscribe(subscribetopic, normalsubscribe);
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}

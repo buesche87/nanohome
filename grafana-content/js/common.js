@@ -5,7 +5,7 @@ var standbyAttribute = "standbyData";
 
 /*
 ---------------------------------------------------------------
-	Common Helper Functions
+	Helper Functions
 ---------------------------------------------------------------
 */
 

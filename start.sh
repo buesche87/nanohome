@@ -30,34 +30,36 @@ export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input:*,longpush:*"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
 export NANOHOME_SHELL_ALLOWED_COMMANDS="create_dashboardelement,create_timer,delete_device,delete_measurement"
-export NANOHOME_MQTT_TOPIC_STATUS="+/status/+"
-export NANOHOME_MQTT_TOPIC_CONNECTED="+/status/+/connected"
-export NANOHOME_MQTT_TOPIC_ONLINE="+/online"
-export NANOHOME_MQTT_TOPIC_ONLINE_LEGACY="shellies/+/+/+"
-export NANOHOME_MQTT_TOPIC_TIMER="nanohome/+/timer"
-export NANOHOME_MQTT_TOPIC_STANDBY="nanohome/+/standby"
-export NANOHOME_MQTT_TOPIC_DASHBOARD="nanohome/config/dashboard"
-export NANOHOME_MQTT_TOPIC_CMDINPUT="input_command"
-export NANOHOME_MQTT_TOPIC_CMDOUTPUT="output_command"
-export NANOHOME_MQTT_FASTSUBSCRIBE="250"
-export NANOHOME_MQTT_NORMALSUBSCRIBE="500"
-export NANOHOME_MQTT_LONGSUBSCRIBE="1000"
+export MQTT_TOPIC_STATUS="+/status/+"
+export MQTT_TOPIC_CONNECTED="+/status/+/connected"
+export MQTT_TOPIC_ONLINE="+/online"
+export MQTT_TOPIC_ONLINE_LEGACY="shellies/+/+/+"
+export MQTT_TOPIC_TIMER="nanohome/+/timer"
+export MQTT_TOPIC_STANDBY="nanohome/+/standby"
+export MQTT_TOPIC_DASHBOARD="nanohome/config/dashboard"
+export MQTT_TOPIC_CMDINPUT="input_command"
+export MQTT_TOPIC_CMDOUTPUT="output_command"
+export MQTT_FASTSUBSCRIBE="250"
+export MQTT_NORMALSUBSCRIBE="500"
+export MQTT_LONGSUBSCRIBE="1000"
 
 # Script logging      
 ############################################################
 
-LOG_DEBUG=true
+export LOG_START=true
+export LOG_SCRIPT=true
+export LOG_SERVICES=true
 
-LOG_BLU="\033[1;36m"
-LOG_GRN="\033[1;32m"
-LOG_YLW="\033[1;93m"
-LOG_RED="\033[1;31m"
-LOG_NOC="\033[0m"
+export LOG_BLU="\033[1;36m"
+export LOG_GRN="\033[1;32m"
+export LOG_YLW="\033[1;93m"
+export LOG_RED="\033[1;31m"
+export LOG_NOC="\033[0m"
 
-LOG_INFO="[${LOG_BLU}Verbose${LOG_NOC}]"
-LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
-LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
-LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
+export LOG_INFO="[${LOG_BLU}Verbose${LOG_NOC}]"
+export LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
+export LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
+export LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
 
 # InfluxDB: Config
 ############################################################
@@ -76,8 +78,7 @@ influxconfig_search() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" found" >> /proc/1/fd/1
 		jq '.token = "<SECURETOKEN>"' <<< ${answer}
 		return 0
@@ -104,8 +105,7 @@ influxconfig_create() {
 		jq -e '. | has("token")' <<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" created" >> /proc/1/fd/1
 		jq '.token = "<SECURETOKEN>"' <<< ${answer}
 		return 0
@@ -128,8 +128,7 @@ influxconfig_validate() {
 		jq -e '.[] | has("name")' <<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
 		return 0
 	else
@@ -146,7 +145,7 @@ influxconfig=$(
 influxconfig_validate
 
 # i.O.
-[ $LOG_DEBUG ] && jq <<< "${influxconfig}" >> /proc/1/fd/1
+[ $LOG_START ] && jq <<< "${influxconfig}" >> /proc/1/fd/1
 
 # InfluxDB: Buckets
 ############################################################
@@ -174,8 +173,7 @@ influxbucket_search() {
 		<<< ${answer}
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -210,8 +208,7 @@ influxbucket_create() {
 		<<< ${answer}
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} InfluxDB: Bucket \"${bucket}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -232,7 +229,7 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 	jq -r '.id'	<<< "${influxbucket_devices}"
 )
 
-[ $LOG_DEBUG ] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
+[ $LOG_START ] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
 # Measurements
 influxbucket_measurements=$(
@@ -244,7 +241,7 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
-[ $LOG_DEBUG ] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
+[ $LOG_START ] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
 # InfluxDB: Auth token (for Grafana datasource)
 ############################################################
@@ -287,8 +284,7 @@ influxauthtoken_create() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${answer}"
 	else
@@ -356,7 +352,7 @@ export INLUX_TOKEN=$(
 	jq -r '.token' <<< "${influxauthtoken}"
 )
 
-[ $LOG_DEBUG ] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
+[ $LOG_START ] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
 
 # Grafana: Basic Auth connection
 ############################################################
@@ -386,8 +382,7 @@ grafanaapibasicauth_test() {
 		jq -e '. | has("name")' <<< "${answer}"
 	)	
 
-	if [ "${result}" = "true" ]
-	then
+	if [ "${result}" = "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Basic auth successful" >> /proc/1/fd/1
 		return 0
 	else
@@ -425,8 +420,7 @@ grafanaserviceaccount_find() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
 	else
@@ -457,8 +451,7 @@ grafanaserviceaccount_create() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
 	else
@@ -484,8 +477,7 @@ grafanaserviceaccounttoken_find() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
 		jq <<< "${answer}"
 	else
@@ -510,8 +502,7 @@ grafanaserviceaccounttoken_delete() {
 		jq -e '.message == "Service account token deleted"' <<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Existing service account token deleted" >> /proc/1/fd/1
 	else
 		echo -e "${LOG_WARN} Grafana: Existing service account token failed to delete" >> /proc/1/fd/1
@@ -535,8 +526,7 @@ grafanaserviceaccounttoken_create() {
 		jq -e 'has("name")' <<< "${answer}"
 	)
 
-	if [ "${result}" = "true" ]
-	then
+	if [ "${result}" = "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: New service account token created" >> /proc/1/fd/1
 		jq <<< "${answer}"
 	else
@@ -560,7 +550,7 @@ then
 		jq -r .id <<< "${grafanaserviceaccount}"
 	)
 
-	[ $LOG_DEBUG ] && jq <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
+	[ $LOG_START ] && jq <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
 
 	# Token
 	grafanaserviceaccount_token=$(
@@ -586,7 +576,7 @@ then
 			grafanaserviceaccounttoken_delete "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
 		
-		[ $LOG_DEBUG ] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
+		[ $LOG_START ] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
 	done
 
 	# Create a new token | TODO: TEST
@@ -599,7 +589,7 @@ then
 	)
 
 	# TODO: TEST
-	[ $LOG_DEBUG ] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
+	[ $LOG_START ] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
@@ -628,8 +618,7 @@ grafanaapiauthtoken_test() {
 		jq -e '. | has("name")' <<< "${answer}"
 	)	
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Service account token valid" >> /proc/1/fd/1
 		return 0
 	else
@@ -666,8 +655,7 @@ grafanadatasource_search() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" = "true" ]
-	then
+	if [ "${result}" = "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -723,8 +711,7 @@ grafanadatasource_create() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" = "true" ]
-	then
+	if [ "${result}" = "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -746,7 +733,7 @@ grafanadatasource_devices=$(
 )
 
 # TODO: TEST
-[ $LOG_DEBUG ] && jq <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
+[ $LOG_START ] && jq <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
 
 # Measurements
 grafanadatasource_measurements_json=$(
@@ -759,7 +746,7 @@ grafanadatasource_measurements=$(
 )
 
 # TODO: TEST
-[ $LOG_DEBUG ] && jq <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
+[ $LOG_START ] && jq <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
 # Grafana: Content
 ############################################################
@@ -783,8 +770,7 @@ grafanacontent_modify() {
 	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/mqttconfig.js"
 	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/mqttconfig.js"
 
-	if [ $? -eq 0 ]
-	then
+	if [ $? -eq 0 ]; then
 		echo -e "${LOG_SUCC} Grafana: Content credentials set" >> /proc/1/fd/1
 		return 0
 	else
@@ -798,8 +784,7 @@ grafanacontent_move() {
 	rm -rf "${grafanacontent_destination}"/*
 	mv -f "${grafanacontent_source}"/* "${grafanacontent_destination}"
 
-	if [ $? -eq 0 ]
-	then
+	if [ $? -eq 0 ]; then
 		echo -e "${LOG_SUCC} Grafana: Content moved to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 		rm -rf "${grafanacontent_source}"
 	else
@@ -845,8 +830,7 @@ grafanadashfolder_search() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${foldername}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -877,8 +861,7 @@ grafanadashfolder_create() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Folder \"${foldername}\" created" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -898,7 +881,7 @@ export GRAFANA_FOLDER_UID=$(
 	jq -r '.uid' <<< "${grafanadashfolder}"
 )
 
-[ $LOG_DEBUG ] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
+[ $LOG_START ] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
 # Grafana: Dashboards
 ############################################################
@@ -927,8 +910,7 @@ grafanadashboard_find() {
 		<<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Dashboard \"${uid}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
@@ -959,8 +941,7 @@ grafanadashboard_prepare() {
 		<<< "${jsondata}"
 	)
 
-	if [ -n "${output}" ]
-	then
+	if [ -n "${output}" ]; then
 		echo -e "${LOG_SUCC} Grafana: Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
 		jq <<< "${output}"
 	else
@@ -984,8 +965,7 @@ grafanadashboard_create() {
 		jq -e '.status == "success"' <<< "${answer}"
 	)
 
-	if [ "${result}" == "true" ]
-	then
+	if [ "${result}" == "true" ]; then
 		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
 		jq <<< "${result}"
 		return 0
@@ -1012,7 +992,7 @@ then
 		grafanadashboard_create "${grafanadashboard_home_json}"
 	)
 
-	[ $LOG_DEBUG ] && jq '.' <<< "${grafanadashboard_home}" >> /proc/1/fd/1
+	[ $LOG_START ] && jq '.' <<< "${grafanadashboard_home}" >> /proc/1/fd/1
 fi
 
 # Devices
@@ -1031,7 +1011,7 @@ then
 		grafanadashboard_create "${grafanadashboard_devices_json}"
 	)
 
-	[ $LOG_DEBUG ] && jq '.' <<< "${grafanadashboard_devices}" >> /proc/1/fd/1	
+	[ $LOG_START ] && jq '.' <<< "${grafanadashboard_devices}" >> /proc/1/fd/1	
 fi
 
 # Timer
@@ -1050,7 +1030,7 @@ then
 		grafanadashboard_create "${grafanadashboard_timer_json}"
 	)
 
-	[ $LOG_DEBUG ] && jq '.' <<< "${grafanadashboard_timer}" >> /proc/1/fd/1
+	[ $LOG_START ] && jq '.' <<< "${grafanadashboard_timer}" >> /proc/1/fd/1
 fi
 
 # Standby
@@ -1069,7 +1049,7 @@ then
 		grafanadashboard_create "${grafanadashboard_standby_json}"
 	)
 
-	[ $LOG_DEBUG ] && jq '.' <<< "${grafanadashboard_standby}" >> /proc/1/fd/1
+	[ $LOG_START ] && jq '.' <<< "${grafanadashboard_standby}" >> /proc/1/fd/1
 fi
 
 # Measurements
@@ -1088,7 +1068,7 @@ then
 		grafanadashboard_create "${grafanadashboard_measurements_json}"
 	)
 
-	[ $LOG_DEBUG ] && jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
+	[ $LOG_START ] && jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
 fi
 
 # Mosquitto: 
