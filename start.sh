@@ -4,7 +4,7 @@
 # things
 # here
 
-
+exec bash
 
 # NanoHome Environment         
 ############################################################
@@ -357,7 +357,7 @@ export INLUX_TOKEN=$(
 	jq -r '.token' <<< "${influxauthtoken}"
 )
 
-[ $LOG_DEBUG ] && jq '.token = <SECURETOKEN>' <<< "${influxauthtoken}" >> /proc/1/fd/1
+[ $LOG_DEBUG ] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
 
 # Grafana: Basic Auth connection
 ############################################################
@@ -1121,4 +1121,4 @@ crond -f &
 #/bin/bash /opt/nanohome/services/measurements_shelly_plus &
 #/bin/bash /opt/nanohome/services/standby_shelly_plus &
 
-exec bash
+
