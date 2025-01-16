@@ -256,8 +256,6 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 # i.O.
 influxauthtoken_find() {
 	
-	local description=$1
-
 	local answer=$(
 		influx auth list \
 		--json
@@ -265,20 +263,14 @@ influxauthtoken_find() {
 
 	local result=$(
 		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
-		'.[] | select(.description == $description) | description == $description' \
+		'.[] | select(.description == $description)' \
 		<<< "${answer}"
 	)
 
-	local output=$(
-		jq -e --arg name "${INFLUX_TOKEN_DESCRIPTION}" \
-		'.[] | select(.name == $name)' \
-		<<< ${answer}
-	)
-
-	if [ "${result}" == "true" ]
+	if [ "${result}" != "" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
-		jq <<< "${output}"
+		jq <<< "${answer}"
 		return 0
 	else
 		echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" not found" >> /proc/1/fd/1
@@ -340,8 +332,21 @@ influxauthtoken_validate() {
 }
 
 influxauthtoken=$(
-	influxauthtoken_find || influxauthtoken_create
+	influxauthtoken_find
 )
+
+influxauthtoken_objects=$(
+	jq length <<< "${influxauthtoken}"
+)
+
+
+if [ "$influxauthtoken_objects" -eq 0 ]
+then
+	influxauthtoken=$(influxauthtoken_create)
+else if [ "$influxauthtoken_objects" -gt 1 ]
+	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found. Please delete" >> /proc/1/fd/1
+	exit 1
+fi
 
 influxauthtoken_validate "${influxauthtoken}"
 
@@ -349,8 +354,7 @@ export INLUX_TOKEN=$(
 	jq -r '.token' <<< "${influxauthtoken}"
 )
 
-[ $LOG_DEBUG ] && jq '.token = <SECURETOKEN>' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
-
+[ $LOG_DEBUG ] && jq '.token = <SECURETOKEN>' <<< "${influxauthtoken}" >> /proc/1/fd/1
 
 # Grafana: Basic Auth connection
 ############################################################
