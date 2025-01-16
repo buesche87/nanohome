@@ -267,10 +267,16 @@ influxauthtoken_find() {
 		<<< "${answer}"
 	)
 
+	local output=$(
+		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
+		'[.[] | select(.description == $description)]' \
+		<<< "${answer}"
+	)
+
 	if [ "${result}" != "" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
-		jq <<< "${answer}"
+		jq <<< "${output}"
 		return 0
 	else
 		echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" not found" >> /proc/1/fd/1
