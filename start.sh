@@ -199,7 +199,7 @@ influxbucket_create() {
 
 	local result=$(
 		jq -e --arg name "${bucket}" \
-		'. | select(.name == $name) .name == $name' \
+		'. | select(.name == $name) | .name == $name' \
 		<<< "${answer}"
 	)
 
@@ -254,7 +254,8 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 # delete them and recreate one before 
 
 # i.O.
-influxauthtoken_search() {
+influxauthtoken_find() {
+	
 	local description=$1
 
 	local answer=$(
@@ -264,64 +265,23 @@ influxauthtoken_search() {
 
 	local result=$(
 		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
-		'[.[] | select(.description == $description)]' \
-		<<< "${answer}"
-	)
-
-	jq <<< "${result}"
-}
-
-# i.O.
-influxauthtoken_test() {
-	local influxauthtoken_current=$1
-
-	local result=$(
-		jq -e \
-		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
-		--arg val2 "${INFLUX_BUCKET_DEVICES_ID}" \
-		'[.[].permissions[]] | contains([$val1, $val2])' \
-		<<< "${influxauthtoken_current}"
-	)
-
-	if ( $result )
-	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
-		return 1
-	fi
-}
-
-# TODO: TEST
-influxauthtoken_delete() {
-
-	local influxauthtoken_current_id=$1
-
-	local answer=$(
-		influx auth delete \
-		--id "${influxauthtoken_current_id}" \
-		--json
-	)
-
-	local result=$(
-		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
-		'.description == $description' \
+		'.[] | select(.description == $description) | description == $description' \
 		<<< "${answer}"
 	)
 
 	local output=$(
-		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' \
-		<<< "${answer}"
-	)	
+		jq -e --arg name "${INFLUX_TOKEN_DESCRIPTION}" \
+		'.[] | select(.name == $name)' \
+		<<< ${answer}
+	)
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" removed" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
+		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" failed to remove" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -334,25 +294,21 @@ influxauthtoken_create() {
 		--description "${INFLUX_TOKEN_DESCRIPTION}" \
 		--org "${INFLUX_ORG}" \
 		--read-bucket "${INFLUX_BUCKET_DEVICES_ID}" \
-		--read-bucket "${INFLUX_BUCKET_DEVICES_ID}" \
+		--read-bucket "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
 		--json
 	)
 
 	local result=$(
 		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
-		'.description == $description' \
-		<<< "${answer}"
-	)
-
-	local output=$(
-		jq '. | {id, description, token, permissions} | .token = "<SECURETOKEN>"' \
+		'. | description == $description' \
 		<<< "${answer}"
 	)
 
 	if [ "${result}" == "true" ]
 	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
-		jq <<< "${output}"
+		jq <<< "${answer}"
+		return 0
 	else
 		echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
@@ -360,77 +316,41 @@ influxauthtoken_create() {
 	fi	
 }
 
-influxauthtoken_current=$(
-	influxauthtoken_search
-)
+# i.O.
+influxauthtoken_validate() {
 
-influxauthtoken_objects=$(
-	jq length <<< "${influxauthtoken_current}"
-)
+	local influxauthtoken=$1
 
-# One token found
-if [ "$influxauthtoken_objects" -eq 1 ]
-then
-	if ( influxauthtoken_test "${influxauthtoken_current}" )
+	local result=$(
+		jq -e \
+		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
+		--arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
+		'[.[].permissions[]] | contains([$val1, $val2])' \
+		<<< "${influxauthtoken}"
+	)
+
+	if ( $result )
 	then
-		export INLUX_TOKEN=$(
-			jq -r '.[].token' <<< "${influxauthtoken_current}"
-		)
-
-		[ $LOG_DEBUG ] && \
-		jq '.[] | {id, description, token, permissions} | .token = "<SECURETOKEN>"' <<< "${influxauthtoken_current}" \
-		>> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
+		return 0
 	else
-		influxauthtoken_current_id=$(
-			jq -r '.[].id' <<< "${influxauthtoken_current}"
-		)
-
-		influxauthtoken_deleted=$(
-			influxauthtoken_delete "${influxauthtoken_current_id}"
-		)
-
-		influxauthtoken_objects=0
-
-		[ $LOG_DEBUG ] jq <<< "${influxauthtoken_deleted}" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
+		exit 1
 	fi
-fi
+}
 
-# Multiple tokens found
-if [ "$influxauthtoken_objects" -gt 1 ]
-then
-	echo -e "${LOG_WARN} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
+influxauthtoken=$(
+	influxauthtoken_find || influxauthtoken_create
+)
 
-	for (( i = 0; i < influxauthtoken_objects; i++ ))
-	do
-		influxauthtoken_current_id=$(
-			jq -r .[$i].id <<< "${influxauthtoken_current}"
-		)
+influxauthtoken_validate "${influxauthtoken}"
 
-		influxauthtoken_deleted=$(
-			influxauthtoken_delete "${influxauthtoken_current_id}"
-		)
+export INLUX_TOKEN=$(
+	jq -r '.token' <<< "${influxauthtoken}"
+)
 
-		[ $LOG_DEBUG ] && jq <<< "${influxauthtoken_deleted}" >> /proc/1/fd/1
-	done
+[ $LOG_DEBUG ] && jq '.token = <SECURETOKEN>' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
-	influxauthtoken_objects=0
-fi
-
-# No token found
-if [ "$influxauthtoken_objects" -eq 0 ]
-then
-	echo -e "${LOG_WARN} InfluxDB: No suitable auth token found" >> /proc/1/fd/1
-
-	influxauthtoken_new=$(
-		influxauthtoken_create "${INFLUX_BUCKET_DEVICES_ID}" "${INFLUX_BUCKET_DEVICES_ID}"
-	)
-
-	export INFLUX_TOKEN=$(
-		jq -r '.token' <<< "${influxauthtoken_new}"
-	)
-
-	[ $LOG_DEBUG ] && jq <<< "${influxauthtoken_new}" >> /proc/1/fd/1
-fi
 
 # Grafana: Basic Auth connection
 ############################################################
