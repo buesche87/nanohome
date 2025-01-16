@@ -244,7 +244,7 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
-[ $LOG_DEBUG ] && jq <<< "${influxbucket_measurements}" >> /proc/1/fd/1
+[ $LOG_DEBUG ] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
 # InfluxDB: Auth token (for Grafana datasource)
 ############################################################
@@ -329,6 +329,12 @@ influxauthtoken_objects=$(
 	jq length <<< "${influxauthtoken_found}"
 )
 
+# No token found
+if [ "$influxauthtoken_objects" -eq 0 ] 
+then
+	influxauthtoken=$(influxauthtoken_create)
+fi
+
 # One token found - check permissions
 if [ "$influxauthtoken_objects" -eq 1 ]
 then
@@ -338,9 +344,6 @@ then
 		jq '.[]' <<< $influxauthtoken_found
 	)
 fi
-
-# No token found
-[ "$influxauthtoken_objects" -eq 0 ] && influxauthtoken=$(influxauthtoken_create)
 
 # Multiple tokens found
 if [ "$influxauthtoken_objects" -gt 1 ]
@@ -545,7 +548,7 @@ grafanaserviceaccounttoken_create() {
 
 if [ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]
 then
-	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file, creating one" >> /proc/1/fd/1
 
 	# Service account
 	grafanaserviceaccount=$(
@@ -627,10 +630,10 @@ grafanaapiauthtoken_test() {
 
 	if [ "${result}" == "true" ]
 	then
-		echo -e "${LOG_SUCC} Grafana: API auth token valid" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Service account token valid" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Connection with API auth token failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Connection with service account token failed" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi
