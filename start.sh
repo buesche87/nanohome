@@ -302,14 +302,14 @@ influxauthtoken_create() {
 # TODO: TEST
 influxauthtoken_validate() {
 
-	local influxauthtoken_current=$1
+	local influxauthtoken_found=$1
 
 	local result=$(
 		jq -e \
 		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
 		--arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
-		'.[].permissions[] | contains([$val1, $val2])' \
-		<<< "${influxauthtoken_current}"
+		'[.[].permissions[]] | contains([$val1, $val2])' \
+		<<< "${influxauthtoken_found}"
 	)
 
 	if ( $result )
@@ -317,8 +317,8 @@ influxauthtoken_validate() {
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions" >> /proc/1/fd/1
-		return 1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions. Delete it first" >> /proc/1/fd/1
+		exit 1
 	fi
 }
 
@@ -331,14 +331,13 @@ influxauthtoken_objects=$(
 )
 
 # One token found - check permissions
-if [ "$influxauthtoken_objects" -eq 1 ] && ( influxauthtoken_validate "${influxauthtoken_found}" )
+if [ "$influxauthtoken_objects" -eq 1 ]
 then
+	influxauthtoken_validate "${influxauthtoken_found}"
+
 	influxauthtoken=$(
 		jq '.[]' <<< $influxauthtoken_found
 	)
-else
-	echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions. Delete it first" >> /proc/1/fd/1
-	exit 1
 fi
 
 # No token found
