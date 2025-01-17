@@ -8,8 +8,8 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # crontab entry
-PLUSCRON="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t DEVICEID/command/COMPONENT -m MESSAGE"
-LEGACYCRON="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
+CRON_TEMPLATE="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t DEVICEID/command/COMPONENT -m MESSAGE"
+CRON_TEMPLATE_LEGACY="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
 
 # Create temporary crontab file and fill it without nanohome crons
 TEMPCRON=$(mktemp)
@@ -43,11 +43,11 @@ for timer in "${TIMERARRAY[@]}"; do
 
 		# Legacy
 		if [[ "${COMPONENTDEV}" != "null" ]]; then
-			CRONENTRY="${LEGACYCRON}"
+			CRONENTRY="${CRON_TEMPLATE_LEGACY}"
 			CRONENTRY=$(sed "s|COMPONENTDEV|${COMPONENTDEV}|g" <<< "${CRONENTRY}")
 			CRONENTRY=$(sed "s|COMPONENTIDEX|${COMPONENTIDEX}|g" <<< "${CRONENTRY}")
 		else
-			CRONENTRY="${PLUSCRON}"
+			CRONENTRY="${CRON_TEMPLATE}"
 			CRONENTRY=$(sed "s|COMPONENT|${COMPONENT}|g" <<< "${CRONENTRY}")
 		fi
 
