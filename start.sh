@@ -167,7 +167,7 @@ influxconfig=$(
 influxconfig_validate
 
 # i.O.
-[[[ $LOG_START ]]] && jq <<< "${influxconfig}" >> /proc/1/fd/1
+[[ $LOG_START ]] && jq <<< "${influxconfig}" >> /proc/1/fd/1
 
 # InfluxDB: Buckets
 ############################################################
@@ -251,7 +251,7 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 	jq -r '.id'	<<< "${influxbucket_devices}"
 )
 
-[[[ $LOG_START ]]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
+[[ $LOG_START ]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
 # Measurements
 influxbucket_measurements=$(
@@ -263,7 +263,7 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 	jq -r '.id' <<< "${influxbucket_measurements}"
 )
 
-[[[ $LOG_START ]]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
+[[ $LOG_START ]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
 # InfluxDB: Auth token (for Grafana datasource)
 ############################################################
@@ -374,7 +374,7 @@ export INLUX_TOKEN=$(
 	jq -r '.token' <<< "${influxauthtoken}"
 )
 
-[[[ $LOG_START ]]] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
+[[ $LOG_START ]] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
 
 # Grafana: Basic Auth connection
 ############################################################
@@ -572,7 +572,7 @@ then
 		jq -r .id <<< "${grafanaserviceaccount}"
 	)
 
-	[[[ $LOG_START ]]] && jq <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
+	[[ $LOG_START ]] && jq <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
 
 	# Token
 	grafanaserviceaccount_token=$(
@@ -598,7 +598,7 @@ then
 			grafanaserviceaccounttoken_delete "${grafanaserviceaccount_id}" "${grafanaserviceaccount_token_id}"
 		)
 		
-		[[[ $LOG_START ]]] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
+		[[ $LOG_START ]] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
 	done
 
 	# Create a new token | TODO: TEST
@@ -611,7 +611,7 @@ then
 	)
 
 	# TODO: TEST
-	[[[ $LOG_START ]]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
+	[[ $LOG_START ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
