@@ -7,7 +7,7 @@
 # For each connected component parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# TODO: Test
+# debug
 MQTT_SERVER="nanohome.buesche.one"
 
 MQTT_CONNECTION_STRING=(
@@ -16,7 +16,7 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# Convert string-boolean to 1 or 0
+# convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
@@ -27,13 +27,12 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	-t "${MQTT_TOPIC_STATUS}" | \
 	while read -r COMPONENTSTATUS; do
 
-	# Extract information from mosquitto subscription
 	STATUSTOPIC=$( jq -r '.topic' <<< "${COMPONENTSTATUS}" )
 	STATUSMESSAGE=$( jq -r '.payload' <<< "${COMPONENTSTATUS}" )
-
 	DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
 
+	# get connected state and description of component
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -44,7 +43,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			convert_value "${CONNECTED}"
 	)
 
-	# Get description
 	DESCRIPTION=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -53,12 +51,12 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
-	# Only monitor connected components and those with a description
+	# only monitor connected components and those with a description
 	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
 		continue
-	fi		
+	fi
 
-	# Parse message payload
+	# Pprse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
 	ENERGY=$(jq -r '.aenergy.total' <<< "${STATUSMESSAGE}" )
 	VOLTAGE=$( jq -r '.voltage' <<< "${STATUSMESSAGE}" )
@@ -69,7 +67,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
 	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
-	# Add fields with value to payload
+	# TODO: Nur string zum schreiben vorbereiten
+	# write fields with value to influxdb
 	[[ "${POWER}" != "null" ]] && PAYLOAD=$(
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Power=$POWER"
 	)

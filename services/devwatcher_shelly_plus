@@ -15,36 +15,39 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 
-# TODO: Test
+# debug
 MQTT_SERVER="nanohome.buesche.one"
 
+# simplify mqtt connection
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
-# Convert string-boolean to 1 or 0
+# convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
-# Main Service
+# loop every $NANOHOME_DEVWATCHER_INTERVAL second
 while /bin/true; do
 
-	# Subscribe to "+/online"
+	# subscribe to "+/online"
 	AVAILABLE_DEVICES=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -W 2 -F "%j" \
 		-t "${MQTT_TOPIC_ONLINE}"
 	)
 	
+	# create array from retreived messages
 	AVAILABLE_DEVICES_ARRAY=$(
 		jq -s '.' <<< "${AVAILABLE_DEVICES}"
 	)
 
-	# Foreach device found subscribe to "shelly-device/status"
-	# publish "status_update" to "shelly-device/command"
+	# foreach device found subscribe to "shelly-deviceid/status"
+	# publish "status_update" to "shelly-deviceid/command"
+	# parse message and write into influxsb
 	jq -c '.[]' <<< "${AVAILABLE_DEVICES_ARRAY}" | while read -r AVAILABLE_DEVICE; do
 
 		ONLINETOPIC=$( jq -r '.topic' <<< "${AVAILABLE_DEVICE}" )
@@ -52,8 +55,8 @@ while /bin/true; do
 		ONLINEVALUE=$( convert_value "${ONLINEMESSAGE}" )
 		DEVICEID=$( cut -d '/' -f 1 <<< "${ONLINETOPIC}" )
 
-		# Subscribe to status topic then publish "status_update"
-		# Wait for message or goto next iteration after 2 seconds
+		# subscribe, wait for answer stored in temporary file
+		# or goto next iteration after 2 seconds
 		MESSAGE_TEMPFILE=$(mktemp)
 
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
@@ -76,7 +79,7 @@ while /bin/true; do
 		rm "${MESSAGE_TEMPFILE}"
 		[[ -z "${MESSAGE_STATUS}" ]] && continue
 
-		# Loop through every component not filtered in NOT_MONITORED_COMPONENTS
+		# loop through every component not filtered with $NANOHOME_NOT_MONITORED_COMPONENTS
 		jq -r 'to_entries[] | "\(.key), \(.value)"' <<< "${MESSAGE_STATUS}" | \
 		while IFS=, read -r COMPONENT VALUE; do
 
@@ -84,7 +87,8 @@ while /bin/true; do
 				continue
 			fi
 
-			# Get connected status of component, publish connected=false for new components
+			# get connected state and description of component
+			# publish connected=false for new components
 			CONNECTED=$(
 				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 				--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -101,8 +105,7 @@ while /bin/true; do
 				-m "false"
 			fi
 
-			# TODO: Description mit special characters?
-			# Get description, connected status and current output
+			# get description of component
 			DESCRIPTION=$(
 				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 				--retained-only --nodelay --quiet -C 1 -W 1  \
@@ -111,6 +114,7 @@ while /bin/true; do
 			
 			DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
+			# publish output value for nanohome dashboard
 			# TODO: Braucht es den Output fürs Dashbaord? > 
 			# Falls ja, kann das der measurement-teil übernehmen?
 			SWITCHPOWER=$(
@@ -128,13 +132,14 @@ while /bin/true; do
 			-t "${DEVICEID}/status/${COMPONENT}/output" \
 			-m "${OUTPUTVALUE}"
 
+			# write measurements into influxdb
 			[[ "${DESCRIPTION}" == "null" ]] && influx write \
-			-b "$INFLUX_BUCKET_DEVICES" \
-			-p s "$DEVICEID,Component=$COMPONENT Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+			-b "${INFLUX_BUCKET_DEVICES}" \
+			-p s "${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
-			[[ "$DESCRIPTION" != "null" ]] && influx write \
-			-b "$INFLUX_BUCKET_DEVICES" \
-			-p s "$DEVICEID,Component=$COMPONENT,Description=$DESCRIPTION_ESCAPED Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+			[[ "${DESCRIPTION}" != "null" ]] && influx write \
+			-b "${INFLUX_BUCKET_DEVICES}" \
+			-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
 			# LOG
 			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Component: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1

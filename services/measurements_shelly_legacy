@@ -12,23 +12,27 @@
 # Automatically get newly connected devices
 # MQTT-Connection Strings in start.sh exportieren
 
+# debug
+MQTT_SERVER="nanohome.buesche.one"
+
+# simplify mqtt connection
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
-# Read measurements
+# read measurements
 read_measurement() {
 	while read -r line; do
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
 	done < <(mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2) &
 }
 
-# Main Service
+# loop indefinitely
 while /bin/true; do
 
-	# Subscribe to "shellies/+/+/+/connected"
+	# subscribe to "shellies/+/+/+/connected"
 	CONNECTED_DEVICES=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -F "%j" -W 2 \
@@ -39,45 +43,59 @@ while /bin/true; do
 		jq -s '.' <<< "${CONNECTED_DEVICES}"
 	)
 
-	# Loop through all connected devices
+	# loop through all connected devices
 	jq -c '.[]' <<< "${CONNECTED_DEVICES_ARRAY}" | while read -r CONNECTED_DEVICE; do
 
-		# Debug:
+		# debug
 		echo "Connected device:"
 		jq <<< "${CONNECTED_DEVICE}"
 
 		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )
-
 		DEVICEID=$( cut -d '/' -f 2 <<< "${CONNECTEDTOPIC}" )
 		COMPONENT=$( cut -d '/' -f 3 <<< "${CONNECTEDTOPIC}")
 		COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${CONNECTEDTOPIC}" )	
 
-		# Don't monitor components excluded in config
+		# don't monitor components excluded in config
 		if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
 			continue
 		fi
 
-		# Get description
-		MESSAGE_DESCRIPTION=$(
+		# get connected state and description of component
+		CONNECTED=$(
+			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+			--retained-only --nodelay --quiet -C 1 -W 1 \
+			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
+		)
+
+		CONNECTEDVALUE=$(
+			convert_value "${CONNECTED}"
+		)
+
+		DESCRIPTION=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
 		)
 		
-		DESCRIPTION="${MESSAGE_DESCRIPTION// /\\ }"
+		DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
-		# Check for measurement topic
+		# only monitor connected components and those with a description
+		if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
+			continue
+		fi
+
+		# create measurement topics
 		ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/energy"
 		POWERTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/power"
 		DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/temperature"
 		
-		# Read measurements
-		[ -n "${DESCRIPTION}" ] && read_measurement "Energy" "${DESCRIPTION}" "${ENERGYTOPIC}"
-		[ -n "${DESCRIPTION}" ] && read_measurement "Power" "${DESCRIPTION}" "${POWERTOPIC}"
-		[ -n "${DESCRIPTION}" ] && read_measurement "Devicetemp" "${DESCRIPTION}" "${TEMPERATURETOPIC}"
+		# subscribe and write into influxdb
+		read_measurement "Energy" "${DESCRIPTION_ESCAPED}" "${ENERGYTOPIC}"
+		read_measurement "Power" "${DESCRIPTION_ESCAPED}" "${POWERTOPIC}"
+		read_measurement "Devicetemp" "${DESCRIPTION_ESCAPED}" "${TEMPERATURETOPIC}"
 		
 	done
 	
+	# TODO: monitor new devices
 	tail -f /dev/null
-
 done
