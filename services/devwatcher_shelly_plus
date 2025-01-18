@@ -37,13 +37,8 @@ MQTT_SUBSCRIBE_RETAINED=(
 MQTT_SUBSCRIBE_WAIT=(
 	--nodelay
 	--quiet
+	-F "%j"
 	-C 1 -W 2
-)
-
-MQTT_SUBSCRIBE_ONEMSG=(
-	--nodelay
-	--quiet
-	-C 1
 )
 
 # Main Service
@@ -67,8 +62,10 @@ while /bin/true; do
 
 		ONLINETOPIC=$( jq -r '.topic' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEMESSAGE=$( jq -r '.payload' <<< "${AVAILABLE_DEVICE}" )
-		ONLINEVALUE=$(convert_value "${ONLINEMESSAGE}")
-		DEVICEID=${ONLINETOPIC%%/*}
+		ONLINEVALUE=$( convert_value "${ONLINEMESSAGE}" )
+		DEVICEID=${ ONLINETOPIC%%/* }
+
+		# DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 		
 		# Subscribe to status topic then publish "status_update"
 		# Wait for message or goto next iteration after 2 seconds
@@ -95,6 +92,8 @@ while /bin/true; do
 
 		rm "${MESSAGE_TEMPFILE}"
 		[ -z "${MESSAGE_STATUS}" ] && continue
+
+		# Debug
 		echo "${MESSAGE_STATUS}"
 
 		# Loop through every component not filtered in NOT_MONITORED_COMPONENTS
@@ -153,6 +152,7 @@ while /bin/true; do
 			-m "${OUTPUTVALUE}"
 
 			# Write payload into influxdb
+			# TODO: Test "" or null as value?
 			PAYLOAD='{
 				"measurement": "'"${DEVICEID}"'",
 				"tags": {
@@ -163,7 +163,7 @@ while /bin/true; do
 					"online": "'"${ONLINEVALUE}"'",
 					"connected": "'"${CONNECTEDVALUE}"'",
 					"output": "'"${OUTPUTVALUE}"'"
-				},
+				}
 			}'
 
 			influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
