@@ -64,6 +64,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			-t "${DEVICEID}/status/${COMPONENT}/description"
 		)
 
+		DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+
 		# Only monitor connected devices and those with a description
 		if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
 			continue
@@ -82,7 +84,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 
 		# Prepare payload
 		PAYLOAD='{
-			"measurement": "'"${DESCRIPTION}"'",
+			"measurement": "'"${DESCRIPTION_ESCAPED}"'",
 			"tags": {
 				"Device": "'"${DEVICEID}"'",
 				"Component": "'"${COMPONENT}"'"
@@ -127,7 +129,18 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		echo "Measurements - Payload: ${DEVICEID}/${COMPONENT}"
 		jq <<< "${PAYLOAD}"
 
+		PAYLOAD_LINE=$(
+			jq -r '[
+			.measurement as $measurement |
+			.tags as $tags |
+			.fields as $fields |
+			($tags | to_entries | map("\(.key)=\(.value|tostring)") | join(",")) as $tags_str |
+			($fields | to_entries | map("\(.key)=\(.value|tostring)") | join(",")) as $fields_str |
+			"\($measurement),\($tags_str) \($fields_str)"
+			] | .[]' <<< "${PAYLOAD}"
+		)
+
 		# Insert values into influxdb
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -f - <<< "${PAYLOAD}"
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" - <<< "${PAYLOAD_LINE}"
 	done
 done
