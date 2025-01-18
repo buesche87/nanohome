@@ -7,6 +7,10 @@
 # For each connected component parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Test
+# MQTT_SERVER="nanohome.buesche.one"
+
+
 # Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
@@ -42,6 +46,7 @@ mosquitto_sub \
 	# Extract information from mosquitto subscription
 	STATUSTOPIC=$( jq -r '.topic' <<< "${COMPONENTSTATUS}" )
 	STATUSMESSAGE=$( jq -r '.payload' <<< "${COMPONENTSTATUS}" )
+
 	DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
 
@@ -49,9 +54,13 @@ mosquitto_sub \
 	while IFS=, read -r COMPONENT VALUE; do
 
 		# Don't monitor components excluded in config
-		if [[ " ${NOT_MONITORED_COMPONENTS//,/ } " == *" $COMPONENT "* ]]; then
+		if [[ " ${NOT_MONITORED_COMPONENTS//,/ } " == *" ${COMPONENT} "* ]]; then
 			continue
 		fi
+
+		# Debug
+		echo "Measurements - Monitored: ${DEVICEID}/${COMPONENT}"
+		jq <<< ${STATUSMESSAGE}
 
 		MESSAGE_CONNECTED=$(
 			mosquitto_sub \
@@ -59,7 +68,7 @@ mosquitto_sub \
 			"${MQTT_SUBSCRIBE_RETAINED[@]}" \
 			-t "${DEVICEID}/status/${COMPONENT}/connected"
 		)
-		
+
 		CONNECTEDVALUE=$(
 			convert_value "${MESSAGE_CONNECTED}"
 		)
@@ -84,13 +93,13 @@ mosquitto_sub \
 		ENERGY=$(jq -r '.aenergy.total' <<< "${STATUSMESSAGE}" )
 		VOLTAGE=$( jq -r '.voltage' <<< "${STATUSMESSAGE}" )
 		CURRENT=$( jq -r '.current' <<< "${STATUSMESSAGE}" )
-		COMPONENT_TEMP=$( jq -r '.temperature.tC' <<< "${STATUSMESSAGE}" )
+		DEVICETEMP=$( jq -r '.temperature.tC' <<< "${STATUSMESSAGE}" )
 		CURRENTPOSITION=$( jq -r '.current_pos' <<< "${STATUSMESSAGE}" )
 		ROOM_TEMP=$( jq -r '.tC' <<< "${STATUSMESSAGE}" )
 		ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
 		BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
-		# Write payload into influxdb
+		# Prepare payload
 		PAYLOAD='{
 			"measurement": "'"${DESCRIPTION}"'",
 			"tags": {
@@ -100,7 +109,7 @@ mosquitto_sub \
 			"fields": {}
 		}'
 
-
+		# Add fields with value to payload
 		[[ "${POWER}" != "null" ]] && PAYLOAD=$(
 			jq --arg value "${POWER}" '.fields.Power = $value' <<< "${PAYLOAD}"
 		)
@@ -117,8 +126,8 @@ mosquitto_sub \
 			jq --arg value "${CURRENT}" '.fields.Current = $value' <<< "${PAYLOAD}"
 		)
 
-		[[ "${COMPONENT_TEMP}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${COMPONENT_TEMP}" '.fields.ComponentTemp = $value' <<< "${PAYLOAD}"
+		[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD=$(
+			jq --arg value "${DEVICETEMP}" '.fields.Devicetemp = $value' <<< "${PAYLOAD}"
 		)
 
 		[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD=$(
@@ -132,6 +141,10 @@ mosquitto_sub \
 		[[ "${BATTERY}" != "null" ]] && PAYLOAD=$(
 			jq --arg value "${BATTERY}" '.fields.Battery = $value' <<< "${PAYLOAD}"
 		)
+
+		# Debug
+		echo "Measurements - Payload: ${DEVICEID}/${COMPONENT}"
+		jq <<< "${PAYLOAD}"
 
 		# Insert values into influxdb
 		influx write -b "${INFLUXDB_BUCKET_MEASUREMENTS}" -f - <<< "${PAYLOAD}"

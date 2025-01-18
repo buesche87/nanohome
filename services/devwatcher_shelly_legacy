@@ -55,16 +55,21 @@ mosquitto_sub \
 	# Extract information from mosquitto subscription
 	STATUSTOPIC=$( jq -r '.topic' <<< "${DEVICESTATUS}" )
 	STATUSMESSAGE=$( jq -r '.payload' <<< "${DEVICESTATUS}" )
-	DEVICEID=$( echo "${STATUSTOPIC}" | cut -d '/' -f 2 )
-	COMPONENT=$( echo "${STATUSTOPIC}" | cut -d '/' -f 3 )
-	COMPONENTINDEX=$( echo "${STATUSTOPIC}" | cut -d '/' -f 4 )
+
+	DEVICEID=$( cut -d '/' -f 2 <<< "${STATUSTOPIC}" )
+	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
+	COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${STATUSTOPIC}" )
+
 	COMPONENTMERGED="${COMPONENT}:${COMPONENTINDEX}"
 	ONLINEVALUE=1 # Assume getting a message equals device is online
 
 	# Filter not monitored components
-	if [[ " ${NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" $COMPONENT "* ]]; then
+	if [[ " ${NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
 		continue
 	fi
+
+	# Debug
+	echo "Devwatcher Legacy - Monitored: ${DEVICEID}/${COMPONENT}"
 
 	MESSAGE_CONNECTED=$(
 		mosquitto_sub \
@@ -73,7 +78,7 @@ mosquitto_sub \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 	)
 
-	CONNECTEDVALUE=$(convert_value "${CONNECTEDMESSAGE}")
+	CONNECTEDVALUE=$( convert_value "${CONNECTEDMESSAGE}" )
 
 	if [ $CONNECTEDVALUE -eq 0 ]; then
 		mosquitto_pub -r \
@@ -81,7 +86,6 @@ mosquitto_sub \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected" \
 		-m "false"
 	fi
-
 
 	# Get description, connected status and current output
 	MESSAGE_DESCRIPTION=$(
@@ -105,6 +109,10 @@ mosquitto_sub \
 			"connected": "'"${CONNECTEDVALUE}"'"
 		},
 	}'
+
+	# Debug
+	echo "Devwatcher Legacy - Payload: ${DEVICEID}/${COMPONENT}"
+	jq <<< "${PAYLOAD}"
 
 	influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
 

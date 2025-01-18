@@ -15,6 +15,9 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 
+# TODO: Test
+# MQTT_SERVER="nanohome.buesche.one"
+
 # Convert string-boolean to 1 or 0
 convert_value() {
 	[ "$1" == "true" ] || [ "$1" == "on" ] && echo 1 || echo 0
@@ -93,16 +96,17 @@ while /bin/true; do
 		rm "${MESSAGE_TEMPFILE}"
 		[ -z "${MESSAGE_STATUS}" ] && continue
 
-		# Debug
-		echo "${MESSAGE_STATUS}"
-
 		# Loop through every component not filtered in NOT_MONITORED_COMPONENTS
 		jq -r 'to_entries[] | "\(.key), \(.value)"' <<< "${MESSAGE_STATUS}" | \
 		while IFS=, read -r COMPONENT VALUE; do
 
-			if [[ " ${NOT_MONITORED_COMPONENTS//,/ } " == *" $COMPONENT "* ]]; then
+			if [[ " ${NOT_MONITORED_COMPONENTS//,/ } " == *" ${COMPONENT} "* ]]; then
 				continue
 			fi
+
+			# Debug
+			echo "Devwatcher - Monitored: ${DEVICEID}/${COMPONENT}"
+			jq <<< ${MESSAGE_STATUS}
 
 			# Get connected status of component, publish connected=false for new components
 			MESSAGE_CONNECTED=$(
@@ -165,6 +169,10 @@ while /bin/true; do
 					"output": "'"${OUTPUTVALUE}"'"
 				}
 			}'
+
+			# Debug
+			echo "Devwatcher - Payload: ${DEVICEID}/${COMPONENT}"
+			jq <<< "${PAYLOAD}"
 
 			influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
 		done

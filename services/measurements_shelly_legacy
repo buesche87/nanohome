@@ -7,44 +7,90 @@
 # For each connected COMPONENT parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Test
+# MQTT_SERVER="nanohome.buesche.one"
+# Automatically get newly connected devices
+# MQTT-Connection Strings in start.sh exportieren
+
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+MQTT_SUBSCRIBE_RETAINED=(
+	--retained-only
+	--nodelay
+	--quiet
+	-F "%j"
+	-W 1
+)
+
+MQTT_SUBSCRIBE_JSON=(
+	--nodelay
+	--quiet
+	-F "%j"
+)
+
 # Read measurements
 read_measurement() {
 	while read -r line; do
 		influx write -b "${INFLUXDB_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
-	done < <(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "$3" -q 2) &
+	done < <(mosquitto_sub -h "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2) &
 }
 
 # Main Service
 while /bin/true; do
+
+	# Subscribe to "shellies/+/+/+/connected"
+	CONNECTED_DEVICES=$(
+		mosquitto_sub \
+		"${MQTT_CONNECTION_STRING[@]}" \
+		"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
+	)
 	
-	# Get all connected devices
-	CONNECTEDTOPIC="shellies/+/+/+/connected"
-	CONNECTEDDEVICES=($(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -W 2 --retained-only --nodelay --quiet -F "%t,%p"))
+	CONNECTED_DEVICES_ARRAY=$(
+		jq -s '.' <<< "${CONNECTED_DEVICES}"
+	)
 
-	# Process every device available
-	for CONNECTEDDEVICE in "${CONNECTEDDEVICES[@]}"; do
+	# Loop through all connected devices
+	jq -c '.[]' <<< "${CONNECTED_DEVICES_ARRAY}" | while read -r CONNECTED_DEVICE; do
 
-		# Extract message from online topic
-		DEVICETOPIC=$(echo "${CONNECTEDDEVICE}" | cut -d ',' -f 1)
-		DEVICEMESSAGE=$(echo "${CONNECTEDDEVICE}" | cut -d ',' -f 2-)
-		DEVICEID=$(echo "${DEVICETOPIC}" | cut -d '/' -f 2)
-		COMPONENT=$(echo "${DEVICETOPIC}" | cut -d '/' -f 3)
-		COMPONENTINDEX=$(echo "${DEVICETOPIC}" | cut -d '/' -f 4)	
-		
+		# Debug:
+		echo "Connected device:"
+		jq <<< "${CONNECTED_DEVICE}"
+
+		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )
+
+		DEVICEID=$( cut -d '/' -f 2 <<< "${CONNECTEDTOPIC}" )
+		COMPONENT=$( cut -d '/' -f 3 <<< "${CONNECTEDTOPIC}")
+		COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${CONNECTEDTOPIC}" )	
+
+		# Don't monitor components excluded in config
+		if [[ " ${NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
+			continue
+		fi
+
 		# Get description
-		DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
-		DESCRIPTIONMESSAGE=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -C 1 -W 1 --retained-only --nodelay --quiet)
-		DESCRIPTION="${DESCRIPTIONMESSAGE// /\\ }"
+		MESSAGE_DESCRIPTION=$(
+			mosquitto_sub \
+			"${MQTT_CONNECTION_STRING[@]}" \
+			"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
+		)
 		
+		DESCRIPTION="${MESSAGE_DESCRIPTION// /\\ }"
+
 		# Check for measurement topic
 		ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/energy"
 		POWERTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/power"
-		TEMPERATURETOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/temperature"
+		DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/temperature"
 		
 		# Read measurements
 		[ -n "${DESCRIPTION}" ] && read_measurement "Energy" "${DESCRIPTION}" "${ENERGYTOPIC}"
 		[ -n "${DESCRIPTION}" ] && read_measurement "Power" "${DESCRIPTION}" "${POWERTOPIC}"
-		[ -n "${DESCRIPTION}" ] && read_measurement "Energy" "${DESCRIPTION}" "${TEMPERATURETOPIC}"
+		[ -n "${DESCRIPTION}" ] && read_measurement "Devicetemp" "${DESCRIPTION}" "${TEMPERATURETOPIC}"
 		
 	done
 	
