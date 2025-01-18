@@ -109,6 +109,8 @@ while /bin/true; do
 				-t "${DEVICEID}/status/${COMPONENT}/description"
 			)
 			
+			DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+
 			# TODO: Braucht es den Output fürs Dashbaord? > 
 			# Falls ja, kann das der measurement-teil übernehmen?
 			SWITCHPOWER=$(
@@ -132,11 +134,11 @@ while /bin/true; do
 
 			[[ "$DESCRIPTION" != "null" ]] && influx write \
 			-b "$INFLUX_BUCKET_DEVICES" \
-			-p s "$DEVICEID,Component=$COMPONENT,Description=$DESCRIPTION Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+			-p s "$DEVICEID,Component=$COMPONENT,Description=$DESCRIPTION_ESCAPED Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
 			# LOG
 			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-			[[ $LOG_SERVICES ]] && jq <<< "${MESSAGE_STATUS}" >> /proc/1/fd/1
+			# [[ $LOG_SERVICES ]] && jq <<< "${MESSAGE_STATUS}" >> /proc/1/fd/1
 		done
 	done
 
