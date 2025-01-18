@@ -41,29 +41,34 @@ export MQTT_LONGSUBSCRIBE="1000"
 # MQTT Settings     
 ############################################################
 
-export MQTT_CONNECTION_STRING=(
+MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
-export MQTT_SUBSCRIBE=(
+MQTT_SUBSCRIBE=(
 	--nodelay
 	--quiet
 	-F "%j"
 )
-export MQTT_SUBSCRIBE_RETAINED=(
+MQTT_SUBSCRIBE_RETAINED=(
 	--retained-only
 	--nodelay
 	--quiet
 	-F "%j"
 	-W 1
 )
-export MQTT_SUBSCRIBE_WAIT=(
+MQTT_SUBSCRIBE_WAIT=(
 	--nodelay
 	--quiet
 	-F "%j"
 	-C 1 -W 2
 )
+
+export MQTT_CONNECTION_STRING
+export MQTT_SUBSCRIBE
+export MQTT_SUBSCRIBE_RETAINED
+export MQTT_SUBSCRIBE_WAIT
 
 # Script logging      
 ############################################################
