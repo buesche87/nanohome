@@ -5,61 +5,44 @@
 # Execute allowed shell commands published to the defined command input topic
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Advanced Settings
-touch .mqtt_shell.pid
-touch .mqtt_shell.cmds
-touch .mqtt_shell.out
-clean=".mqtt_shell.cmds .mqtt_shell.pid .mqtt_shell.out"
-p=".mqtt_shell.cache"
-pid=$(cat .mqtt_shell.pid)
+# Configuration
+FIFO_FILE=".mqtt_shell.cache"
+ALLOWED_COMMANDS=(${NANOHOME_SHELL_ALLOWED_COMMANDS//,/ }) # Convert comma-separated list to array
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
 
-# Clean
-ctrl_c() {
-  echo "Cleaning up..."
-  rm -f $p;rm $clean;kill $pid 2>/dev/null
-  if [[ "$?" -eq "0" ]]; then
-     echo "Exit success"
-	 exit 0
-  else
-     exit 1
-  fi
+# Cleanup function
+cleanup() {
+    echo "Cleaning up..."
+    rm -f "$FIFO_FILE"
+    exit 0
 }
 
-# MQTT Listen on topic_cmdInput
-listen(){
-	([ ! -p "$p" ]) && mkfifo $p
-	(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSSWORD}" -t "${MQTT_TOPIC_CMDINPUT}" > $p 2>/dev/null) &
-	echo "$!" > .mqtt_shell.pid
-	while read line <$p; do
-	
-		# Only execute allowed commands
-		IFS=',' read -r -a ALLOWEDCOMMANDS <<< "${NANOHOME_SHELL_ALLOWED_COMMANDS}"
-		COMMAND=$(echo "$line" | awk '{print $1;}')
-		
-		for item in "${ALLOWEDCOMMANDS[@]}"; do
-			if [ "$item" == "$COMMAND" ]; then
-				echo $line > .mqtt_shell.cmds
-				(bash .mqtt_shell.cmds | tee .mqtt_shell.out) && mosquitto_pub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSSWORD}" -t "${MQTT_TOPIC_CMDOUTPUT}" -f .mqtt_shell.out;>.mqtt_shell.out
-			fi
-		done
-	done
-}
+# Ensure FIFO exists
+[ ! -p "$FIFO_FILE" ] && mkfifo "$FIFO_FILE"
 
-usage(){
-	echo "    MQTT_shell - Drop bash commands"
-	echo "  Usage: $0 -s [Change Settings inside]"
-	echo "  Subscripe to topic /"${MQTT_TOPIC_CMDOUTPUT}", publish to topic /"${MQTT_TOPIC_CMDINPUT}""
-}
+# Trap to clean up on exit
+trap cleanup EXIT
 
+# Start MQTT subscription
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDINPUT}" > "$FIFO_FILE" &
 
-case "$1" in
--s |--start)
-trap ctrl_c INT
-listen
-;;
-*)
-usage
-exit 1
-;;
-esac
+# Main loop
+while read -r line <"$FIFO_FILE"; do
+    COMMAND=$(echo "$line" | awk '{print $1}')
+    
+    # Check if command is allowed
+    for ALLOWED in "${ALLOWED_COMMANDS[@]}"; do
+        if [[ "$ALLOWED" == "$COMMAND" ]]; then
+            # Execute the command and publish output
+			OUTPUT=$(bash -c "$line" 2>&1)
+
+            mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDOUTPUT}" -m "$OUTPUT"
+            break
+        fi
+    done
+done
 

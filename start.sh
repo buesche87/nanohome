@@ -21,7 +21,7 @@ export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
 export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
 export NANOHOME_DEVWATCHER_INTERVAL=30
-export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input:*,longpush:*"
+export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input,longpush"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
 export NANOHOME_SHELL_ALLOWED_COMMANDS="create_dashboardelement,create_timer,delete_device,delete_measurement"
 export MQTT_TOPIC_STATUS="+/status/+"
@@ -37,38 +37,6 @@ export MQTT_TOPIC_CMDOUTPUT="output_command"
 export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
-
-# MQTT Settings     
-############################################################
-
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-MQTT_SUBSCRIBE=(
-	--nodelay
-	--quiet
-	-F "%j"
-)
-MQTT_SUBSCRIBE_RETAINED=(
-	--retained-only
-	--nodelay
-	--quiet
-	-F "%j"
-	-W 1
-)
-MQTT_SUBSCRIBE_WAIT=(
-	--nodelay
-	--quiet
-	-F "%j"
-	-C 1 -W 2
-)
-
-export MQTT_CONNECTION_STRING
-export MQTT_SUBSCRIBE
-export MQTT_SUBSCRIBE_RETAINED
-export MQTT_SUBSCRIBE_WAIT
 
 # Script logging      
 ############################################################

@@ -10,16 +10,14 @@
 # TODO: Test
 # MQTT_SERVER="nanohome.buesche.one"
 
-
 # Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
 # Main Service
-mosquitto_sub \
-	"${MQTT_CONNECTION_STRING[@]}" \
-	"${MQTT_SUBSCRIBE[@]}" \
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+	--nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_STATUS}" | \
 	while read -r COMPONENTSTATUS; do
 
@@ -42,26 +40,22 @@ mosquitto_sub \
 		echo "Measurements - Monitored: ${DEVICEID}/${COMPONENT}"
 		jq <<< ${STATUSMESSAGE}
 
-		MESSAGE_CONNECTED=$(
-			mosquitto_sub \
-			"${MQTT_CONNECTION_STRING[@]}" \
-			"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+		CONNECTED=$(
+			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "${DEVICEID}/status/${COMPONENT}/connected"
 		)
 
 		CONNECTEDVALUE=$(
-			convert_value "${MESSAGE_CONNECTED}"
+			convert_value "${CONNECTED}"
 		)
 
-		# Get description, connected status and current output
-		MESSAGE_DESCRIPTION=$(
-			mosquitto_sub \
-			"${MQTT_CONNECTION_STRING[@]}" \
-			"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+		# Get description
+		DESCRIPTION=$(
+			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "${DEVICEID}/status/${COMPONENT}/description"
 		)
-		
-		DESCRIPTION="${MESSAGE_DESCRIPTION// /\\ }"
 
 		# Only monitor connected devices and those with a description
 		if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then

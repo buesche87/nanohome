@@ -20,15 +20,32 @@
 # mosquitto_sub -t bbc/# -T bbc/radio3
 # This option may be repeated to filter out multiple topics or topic trees.
 
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+MQTT_SUBSCRIBE=(
+	--nodelay
+	--quiet
+	-F "%j"
+)
+MQTT_SUBSCRIBE_RETAINED=(
+	--retained-only
+	--nodelay
+	--quiet
+	-F "%j"
+	-W 1
+)
+
 # Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
 # Main Service
-mosquitto_sub \
-	"${MQTT_CONNECTION_STRING[@]}" \
-	"${MQTT_SUBSCRIBE[@]}" \
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+	--nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | \
 	while read -r DEVICESTATUS; do
 
@@ -51,31 +68,26 @@ mosquitto_sub \
 	# Debug
 	echo "Devwatcher Legacy - Monitored: ${DEVICEID}/${COMPONENT}"
 
-	MESSAGE_CONNECTED=$(
-		mosquitto_sub \
-		"${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+	CONNECTED=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--retained-only --nodelay --quiet -C 1 -W 1 \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 	)
 
-	CONNECTEDVALUE=$( convert_value "${CONNECTEDMESSAGE}" )
+	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
-		mosquitto_pub -r \
-		"${MQTT_CONNECTION_STRING[@]}" \
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected" \
 		-m "false"
 	fi
 
-	# Get description, connected status and current output
-	MESSAGE_DESCRIPTION=$(
-		mosquitto_sub \
-		"${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_SUBSCRIBE_RETAINED[@]}" \
-		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
+	# Get description
+	DESCRIPTION=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--retained-only --nodelay --quiet -C 1 -W 1 \
+		-t "${DEVICEID}/status/${COMPONENT}/description"
 	)
-	
-	DESCRIPTION="${MESSAGE_DESCRIPTION// /\\ }"
 
 	# Write payload into influxdb
 	PAYLOAD='{

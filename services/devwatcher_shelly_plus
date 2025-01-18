@@ -18,6 +18,12 @@
 # TODO: Test
 # MQTT_SERVER="nanohome.buesche.one"
 
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
 # Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
@@ -28,9 +34,8 @@ while /bin/true; do
 
 	# Subscribe to "+/online"
 	AVAILABLE_DEVICES=$(
-		mosquitto_sub \
-		"${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--retained-only --nodelay --quiet -W 2 -F "%j" \
 		-t "${MQTT_TOPIC_ONLINE}"
 	)
 	
@@ -45,35 +50,31 @@ while /bin/true; do
 		ONLINETOPIC=$( jq -r '.topic' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEMESSAGE=$( jq -r '.payload' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEVALUE=$( convert_value "${ONLINEMESSAGE}" )
-		DEVICEID=${ ONLINETOPIC%%/* }
-
-		# DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
+		DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 		
 		# Subscribe to status topic then publish "status_update"
 		# Wait for message or goto next iteration after 2 seconds
 		MESSAGE_TEMPFILE=$(mktemp)
 
-		mosquitto_sub \
-		"${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_SUBSCRIBE_WAIT[@]}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--nodelay --quiet -C 1 -W 2 -F "%j" \
 		-t "${DEVICEID}/status" \
 		> "${MESSAGE_TEMPFILE}" &
 
 		SUBSCRIBE_PID=$!
 		
-		mosquitto_pub \
-		"${MQTT_CONNECTION_STRING[@]}" \
+		mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" \
 		-t "${DEVICEID}/command" \
 		-m "status_update"
 
 		wait "$SUBSCRIBE_PID"
 
 		MESSAGE_STATUS=$(
-			jq -e . "${MESSAGE_TEMPFILE}" 2>/dev/null
+			jq -r '.payload' "${MESSAGE_TEMPFILE}" 2>/dev/null
 		)
 
 		rm "${MESSAGE_TEMPFILE}"
-		[ -z "${MESSAGE_STATUS}" ] && continue
+		[[ -z "${MESSAGE_STATUS}" ]] && continue
 
 		# Loop through every component not filtered in NOT_MONITORED_COMPONENTS
 		jq -r 'to_entries[] | "\(.key), \(.value)"' <<< "${MESSAGE_STATUS}" | \
@@ -85,37 +86,33 @@ while /bin/true; do
 
 			# Debug
 			echo "Devwatcher - Monitored: ${DEVICEID}/${COMPONENT}"
-			jq <<< ${MESSAGE_STATUS}
+			jq -e --arg component "${COMPONENT}" '.[$component]' <<< "${MESSAGE_STATUS}"
 
 			# Get connected status of component, publish connected=false for new components
-			MESSAGE_CONNECTED=$(
-				mosquitto_sub \
-				"${MQTT_CONNECTION_STRING[@]}" \
-				"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+			CONNECTED=$(
+				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+				--retained-only --nodelay --quiet -C 1 \
 				-t "${DEVICEID}/status/${COMPONENT}/connected"
 			)
-			
+
 			CONNECTEDVALUE=$(
-				convert_value "${MESSAGE_CONNECTED}"
+				convert_value "${CONNECTED}"
 			)
 
 			if [[ $CONNECTEDVALUE -eq 0 ]]; then
-				mosquitto_pub -r \
-				"${MQTT_CONNECTION_STRING[@]}" \
+				mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 				-t "${DEVICEID}/status/${COMPONENT}/connected" \
 				-m "false"
 			fi
 
+			# TODO: Description mit special characters?
 			# Get description, connected status and current output
-			MESSAGE_DESCRIPTION=$(
-				mosquitto_sub \
-				"${MQTT_CONNECTION_STRING[@]}" \
-				"${MQTT_SUBSCRIBE_RETAINED[@]}" \
+			DESCRIPTION=$(
+				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+				--retained-only --nodelay --quiet -C 1 \
 				-t "${DEVICEID}/status/${COMPONENT}/description"
 			)
 			
-			DESCRIPTION="${MESSAGE_DESCRIPTION// /\\ }"
-
 			# TODO: Braucht es den Output fürs Dashbaord? > 
 			# Falls ja, kann das der measurement-teil übernehmen?
 			SWITCHPOWER=$(
@@ -129,8 +126,7 @@ while /bin/true; do
 			[ "${SWITCHPOWER}" != "null" ] && OUTPUTVALUE="${SWITCHPOWER}"
 			[ "${CURRENTPOSITION}" != "null" ] && OUTPUTVALUE="${CURRENTPOSITION}"
 
-			mosquitto_pub -r \
-			"${MQTT_CONNECTION_STRING[@]}" \
+			mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 			-t "${DEVICEID}/status/${COMPONENT}/output" \
 			-m "${OUTPUTVALUE}"
 
