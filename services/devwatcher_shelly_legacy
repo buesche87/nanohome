@@ -25,18 +25,6 @@ MQTT_CONNECTION_STRING=(
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
-MQTT_SUBSCRIBE=(
-	--nodelay
-	--quiet
-	-F "%j"
-)
-MQTT_SUBSCRIBE_RETAINED=(
-	--retained-only
-	--nodelay
-	--quiet
-	-F "%j"
-	-W 1
-)
 
 # Convert string-boolean to 1 or 0
 convert_value() {

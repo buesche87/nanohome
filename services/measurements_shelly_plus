@@ -10,16 +10,30 @@
 # TODO: Test
 # MQTT_SERVER="nanohome.buesche.one"
 
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+
 # Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
-# Main Service
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+# # Main Service
+# mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+# 	--nodelay --quiet -F "%j" \
+# 	-t "${MQTT_TOPIC_STATUS}" | \
+# 	while read -r COMPONENTSTATUS; do
+
+mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" \
 	--nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_STATUS}" | \
 	while read -r COMPONENTSTATUS; do
+
+	echo "${COMPONENTSTATUS}"
 
 	# Extract information from mosquitto subscription
 	STATUSTOPIC=$( jq -r '.topic' <<< "${COMPONENTSTATUS}" )
