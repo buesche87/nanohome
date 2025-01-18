@@ -16,7 +16,7 @@
 
 
 # TODO: Test
-# MQTT_SERVER="nanohome.buesche.one"
+MQTT_SERVER="nanohome.buesche.one"
 
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
@@ -53,7 +53,7 @@ while /bin/true; do
 		DEVICEID=$( cut -d '/' -f 1 <<< "${ONLINETOPIC}" )
 		
 		# Debug
-		echo "Devwatcher: ${DEVICEID}"
+		echo "[Devwatcher] Status: ${DEVICEID}"
 		jq -r '{topic, payload}' <<< "${AVAILABLE_DEVICE}"
 
 		# Subscribe to status topic then publish "status_update"
@@ -89,7 +89,7 @@ while /bin/true; do
 			fi
 
 			# Debug
-			echo "[Devwatcher] Monitored: ${DEVICEID} - ${COMPONENT}"
+			echo "[Devwatcher] Component: ${DEVICEID} - ${COMPONENT}"
 			jq -r <<< "${VALUE}"
 
 			# Get connected status of component, publish connected=false for new components
@@ -150,7 +150,7 @@ while /bin/true; do
 			}'
 
 			# Debug
-			echo "Devwatcher - Payload: ${DEVICEID}/${COMPONENT}"
+			echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}"
 			jq <<< "${PAYLOAD}"
 
 			# influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
@@ -158,5 +158,7 @@ while /bin/true; do
 	done
 
 	sleep $NANOHOME_DEVWATCHER_INTERVAL
+
+	sleep 10
 
 done
