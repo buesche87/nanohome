@@ -141,6 +141,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		)
 
 		# Insert values into influxdb
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" - <<< "${PAYLOAD_LINE}"
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" <<< "${PAYLOAD_LINE}"
 	done
 done
