@@ -49,12 +49,12 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	ONLINEVALUE=1 # Assume getting a message equals device is online
 
 	# Filter not monitored components
-	if [[ " ${NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
+	if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
 		continue
 	fi
 
 	# Debug
-	echo "Devwatcher Legacy - Monitored: ${DEVICEID}/${COMPONENT}"
+	echo "Devwatcher Legacy: ${DEVICEID}/${COMPONENTMERGED}"
 
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \

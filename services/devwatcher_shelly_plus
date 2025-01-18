@@ -50,8 +50,12 @@ while /bin/true; do
 		ONLINETOPIC=$( jq -r '.topic' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEMESSAGE=$( jq -r '.payload' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEVALUE=$( convert_value "${ONLINEMESSAGE}" )
-		DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
+		DEVICEID=$( cut -d '/' -f 1 <<< "${ONLINETOPIC}" )
 		
+		# Debug
+		echo "Devwatcher: ${DEVICEID}"
+		jq -r '{topic, payload}' <<< "${AVAILABLE_DEVICE}"
+
 		# Subscribe to status topic then publish "status_update"
 		# Wait for message or goto next iteration after 2 seconds
 		MESSAGE_TEMPFILE=$(mktemp)
@@ -80,13 +84,13 @@ while /bin/true; do
 		jq -r 'to_entries[] | "\(.key), \(.value)"' <<< "${MESSAGE_STATUS}" | \
 		while IFS=, read -r COMPONENT VALUE; do
 
-			if [[ " ${NOT_MONITORED_COMPONENTS//,/ } " == *" ${COMPONENT} "* ]]; then
+			if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " =~ " ${COMPONENT} " ]]; then
 				continue
 			fi
 
 			# Debug
-			echo "Devwatcher - Monitored: ${DEVICEID}/${COMPONENT}"
-			jq -e --arg component "${COMPONENT}" '.[$component]' <<< "${MESSAGE_STATUS}"
+			echo "[Devwatcher] Monitored: ${DEVICEID} - ${COMPONENT}"
+			jq -r <<< "${VALUE}"
 
 			# Get connected status of component, publish connected=false for new components
 			CONNECTED=$(
@@ -136,7 +140,7 @@ while /bin/true; do
 				"measurement": "'"${DEVICEID}"'",
 				"tags": {
 					"Component": "'"${COMPONENT}"'",
-					"Description": "'"${DESCRIPTION}"'",
+					"Description": "'"${DESCRIPTION}"'"
 				},
 				"fields": {
 					"online": "'"${ONLINEVALUE}"'",
@@ -149,7 +153,7 @@ while /bin/true; do
 			echo "Devwatcher - Payload: ${DEVICEID}/${COMPONENT}"
 			jq <<< "${PAYLOAD}"
 
-			influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
+			# influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
 		done
 	done
 

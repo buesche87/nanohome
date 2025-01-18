@@ -4,6 +4,26 @@
 ############################################################
 
 export NANOHOME_ROOTPATH="/opt/nanohome"
+export NANOHOME_DEVWATCHER_INTERVAL=30
+export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input,longpush"
+export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="create_dashboardelement,create_timer,delete_device,delete_measurement"
+export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
+export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
+export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
+export MQTT_TOPIC_STATUS="+/status/+"
+export MQTT_TOPIC_CONNECTED="+/status/+/connected"
+export MQTT_TOPIC_CONNECTED_LEGACY="shellies/+/+/+/connected"
+export MQTT_TOPIC_ONLINE="+/online" # native online topic
+export MQTT_TOPIC_ONLINE_LEGACY="shellies/+/input/+" # assuming all gen1 shellies are publishing to this topic
+export MQTT_TOPIC_TIMER="nanohome/+/timer"
+export MQTT_TOPIC_STANDBY="nanohome/+/standby"
+export MQTT_TOPIC_DASHBOARD="nanohome/config/dashboard"
+export MQTT_TOPIC_CMDINPUT="input_command"
+export MQTT_TOPIC_CMDOUTPUT="output_command"
+export MQTT_FASTSUBSCRIBE="250"
+export MQTT_NORMALSUBSCRIBE="500"
+export MQTT_LONGSUBSCRIBE="1000"
 export GRAFANA_DASHFOLDER_NAME="nanohome"
 export GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
 export GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
@@ -17,26 +37,7 @@ export GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
 export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 export GRAFANA_DATASOURCE_DEVICES="Devices"
 export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
-export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
-export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
-export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
-export NANOHOME_DEVWATCHER_INTERVAL=30
-export NANOHOME_NOT_MONITORED_COMPONENTS="ble,cloud,mqtt,sys,wifi,ws,status,ht_ui,input,longpush"
-export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="create_dashboardelement,create_timer,delete_device,delete_measurement"
-export MQTT_TOPIC_STATUS="+/status/+"
-export MQTT_TOPIC_CONNECTED="+/status/+/connected"
-export MQTT_TOPIC_CONNECTED_LEGACY="shellies/+/+/+/connected"
-export MQTT_TOPIC_ONLINE="+/online"
-export MQTT_TOPIC_ONLINE_LEGACY="shellies/+/+/+"
-export MQTT_TOPIC_TIMER="nanohome/+/timer"
-export MQTT_TOPIC_STANDBY="nanohome/+/standby"
-export MQTT_TOPIC_DASHBOARD="nanohome/config/dashboard"
-export MQTT_TOPIC_CMDINPUT="input_command"
-export MQTT_TOPIC_CMDOUTPUT="output_command"
-export MQTT_FASTSUBSCRIBE="250"
-export MQTT_NORMALSUBSCRIBE="500"
-export MQTT_LONGSUBSCRIBE="1000"
+
 
 # Script logging      
 ############################################################
