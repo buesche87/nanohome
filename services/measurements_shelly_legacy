@@ -22,7 +22,7 @@ MQTT_CONNECTION_STRING=(
 # Read measurements
 read_measurement() {
 	while read -r line; do
-		influx write -b "${INFLUXDB_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
 	done < <(mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2) &
 }
 

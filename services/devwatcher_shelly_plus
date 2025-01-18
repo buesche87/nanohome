@@ -145,7 +145,7 @@ while /bin/true; do
 			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 			[[ $LOG_SERVICES ]] && jq <<< "${PAYLOAD}" >> /proc/1/fd/1
 
-			influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
 		done
 	done
 
