@@ -51,10 +51,6 @@ while /bin/true; do
 		ONLINEMESSAGE=$( jq -r '.payload' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEVALUE=$( convert_value "${ONLINEMESSAGE}" )
 		DEVICEID=$( cut -d '/' -f 1 <<< "${ONLINETOPIC}" )
-		
-		# Debug
-		echo "[Devwatcher] Status: ${DEVICEID}"
-		jq -r '{topic, payload}' <<< "${AVAILABLE_DEVICE}"
 
 		# Subscribe to status topic then publish "status_update"
 		# Wait for message or goto next iteration after 2 seconds
@@ -87,10 +83,6 @@ while /bin/true; do
 			if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " =~ " ${COMPONENT} " ]]; then
 				continue
 			fi
-
-			# Debug
-			echo "[Devwatcher] Component: ${DEVICEID} - ${COMPONENT}"
-			jq -r <<< "${VALUE}"
 
 			# Get connected status of component, publish connected=false for new components
 			CONNECTED=$(
@@ -149,11 +141,11 @@ while /bin/true; do
 				}
 			}'
 
-			# Debug
-			echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}"
-			jq <<< "${PAYLOAD}"
+			# LOG
+			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}"
+			[[ $LOG_SERVICES ]] && jq <<< "${PAYLOAD}"
 
-			# influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
+			influx write -b "${INFLUXDB_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
 		done
 	done
 
