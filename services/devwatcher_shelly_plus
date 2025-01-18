@@ -20,29 +20,8 @@
 
 # Convert string-boolean to 1 or 0
 convert_value() {
-	[ "$1" == "true" ] || [ "$1" == "on" ] && echo 1 || echo 0
+	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
-
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
-MQTT_SUBSCRIBE_RETAINED=(
-	--retained-only
-	--nodelay
-	--quiet
-	-F "%j"
-	-W 1
-)
-
-MQTT_SUBSCRIBE_WAIT=(
-	--nodelay
-	--quiet
-	-F "%j"
-	-C 1 -W 2
-)
 
 # Main Service
 while /bin/true; do
@@ -120,7 +99,7 @@ while /bin/true; do
 				convert_value "${MESSAGE_CONNECTED}"
 			)
 
-			if [ $CONNECTEDVALUE -eq 0 ]; then
+			if [[ $CONNECTEDVALUE -eq 0 ]]; then
 				mosquitto_pub -r \
 				"${MQTT_CONNECTION_STRING[@]}" \
 				-t "${DEVICEID}/status/${COMPONENT}/connected" \

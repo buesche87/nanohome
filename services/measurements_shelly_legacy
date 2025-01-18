@@ -12,25 +12,6 @@
 # Automatically get newly connected devices
 # MQTT-Connection Strings in start.sh exportieren
 
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
-MQTT_SUBSCRIBE_RETAINED=(
-	--retained-only
-	--nodelay
-	--quiet
-	-F "%j"
-	-W 1
-)
-
-MQTT_SUBSCRIBE_JSON=(
-	--nodelay
-	--quiet
-	-F "%j"
-)
 
 # Read measurements
 read_measurement() {

@@ -25,30 +25,10 @@ convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
-MQTT_SUBSCRIBE_RETAINED=(
-	--retained-only
-	--nodelay
-	--quiet
-	-F "%j"
-	-W 1
-)
-
-MQTT_SUBSCRIBE_JSON=(
-	--nodelay
-	--quiet
-	-F "%j"
-)
-
 # Main Service
 mosquitto_sub \
 	"${MQTT_CONNECTION_STRING[@]}" \
-	"${MQTT_SUBSCRIBE_JSON[@]}" \
+	"${MQTT_SUBSCRIBE[@]}" \
 	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | \
 	while read -r DEVICESTATUS; do
 
@@ -80,7 +60,7 @@ mosquitto_sub \
 
 	CONNECTEDVALUE=$( convert_value "${CONNECTEDMESSAGE}" )
 
-	if [ $CONNECTEDVALUE -eq 0 ]; then
+	if [[ $CONNECTEDVALUE -eq 0 ]]; then
 		mosquitto_pub -r \
 		"${MQTT_CONNECTION_STRING[@]}" \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected" \
