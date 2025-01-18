@@ -82,65 +82,41 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
 		BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
-		# Prepare payload
-		PAYLOAD='{
-			"measurement": "'"${DESCRIPTION_ESCAPED}"'",
-			"tags": {
-				"Device": "'"${DEVICEID}"'",
-				"Component": "'"${COMPONENT}"'"
-			},
-			"fields": {}
-		}'
-
 		# Add fields with value to payload
 		[[ "${POWER}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${POWER}" '.fields.Power = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Power=$POWER"
 		)
 
 		[[ "${ENERGY}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${ENERGY}" '.fields.Energy = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Energy=$ENERGY"
 		)
 
 		[[ "${VOLTAGE}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${VOLTAGE}" '.fields.Voltage = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Voltage=$VOLTAGE"
 		)
 
 		[[ "${CURRENT}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${CURRENT}" '.fields.Current = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Current=$CURRENT"
 		)
 
 		[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${DEVICETEMP}" '.fields.Devicetemp = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED DeviceTemp=$DEVICETEMP"
 		)
 
 		[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${ROOM_TEMP}" '.fields.Temperature = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Temperature=$ROOM_TEMP"
 		)
 
 		[[ "${ROOM_HUM}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${ROOM_HUM}" '.fields.Humidity = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Humidity=$ROOM_HUM"
 		)
 
 		[[ "${BATTERY}" != "null" ]] && PAYLOAD=$(
-			jq --arg value "${BATTERY}" '.fields.Battery = $value' <<< "${PAYLOAD}"
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Battery=$BATTERY"
 		)
 
 		# Debug
-		echo "Measurements - Payload: ${DEVICEID}/${COMPONENT}"
-		jq <<< "${PAYLOAD}"
-
-		PAYLOAD_LINE=$(
-			jq -r '[
-			.measurement as $measurement |
-			.tags as $tags |
-			.fields as $fields |
-			($tags | to_entries | map("\(.key)=\(.value|tostring)") | join(",")) as $tags_str |
-			($fields | to_entries | map("\(.key)=\(.value|tostring)") | join(",")) as $fields_str |
-			"\($measurement),\($tags_str) \($fields_str)"
-			] | .[]' <<< "${PAYLOAD}"
-		)
-
-		# Insert values into influxdb
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" <<< "${PAYLOAD_LINE}"
+		[[ $LOG_SERVICES ]] && echo "Measurements - Status: ${DEVICEID}/${COMPONENT}"
+		[[ $LOG_SERVICES ]] && jq <<< "${STATUSMESSAGE}"
 	done
 done

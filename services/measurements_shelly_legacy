@@ -18,7 +18,6 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-
 # Read measurements
 read_measurement() {
 	while read -r line; do

@@ -126,29 +126,19 @@ while /bin/true; do
 			-t "${DEVICEID}/status/${COMPONENT}/output" \
 			-m "${OUTPUTVALUE}"
 
-			# Write payload into influxdb
-			# TODO: Test "" or null as value?
-			PAYLOAD='{
-				"measurement": "'"${DEVICEID}"'",
-				"tags": {
-					"Component": "'"${COMPONENT}"'",
-					"Description": "'"${DESCRIPTION}"'"
-				},
-				"fields": {
-					"online": "'"${ONLINEVALUE}"'",
-					"connected": "'"${CONNECTEDVALUE}"'",
-					"output": "'"${OUTPUTVALUE}"'"
-				}
-			}'
+			[[ "${DESCRIPTION}" == "null" ]] && influx write \
+			-b "$INFLUX_BUCKET_DEVICES" \
+			-p s "$DEVICEID,Component=$COMPONENT Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+
+			[[ "$DESCRIPTION" != "null" ]] && influx write \
+			-b "$INFLUX_BUCKET_DEVICES" \
+			-p s "$DEVICEID,Component=$COMPONENT,Description=$DESCRIPTION Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
 			# LOG
 			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-			[[ $LOG_SERVICES ]] && jq <<< "${PAYLOAD}" >> /proc/1/fd/1
-
-			influx write -b "${INFLUX_BUCKET_DEVICES}" -f - <<< "${PAYLOAD}"
+			[[ $LOG_SERVICES ]] && jq <<< "${MESSAGE_STATUS}" >> /proc/1/fd/1
 		done
 	done
 
 	sleep $NANOHOME_DEVWATCHER_INTERVAL
-
 done
