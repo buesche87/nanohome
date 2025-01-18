@@ -137,7 +137,7 @@ while /bin/true; do
 			-p s "$DEVICEID,Component=$COMPONENT,Description=$DESCRIPTION_ESCAPED Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
 			# LOG
-			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Measurement: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
+			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Component: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 			# [[ $LOG_SERVICES ]] && jq <<< "${MESSAGE_STATUS}" >> /proc/1/fd/1
 		done
 	done

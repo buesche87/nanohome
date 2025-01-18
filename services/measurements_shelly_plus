@@ -8,14 +8,13 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # TODO: Test
-# MQTT_SERVER="nanohome.buesche.one"
+MQTT_SERVER="nanohome.buesche.one"
 
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
-
 
 # Convert string-boolean to 1 or 0
 convert_value() {
@@ -35,88 +34,76 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
 
-	jq -r 'to_entries[] | "\(.key), \(.value)"' <<< "${STATUSMESSAGE}" | \
-	while IFS=, read -r COMPONENT VALUE; do
+	CONNECTED=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--retained-only --nodelay --quiet -C 1 -W 1 \
+		-t "${DEVICEID}/status/${COMPONENT}/connected"
+	)
 
-		# Don't monitor components excluded in config
-		if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " == *" ${COMPONENT} "* ]]; then
-			continue
-		fi
-
-		# Debug
-		echo "Measurements - Monitored: ${DEVICEID}/${COMPONENT}"
-		jq <<< ${STATUSMESSAGE}
-
-		CONNECTED=$(
-			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
-			-t "${DEVICEID}/status/${COMPONENT}/connected"
-		)
-
-		CONNECTEDVALUE=$(
+	CONNECTEDVALUE=$(
 			convert_value "${CONNECTED}"
-		)
+	)
 
-		# Get description
-		DESCRIPTION=$(
+	# Get description
+	DESCRIPTION=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "${DEVICEID}/status/${COMPONENT}/description"
-		)
+	)
 
-		DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
-		# Only monitor connected devices and those with a description
-		if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
-			continue
-		fi		
+	# Only monitor connected components and those with a description
+	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
+		continue
+	fi		
 
-		# Parse message payload
-		POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
-		ENERGY=$(jq -r '.aenergy.total' <<< "${STATUSMESSAGE}" )
-		VOLTAGE=$( jq -r '.voltage' <<< "${STATUSMESSAGE}" )
-		CURRENT=$( jq -r '.current' <<< "${STATUSMESSAGE}" )
-		DEVICETEMP=$( jq -r '.temperature.tC' <<< "${STATUSMESSAGE}" )
-		CURRENTPOSITION=$( jq -r '.current_pos' <<< "${STATUSMESSAGE}" )
-		ROOM_TEMP=$( jq -r '.tC' <<< "${STATUSMESSAGE}" )
-		ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
-		BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
+	# Parse message payload
+	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
+	ENERGY=$(jq -r '.aenergy.total' <<< "${STATUSMESSAGE}" )
+	VOLTAGE=$( jq -r '.voltage' <<< "${STATUSMESSAGE}" )
+	CURRENT=$( jq -r '.current' <<< "${STATUSMESSAGE}" )
+	DEVICETEMP=$( jq -r '.temperature.tC' <<< "${STATUSMESSAGE}" )
+	CURRENTPOSITION=$( jq -r '.current_pos' <<< "${STATUSMESSAGE}" )
+	ROOM_TEMP=$( jq -r '.tC' <<< "${STATUSMESSAGE}" )
+	ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
+	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
-		# Add fields with value to payload
-		[[ "${POWER}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Power=$POWER"
-		)
+	# Add fields with value to payload
+	[[ "${POWER}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Power=$POWER"
+	)
 
-		[[ "${ENERGY}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Energy=$ENERGY"
-		)
+	[[ "${ENERGY}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Energy=$ENERGY"
+	)
 
-		[[ "${VOLTAGE}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Voltage=$VOLTAGE"
-		)
+	[[ "${VOLTAGE}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Voltage=$VOLTAGE"
+	)
 
-		[[ "${CURRENT}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Current=$CURRENT"
-		)
+	[[ "${CURRENT}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Current=$CURRENT"
+	)
 
-		[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED DeviceTemp=$DEVICETEMP"
-		)
+	[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED DeviceTemp=$DEVICETEMP"
+	)
 
-		[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Temperature=$ROOM_TEMP"
-		)
+	[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Temperature=$ROOM_TEMP"
+	)
 
-		[[ "${ROOM_HUM}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Humidity=$ROOM_HUM"
-		)
+	[[ "${ROOM_HUM}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Humidity=$ROOM_HUM"
+	)
 
-		[[ "${BATTERY}" != "null" ]] && PAYLOAD=$(
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Battery=$BATTERY"
-		)
+	[[ "${BATTERY}" != "null" ]] && PAYLOAD=$(
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Battery=$BATTERY"
+	)
 
-		# Debug
-		[[ $LOG_SERVICES ]] && echo "Measurements - Status: ${DEVICEID}/${COMPONENT}"
-		[[ $LOG_SERVICES ]] && jq <<< "${STATUSMESSAGE}"
-	done
+	# Debug
+	[[ $LOG_SERVICES ]] && echo "[Measurements] ${DEVICEID} - ${COMPONENT}"
+	[[ $LOG_SERVICES ]] && jq <<< "${STATUSMESSAGE}"
+	
 done
