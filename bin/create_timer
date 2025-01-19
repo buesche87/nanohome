@@ -17,49 +17,57 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
+# create temporary crontab array
+CRONTAB_FILE="/etc/crontabs/nanohome"
+CRONTAB_TEMP=()
+
 # crontab entry templates
 CRONENTRY_TEMPLATE="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t DEVICEID/command/COMPONENT -m MESSAGE"
 CRONENTRY_TEMPLATE_LEGACY="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
 
-# read crontab file without nanohome entries
-TEMPCRON=$(
-	sed '/# Nanohome Crontabs/q' /etc/crontabs/root
-)
 
-# subscribe to timer topic and create array with all timers
+# TODO: ggf. json payload abholen > könnte IFS ersparen
+# subscribe to timer topic and create json array with all timers
 TIMERS_PUBLISHED=$(
 	mosquitto_sub ${MQTT_CONNECTION_STRING[@]} \
-	-W 2 --retained-only --nodelay --quiet \
+	--retained-only --nodelay --quiet -W 2 \
 	-t "${MQTT_TOPIC_TIMER}" 
 )
 
-TIMERS_CONFIGURED="${TIMERS_PUBLISHED//$'\n'/}" # remove newlines
-TIMERS_CONFIGURED="${TIMERS_CONFIGURED//]/];}" # replace ] with ]; to easily create an array
-IFS=';' read -r -a TIMERS_ARRAY <<< "$TIMERS_CONFIGURED"
+TIMERS_CONFIGURED=$(
+	jq -s '.[]' <<< "${TIMERS_PUBLISHED}"
+)
 
-# Process each timer for every device stored in the arary
-for timer in "${TIMERS_ARRAY[@]}"; do
+# TODO: Array korrigieren
+# process each timer for every device stored in the arary
+for TIMER in "${TIMERS_CONFIGURED[@]}"; do
 
 	# count timer per device and process data
-	num_objects=$(jq length <<< $timer)
-	for ((i = 0; i < num_objects; i++)); do
+	timer_objects=$(jq length <<< $TIMER)
+	for ((i = 0; i < timer_objects; i++)); do
+
+		# debug
+		jq -r .[$i].deviceId <<< "${TIMER}"
+		jq <<< "${TIMER}"
 
 		# Fill Variables
-		DEVICEID=$(echo "$timer" | jq -r .[$i].deviceId )
-		COMPONENT=$(echo "$timer" | jq -r .[$i].component )
-		DESCRIPTION=$(echo "$timer" | jq -r .[$i].description )
-		TIMERPERIOD=$(echo "$timer" | jq -r .[$i].timerPeriodValue )
-		TIMERPERIODTEXT=$(echo "$timer" | jq -r .[$i].timerPeriodText )
-		TIMERON=$(echo "$timer" | jq -r .[$i].timerOn )
-		TIMEROFF=$(echo "$timer" | jq -r .[$i].timerOff )
-		
-		# Legacy
-		COMPONENTDEV=$(echo "$timer" | jq -r .[$i].componentDev )
-		COMPONENTINDEX=$(echo "$timer" | jq -r .[$i].componentIndex )
+		DEVICEID=$( jq -r .[$i].deviceId <<< "${TIMER}" )
+		COMPONENT=$( jq -r .[$i].component <<< "${TIMER}" )
+		DESCRIPTION=$( jq -r .[$i].description <<< "${TIMER}" )
+		TIMERPERIOD=$( jq -r .[$i].timerPeriodValue <<< "${TIMER}" )
+		TIMERPERIODTEXT=$( jq -r .[$i].timerPeriodText <<< "${TIMER}" )
+		TIMERON=$( jq -r .[$i].timerOn <<< "${TIMER}" )
+		TIMEROFF=$( jq -r .[$i].timerOff <<< "${TIMER}" )
 
 		# Legacy
-		if [[ "${COMPONENTDEV}" != "null" ]]; then
+		LEGACY=$( jq -r .[$i].legacy <<< "${TIMER}" )
+
+		if [[ "${LEGACY}" == "true" ]]; then
 			CRONENTRY="${CRONENTRY_TEMPLATE_LEGACY}"
+
+			COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
+			COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
+
 			CRONENTRY=$(sed "s|COMPONENTDEV|${COMPONENTDEV}|g" <<< "${CRONENTRY}")
 			CRONENTRY=$(sed "s|COMPONENTIDEX|${COMPONENTIDEX}|g" <<< "${CRONENTRY}")
 		else
@@ -98,7 +106,7 @@ for timer in "${TIMERS_ARRAY[@]}"; do
 			CRONONENTRY=$(sed "s|MESSAGE|${MESSAGE}|g" <<< "${CRONONENTRY}")
 			
 			# Append entry to temp file
-			echo "${CRONONENTRY}" >> "${TEMPCRON}"
+			CRONTAB_TEMP+="${CRONONENTRY}"
 		fi
 
 		# If on time create on entry
@@ -128,10 +136,11 @@ for timer in "${TIMERS_ARRAY[@]}"; do
 			CRONOFFENTRY=$(sed "s|MESSAGE|${MESSAGE}|g" <<< "${CRONOFFENTRY}")
 			
 			# Append entry to temp file
-			echo "${CRONOFFENTRY}" >> "${TEMPCRON}"
+			echo "${CRONOFFENTRY}" >> "${CRONTAB_TEMP}"
 		fi
 	done
 done
 
 # Save to crontab
-cat ${TEMPCRON} > /etc/crontab
+cat ${CRONTAB_TEMP} > ${CRONTAB_FILE}
+chmod 600 ${CRONTAB_FILE}
