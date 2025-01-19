@@ -17,130 +17,113 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# create temporary crontab array
-CRONTAB_FILE="/etc/crontabs/nanohome"
-CRONTAB_TEMP=()
+# clear crontab file
+echo "" > "${NANOHOME_CRONTABS}"
 
-# crontab entry templates
-CRONENTRY_TEMPLATE="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t DEVICEID/command/COMPONENT -m MESSAGE"
-CRONENTRY_TEMPLATE_LEGACY="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
+CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t _DEVICEID_/command/_COMPONENT_ -m _MESSAGE_"
+CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
-
-# TODO: ggf. json payload abholen > könnte IFS ersparen
 # subscribe to timer topic and create json array with all timers
 TIMERS_PUBLISHED=$(
-	mosquitto_sub ${MQTT_CONNECTION_STRING[@]} \
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--retained-only --nodelay --quiet -W 2 \
 	-t "${MQTT_TOPIC_TIMER}" 
 )
 
 TIMERS_CONFIGURED=$(
-	jq -s '.[]' <<< "${TIMERS_PUBLISHED}"
+	jq -s 'add' <<< "${TIMERS_PUBLISHED}"
 )
 
-# TODO: Array korrigieren
-# process each timer for every device stored in the arary
-for TIMER in "${TIMERS_CONFIGURED[@]}"; do
+jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
 
-	# count timer per device and process data
-	timer_objects=$(jq length <<< $TIMER)
-	for ((i = 0; i < timer_objects; i++)); do
+	# debug
+	echo ""
+	jq <<< "${TIMER}"
+
+	# Fill Variables
+	DEVICEID=$( jq -r .deviceId <<< "${TIMER}" )
+	COMPONENT=$( jq -r .component <<< "${TIMER}" )
+	DESCRIPTION=$( jq -r .description <<< "${TIMER}" )
+	TIMERPERIOD=$( jq -r .timerPeriodValue <<< "${TIMER}" )
+
+	TIMERON=$( jq -r .timerOn <<< "${TIMER}" )
+	TIMEROFF=$( jq -r .timerOff <<< "${TIMER}" )
+
+	# Legacy
+	LEGACY=$( jq -r .legacy <<< "${TIMER}" )
+
+	if [[ "${LEGACY}" == "true" ]]; then
+		CRONENTRY="${CRONENTRY_TEMPLATE_LEGACY}"
+
+		COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
+		COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
+
+		CRONENTRY="${CRONENTRY//_COMPONENTDEV_/${COMPONENTDEV}}"
+		CRONENTRY="${CRONENTRY//_COMPONENTINDEX_/${COMPONENTINDEX}}"
+
+	else
+		CRONENTRY="${CRONENTRY_TEMPLATE}"
+		CRONENTRY="${CRONENTRY//_COMPONENT_/${COMPONENT}}"
+	fi
+
+	# Prepare cron entry
+	CRONENTRY="${CRONENTRY//_TIMERPERIOD_/${TIMERPERIOD}}"
+	CRONENTRY="${CRONENTRY//_DEVICEID_/${DEVICEID}}"
+
+	# If timerOn set create a cron entry to switch on component
+	if [[ -n "${TIMERON}" ]]; then
+		
+		CRONENTRY_ON="${CRONENTRY}"
+
+		# Parse hour and minute from time string
+		HOUR="${TIMERON:0:2}"
+		MINUTE="${TIMERON:3:5}"
+
+		# Check component type
+		case "${COMPONENT}" in
+			"switch"*|"relay"*) MESSAGE="on" ;;
+			"cover"*) MESSAGE="open" ;;
+		esac
+
+		# Fill cron entry with on values
+		CRONENTRY_ON="${CRONENTRY_ON//_MINUTE_/${MINUTE}}"
+		CRONENTRY_ON="${CRONENTRY_ON//_HOUR_/${HOUR}}"
+		CRONENTRY_ON="${CRONENTRY_ON//_MESSAGE_/${MESSAGE}}"
 
 		# debug
-		jq -r .[$i].deviceId <<< "${TIMER}"
-		jq <<< "${TIMER}"
+		echo "${CRONENTRY_OFF}"
 
-		# Fill Variables
-		DEVICEID=$( jq -r .[$i].deviceId <<< "${TIMER}" )
-		COMPONENT=$( jq -r .[$i].component <<< "${TIMER}" )
-		DESCRIPTION=$( jq -r .[$i].description <<< "${TIMER}" )
-		TIMERPERIOD=$( jq -r .[$i].timerPeriodValue <<< "${TIMER}" )
-		TIMERPERIODTEXT=$( jq -r .[$i].timerPeriodText <<< "${TIMER}" )
-		TIMERON=$( jq -r .[$i].timerOn <<< "${TIMER}" )
-		TIMEROFF=$( jq -r .[$i].timerOff <<< "${TIMER}" )
+		# Append entry to crontab
+		echo "${CRONENTRY_ON}" > "${NANOHOME_CRONTABS}"
+	fi
 
-		# Legacy
-		LEGACY=$( jq -r .[$i].legacy <<< "${TIMER}" )
+	# If on time create on entry
+	if [[ -n "${TIMEROFF}" ]]; then
+	
+		CRONENTRY_OFF="${CRONENTRY}"
 
-		if [[ "${LEGACY}" == "true" ]]; then
-			CRONENTRY="${CRONENTRY_TEMPLATE_LEGACY}"
+		# Parse hour and minute from time string
+		HOUR="${TIMEROFF:0:2}"
+		MINUTE="${TIMEROFF:3:5}"
 
-			COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
-			COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
+		# Check component type
+		case "${COMPONENT}" in
+			"switch"*|"relay"*) MESSAGE="off" ;;
+			"cover"*) MESSAGE="close" ;;
+		esac
 
-			CRONENTRY=$(sed "s|COMPONENTDEV|${COMPONENTDEV}|g" <<< "${CRONENTRY}")
-			CRONENTRY=$(sed "s|COMPONENTIDEX|${COMPONENTIDEX}|g" <<< "${CRONENTRY}")
-		else
-			CRONENTRY="${CRONENTRY_TEMPLATE}"
-			CRONENTRY=$(sed "s|COMPONENT|${COMPONENT}|g" <<< "${CRONENTRY}")
-		fi
+		# Fill cron entry with off values
+		CRONENTRY_OFF="${CRONENTRY_OFF//_MINUTE_/${MINUTE}}"
+		CRONENTRY_OFF="${CRONENTRY_OFF//_HOUR_/${HOUR}}"
+		CRONENTRY_OFF="${CRONENTRY_OFF//_MESSAGE_/${MESSAGE}}"
 
-		# Prepare cron entry
-		CRONENTRY=$(sed "s|PERIOD|${TIMERPERIOD}|g" <<< "${CRONENTRY}")
-		CRONENTRY=$(sed "s|DEVICEID|${DEVICEID}|g" <<< "${CRONENTRY}")
+		# debug
+		echo "${CRONENTRY_OFF}"
 
-		# If timerOn set create a cron entry to switch on component
-		if [[ "${TIMERON}" != "" ]]; then
-			
-			CRONONENTRY="${CRONENTRY}"
-
-			# Parse hour and minute from time string
-			HOUR="${TIMERON:0:2}"
-			MINUTE="${TIMERON:3:5}"
-
-			# Check component type
-			case "${COMPONENT}" in
-				"switch"*)
-					MESSAGE="on"
-				;;
-				"cover"*)
-					MESSAGE="open"
-				;;
-				"relay"*)
-					MESSAGE="on"
-			esac
-
-			# Fill cron entry with on values
-			CRONONENTRY=$(sed "s|MINUTE|${MINUTE}|g" <<< "${CRONONENTRY}")
-			CRONONENTRY=$(sed "s|HOUR|${HOUR}|g" <<< "${CRONONENTRY}")
-			CRONONENTRY=$(sed "s|MESSAGE|${MESSAGE}|g" <<< "${CRONONENTRY}")
-			
-			# Append entry to temp file
-			CRONTAB_TEMP+="${CRONONENTRY}"
-		fi
-
-		# If on time create on entry
-		if [[ "${TIMEROFF}" != "" ]]; then
+		# Append entry to crontab
+		echo "${CRONENTRY_OFF}" > "${NANOHOME_CRONTABS}"
+	fi
 		
-			CRONOFFENTRY="${CRONENTRY}"
-
-			# Parse hour and minute from time string
-			HOUR="${TIMEROFF:0:2}"
-			MINUTE="${TIMEROFF:3:5}"
-
-			# Check component type
-			case "${COMPONENT}" in
-				"switch"*)
-					MESSAGE="off"
-				;;
-				"cover"*)
-					MESSAGE="close"
-				;;
-				"relay"*)
-					MESSAGE="off"
-			esac
-
-			# Fill cron entry with off values
-			CRONOFFENTRY=$(sed "s|MINUTE|${MINUTE}|g" <<< "${CRONOFFENTRY}")
-			CRONOFFENTRY=$(sed "s|HOUR|${HOUR}|g" <<< "${CRONOFFENTRY}")
-			CRONOFFENTRY=$(sed "s|MESSAGE|${MESSAGE}|g" <<< "${CRONOFFENTRY}")
-			
-			# Append entry to temp file
-			echo "${CRONOFFENTRY}" >> "${CRONTAB_TEMP}"
-		fi
-	done
 done
 
-# Save to crontab
-cat ${CRONTAB_TEMP} > ${CRONTAB_FILE}
-chmod 600 ${CRONTAB_FILE}
+chmod 600 "${NANOHOME_CRONTABS}"

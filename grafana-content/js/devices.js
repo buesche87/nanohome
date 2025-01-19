@@ -2,13 +2,14 @@
 var devmgrDescriptionPrefix = "description_";
 var devmgrComponentPrefix = "component_";
 var devmgrConnectedPrefix = "connected_";
-var devmgrNetworkPrefix = "manage_";
+var devmgrManagePrefix = "manage_";
 var devmgrIconPrefix = "icon_";
-var devmgrBtnDescriptionPrefix = "btnDescription_";
-var devmgrSliderDescriptionPrefix = "sliderDescription_";
+var devmgrBtnDescriptionPrefix = "exBtnDescription_";
+var devmgrSliderDescriptionPrefix = "exSliderDescription_";
 var devmgrSaveBtnPrfix = "savebtn_";
 var devmgrDetailsPrefix = "details_";
 var devmgrSummaryPrefix = "summary_";
+var devmgrStatusPrefix = "status_";
 
 /*
   ---------------------------------------------------------------
@@ -16,15 +17,16 @@ var devmgrSummaryPrefix = "summary_";
   ---------------------------------------------------------------
 */
 
+// TODO
 function getDashboardInfo() {
 	mqttSubscribe(dashboardTopic, fastsubscribe);
 }
 
 function getDeviceInfo() {
-	mqttSubscribe(connectedTopic, fastsubscribe);
-	mqttSubscribe(connectedTopicLegacy, fastsubscribe);
-	mqttSubscribe(descriptionTopic, fastsubscribe);
-	mqttSubscribe(descriptionTopicLegacy, fastsubscribe);
+	mqttSubscribe(connectedTopicAll, fastsubscribe);
+	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
+	mqttSubscribe(descriptionTopicAll, fastsubscribe);
+	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 }
 
 // Get device infos (onLoad - per device)
@@ -32,16 +34,15 @@ function getdetailsInfo(device) {
 	let deviceDetails = getDeviceDetails(device);
 
 	if (checkElement(deviceDetails)) {
-		let deviceTopics = getDeviceTopics(device, deviceDetails);
+		let mqttTopics = getMqttTopics(device, deviceDetails);
 
 		if (deviceDetails.legacy) {
 			setStatusLegacy(device);
 		} else {
-			let payload = '{"id":999, "src":"' + deviceTopics.status + '", "method":"Shelly.GetStatus"}';
-			let subscribetopic = statusOutTopicRoot + device + "/status/rpc";
+			let payload = '{"id":999, "src":"' + mqttTopics.device + '", "method":"Shelly.GetStatus"}';
 
-			mqttSubscribe(subscribetopic, normalsubscribe);
-			mqttPublish(deviceTopics.rpc, payload, false);
+			mqttSubscribe(mqttTopics.rpcStatus, normalsubscribe);
+			mqttPublish(mqttTopics.rpc, payload, false);
 		}
 	}
 	getDashboardInfo();
@@ -56,13 +57,13 @@ function getdetailsInfo(device) {
 // Connect or disconnect device
 function connectDevice(device) {
 	let deviceDetails = getDeviceDetails(device);
-	let deviceTopics = getDeviceTopics(device, deviceDetails);
+	let mqttTopics = getMqttTopics(device, deviceDetails);
 
 	// Get current connected value
 	let payload = deviceDetails.connected === "Disconnected" ? "true" : "false";
 
 	// Publish and refresh
-	mqttPublish(deviceTopics.connected, payload, true);
+	mqttPublish(mqttTopics.connected, payload, true);
 	getDeviceInfo(device);
 }
 
@@ -72,14 +73,14 @@ function connectDevice(device) {
 // TODO - Delete old mqtt topics in nanohome/
 function saveDevice(device) {
 	let deviceDetails = getDeviceDetails(device);
-	let deviceTopics = getDeviceTopics(device, deviceDetails);
+	let mqttTopics = getMqttTopics(device, deviceDetails);
 
 	let jsonElement = generateDeviceJson(device, deviceDetails);
 	let payload = JSON.stringify(jsonElement);
 
 	// Publish and refresh
-	mqttPublish(deviceTopics.details, payload, true);
-	mqttPublish(deviceTopics.description, deviceDetails.description, true);
+	mqttPublish(mqttTopics.device, payload, true);
+	mqttPublish(mqttTopics.description, deviceDetails.description, true);
 	getDeviceInfo(device);
 	getDashboardInfo();
 }
@@ -87,7 +88,7 @@ function saveDevice(device) {
 // Create dashboard element
 function createDashboardElement(device) {
 	let deviceDetails = getDeviceDetails(device);
-	let deviceTopics = getDeviceTopics(device, deviceDetails);
+	let mqttTopics = getMqttTopics(device, deviceDetails);
 	let deviceCommands = getDeviceCommands(device, deviceDetails);
 
 	// Confirm creation of element
@@ -108,28 +109,28 @@ function createDashboardElement(device) {
 
 		// Save modified attribute
 		jsonStore.setAttribute("deviceDetails", JSON.stringify(existingJson));
-		mqttPublish(deviceTopics.dashboard, JSON.stringify(newJsonElement), true);
-		createPayload = deviceCommands.createElement + ' "' + jsonIndex + '"'
+		mqttPublish(mqttTopics.home, JSON.stringify(newJsonElement), true);
+		createPayload = deviceCommands.createPanel + ' "' + jsonIndex + '"'
 		shellCommand(createPayload);
 		console.log (createPayload)
 	}
 }
 
 // Delete measurement
-function deleteMeasurement(device) {
+function clearMeasurement(device) {
 	let deviceDetails = getDeviceDetails(device);
 	let deviceCommands = getDeviceCommands(device, deviceDetails);
 
-	shellCommand(deviceCommands.deleteMeasurement);
+	shellCommand(deviceCommands.clearMeasurement);
 }
 
 // Delete device
-function deleteDevice(device) {
+function removeDevice(device) {
 	let deviceDetails = getDeviceDetails(device);
 	let deviceCommands = getDeviceCommands(device, deviceDetails);
 
-	shellCommand(deviceCommands.deleteMeasurement);
-	shellCommand(deviceCommands.deleteDevice);
+	shellCommand(deviceCommands.clearMeasurement);
+	shellCommand(deviceCommands.removeDevice);
 }
 
 /*
@@ -144,68 +145,96 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	// Populate jsonStore
-	if (topic == "nanohome/config/dashboard") {
-		saveDeviceAttribute(payload);
-		setExampleElementIcon(payload);
-		console.log("Dashboard config loaded");
-		//console.log(payload);
-	}
+	if ( topicSplit[0] == "nanohome" ) {
 
-	// Set device status
-	if (topicSplit[0] == statusOutTopicRoot) {
-		fillNetworkElement(topicSplit[1], payload);
-		console.log("status retreived");
-	}
+		let description = topicSplit[2]
 
-	// Fill elements from connected topic path
-	if (topicSplit[1] == "status" && topicSplit[3] == "connected") {
-		fillComponents(topicSplit[0], topicSplit[2]);
-		fillStatusElements(topicSplit[0], topicSplit[2], topicSplit[3], payload);
-		fillExampleElements(topicSplit[0], topicSplit[2], topicSplit[3], payload);
-		//console.log('Connection Status loaded: ' + topicSplit[0]);
-	}
+		if ( topicSplit[1] == "devices" ) {
+			// tbd
+		} else if ( topicSplit[1] == "home" ) {
 
-	// Fill elements from connected topic path legacy
-	if (topicSplit[0] == "shellies" && topicSplit[4] == "connected") {
-		let componentMerged = topicSplit[2] + ":" + topicSplit[3];
-		fillComponents(topicSplit[1], componentMerged);
-		fillStatusElements(topicSplit[1], componentMerged, topicSplit[4], payload);
-		fillExampleElements(topicSplit[1], componentMerged, topicSplit[4], payload);
-		setStatusLegacy(topicSplit[1]);
-	}
+			// nanohome/home/dashboard
+			if (topicSplit[2] == "dashboard") {
+				saveDeviceAttribute(payload);
+				setExampleElementIcon(payload);
+				console.log("Dashboard config loaded");
+				//console.log(payload);
+			}
 
-	// Fill elements from description topic path
-	if (topicSplit[1] == "status" && topicSplit[3] == "description") {
-		fillStatusElements(topicSplit[0], topicSplit[2], topicSplit[3], payload);
-		fillExampleElements(topicSplit[0], topicSplit[2], topicSplit[3], payload);
-		//console.log('Description loaded: "' + payload + '" (' +  topicSplit[0] + ')');
-	}
+		} else if ( topicSplit[1] == "timer" ) {
+			// tbd
+		} else if ( topicSplit[1] == "standby" ) {
+			// tbd
+		} 
 
-	// Fill elements from description topic path legacy
-	if (topicSplit[0] == "shellies" && topicSplit[4] == "description") {
-		let componentMerged = topicSplit[2] + ":" + topicSplit[3];
-		fillStatusElements(topicSplit[1], componentMerged, topicSplit[4], payload);
-		fillExampleElements(topicSplit[1], componentMerged, topicSplit[4], payload);
-		setStatusLegacy(topicSplit[1]);
-	}
+	} else if ( topicSplit[0].startsWith("shelly") ) {
 
-	// Show example button
-	if (checkElement(topicSplit[2]) && topicSplit[2].includes("switch")) {
-		showExampleElement(topicSplit[0], "btnContainer");
-		//console.log('Example Element loaded: ' + topicSplit[0]);
-	}
+		let deviceid = topicSplit[0]
+		let component = topicSplit[2]
 
-	// Show example button legacy
-	if (checkElement(topicSplit[2]) && topicSplit[2].includes("relay")) {
-		showExampleElement(topicSplit[1], "btnContainer");
-		setStatusLegacy(topicSplit[1]);
-	}
+		// TODO: Wo gehöt das hin...?
+		// nanohome/devices/description/status
+		// deviceid/status
+		if (topicSplit[1] == "status") {
 
-	// Show example slider
-	if (checkElement(topicSplit[2]) && topicSplit[2].includes("cover")) {
-		showExampleElement(topicSplit[0], "sliderContainer");
-		//console.log('Example Element loaded: ' + topicSplit[0]);
+			fillNetworkElement(deviceid, payload);
+			// console.log("status retreived");
+
+			// Show example button
+			if (component.includes("switch")) {
+				showExampleElement(deviceid, "btnContainer");
+				//console.log('Example Element loaded: ' + topicSplit[0]);
+			}
+
+			// Show example slider
+			else if (component.includes("cover")) {
+				showExampleElement(deviceid, "sliderContainer");
+				//console.log('Example Element loaded: ' + topicSplit[0]);
+			}
+		}
+
+		// shelly-deviceid/status/component/connected
+		else if (topicSplit[3] == "connected") {
+			fillComponents(deviceid, component);
+			fillStatusElements(deviceid, component, topicSplit[3], payload);
+			fillExampleElements(deviceid, component, topicSplit[3], payload);
+			//console.log('Connection Status loaded: ' + deviceid);
+		}
+
+		// shelly-deviceid/status/component/description
+		else if (topicSplit[3] == "description") {
+			fillStatusElements(deviceid, component, topicSplit[3], payload);
+			fillExampleElements(deviceid, component, topicSplit[3], payload);
+			//console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
+		}
+
+	} else if ( topicSplit[0] == "shellies" ) {
+
+		let deviceid = topicSplit[1]
+		let componentdev = topicSplit[2]
+		let componentidx = topicSplit[3]
+		let componentMerged = componentdev + ":" + componentidx;
+
+		// shellies/shelly-deviceid/componentdev/componentindex/connected
+		if (topicSplit[4] == "connected") {
+			fillComponents(deviceid, componentMerged);
+			fillStatusElements(deviceid, componentMerged, topicSplit[4], payload);
+			fillExampleElements(deviceid, componentMerged, topicSplit[4], payload);
+			setStatusLegacy(deviceid);
+		}
+
+		// shellies/shelly-deviceid/componentdev/componentindex/description
+		else if (topicSplit[4] == "description") {
+			fillStatusElements(deviceid, componentMerged, topicSplit[4], payload);
+			fillExampleElements(deviceid, componentMerged, topicSplit[4], payload);
+			setStatusLegacy(deviceid);
+		}
+
+		// Show example button legacy
+		if (componentdev.includes("relay")) {
+			showExampleElement(deviceid, "btnContainer");
+			setStatusLegacy(deviceid);
+		}
 	}
 }
 
@@ -259,7 +288,7 @@ function fillStatusElements(device, component, element, payload) {
 
 // Fill network with returned from JSON
 function fillNetworkElement(device, payload) {
-	let htmlElement = document.getElementById("status_" + device);
+	let htmlElement = document.getElementById(devmgrStatusPrefix + device);
 	let statusData = JSON.parse(payload);
 
 	console.log("setting networkElement");
@@ -290,8 +319,8 @@ function fillNetworkElement(device, payload) {
 // Fill example elements with content from mqtt message
 function fillExampleElements(device, component, element, payload) {
 	let htmlElements = getHtmlElements(device);
-	let btnDescription = document.getElementById("exBtnDescription_" + device);
-	let sliderDescription = document.getElementById("exSliderDescription_" + device);
+	let btnDescription = document.getElementById(devmgrBtnDescriptionPrefix + device);
+	let sliderDescription = document.getElementById(devmgrBtnDescriptionPrefix + device);
 
 	if (checkElement(btnDescription) && checkElement(htmlElements.component) && component == htmlElements.component.value) {
 		if (element == "description" && checkElement(payload)) {
@@ -373,13 +402,13 @@ function checkElementsStatus(device) {
 
 function getHtmlElements(device) {
 	return {
-		description:         document.getElementById("description_" + device),
-		component:           document.getElementById("component_" + device),
-		connected:           document.getElementById("connected_" + device),
-		status:              document.getElementById("status_" + device),
-		manage:              document.getElementById("manage_" + device),
-		manageSum:           document.getElementById("summary_" + device),
-		saveButton:          document.getElementById("savebtn_" + device)
+		description:         document.getElementById(devmgrDescriptionPrefix + device),
+		component:           document.getElementById(devmgrComponentPrefix + device),
+		connected:           document.getElementById(devmgrConnectedPrefix + device),
+		status:              document.getElementById(devmgrStatusPrefix + device),
+		manage:              document.getElementById(devmgrManagePrefix + device),
+		manageSum:           document.getElementById(devmgrSummaryPrefix + device),
+		saveButton:          document.getElementById(devmgrSaveBtnPrfix + device)
 	}
 }
 
@@ -400,12 +429,12 @@ function getDeviceDetails(device) {
 		}
 
 		return {
-			description:         document.getElementById("description_" + device).value,
-			component:           document.getElementById("component_" + device).value,
-			connected:           document.getElementById("connected_" + device).textContent,
-			status:              document.getElementById("status_" + device).textContent,
-			exBtnDescription:    document.getElementById("exBtnDescription_" + device).textContent,
-			exSliderDescription: document.getElementById("exSliderDescription_" + device).textContent,
+			description:         document.getElementById(devmgrDescriptionPrefix + device).value,
+			component:           document.getElementById(devmgrComponentPrefix + device).value,
+			connected:           document.getElementById(devmgrConnectedPrefix + device).textContent,
+			status:              document.getElementById(devmgrStatusPrefix + device).textContent,
+			exBtnDescription:    document.getElementById(devmgrBtnDescriptionPrefix + device).textContent,
+			exSliderDescription: document.getElementById(devmgrSliderDescriptionPrefix + device).textContent,
 			exButtonImage:       icon,
 			legacy:              legacy
 		}
@@ -414,47 +443,7 @@ function getDeviceDetails(device) {
 	}
 }
 
-function getDeviceTopics(device, deviceDetails) {
-	if (deviceDetails.legacy) {
-		let componentSplit = deviceDetails.component.split(":");
-		return {
-			connected:    "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
-			description:  "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
-			details:      "nanohome/" + deviceDetails.description + "/device",
-			dashboard:    "nanohome/config/dashboard"
-		}
-	} else {
-		return {
-			rpc:          device + "/rpc",
-			status:       statusOutTopicRoot +  device + "/status",
-			connected:    device + "/status/" + deviceDetails.component + "/connected",
-			description:  device + "/status/" + deviceDetails.component + "/description",
-			details:      "nanohome/" + deviceDetails.description + "/device",
-			dashboard:    "nanohome/config/dashboard"
-		}
-	}
-}
 
-// TODO - Übergabe von true / false bzw. deviceDetails.legacy
-function getDeviceCommands(device, deviceDetails) {
-	if (deviceDetails.legacy) {
-		return {
-			jsonStoreElement:   "deviceData",
-			jsonStoreAttribute: "deviceDetails",
-			createElement:      'create_dashboardelement "' + deviceDetails.description + '" "true"',
-			deleteDevice:       'delete_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '" "true"',
-			deleteMeasurement:  'delete_measurement "' + deviceDetails.description + '"'
-		}
-	} else {
-		return {
-			jsonStoreElement:   "deviceData",
-			jsonStoreAttribute: "deviceDetails",
-			createElement:      'create_dashboardelement "' + deviceDetails.description + '" "false"',
-			deleteDevice:       'delete_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '" "false"',
-			deleteMeasurement:  'delete_measurement "' + deviceDetails.description + '"'
-		}
-	}
-}
 
 // Populate json data from mqtt to element holding the data
 function saveDeviceAttribute(payload) {

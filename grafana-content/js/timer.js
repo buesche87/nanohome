@@ -10,10 +10,10 @@ var timerAttribute  = "timerData";
 
 // Get Device Info - Subscribe to the MQTT topics
 function getTimerInfo(description) {
-	let timerTopics = getTimerTopics(description);
+	let mqttTopics = getMqttTopics(description);
 
-	mqttSubscribe(timerTopics.deviceTopic, fastsubscribe);
-	mqttSubscribe(timerTopics.timerTopic, fastsubscribe);
+	mqttSubscribe(mqttTopics.device, fastsubscribe);
+	mqttSubscribe(mqttTopics.timer, fastsubscribe);
 }
 
 /*
@@ -25,7 +25,7 @@ function getTimerInfo(description) {
 // Get current timers for component and append a new one
 function saveTimer(description) {
 	let timerDetails = getTimerElements(description);
-	let timerTopics = getTimerTopics(description);
+	let mqttTopics = getMqttTopics(description);
 	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timerAttribute));
 
 	// Define new index
@@ -38,14 +38,14 @@ function saveTimer(description) {
 	// Populate data
 	populateTimerAttribute(existingJson);
 	populateTimerList(existingJson);
-	mqttPublish(timerTopics.timerTopic, JSON.stringify(existingJson), true);
-	mqttPublish(cmdInputTopic, "create_timer", false);
+	mqttPublish(mqttTopics.timer, JSON.stringify(existingJson), true);
+	mqttPublish(cmdInputTopic, "create.timer", false);
 }
 
 // Remove selected timer
 function removeTimer(description) {
 	let timerDetails = getTimerElements(description);
-	let timerTopics = getTimerTopics(description);
+	let mqttTopics = getMqttTopics(description);
 
 	// get index of selected timer
 	let selectedIndex = timerDetails.timerList.selectedIndex;
@@ -62,8 +62,8 @@ function removeTimer(description) {
 	// Populate data
 	populateTimerAttribute(activeTimerJson);
 	populateTimerList(activeTimerJson);
-	mqttPublish(timerTopics.timerTopic, JSON.stringify(activeTimerJson), true);
-	mqttPublish(cmdInputTopic, "create_timer", false);
+	mqttPublish(mqttTopics.timer, JSON.stringify(activeTimerJson), true);
+	mqttPublish(cmdInputTopic, "create.timer", false);
 }
 
 /*
@@ -173,13 +173,6 @@ function getTimerElements(description) {
 		timerStatus:  document.getElementById("timerStatus_" + description),
 		saveButton:   document.getElementById("timerSaveBtn_" + description),
 		removeButton: document.getElementById("timerRemoveBtn_" + description)
-	}
-}
-
-function getTimerTopics(description) {
-	return {
-		deviceTopic: "nanohome/" + description + "/device",
-		timerTopic:  "nanohome/" + description + "/timer"
 	}
 }
 

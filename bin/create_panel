@@ -5,6 +5,16 @@
 # create buttons or slider on the home dashbaord
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# debug
+MQTT_SERVER="nanohome.buesche.one"
+
+# simplify mqtt connection
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
 # Parameter & Variables
 COMPONENT_DESCRIPTION=$1
 LEGACY=$2
@@ -31,12 +41,9 @@ JSON_INDEX="7"
 
 # Main
 PUBLISHED_ELEMENTS=$(
-    mosquitto_sub \
-    -h "${MQTT_HOST}" \
-    -u "${MQTT_USER}" \
-    -P "${MQTT_PASSWORD}" \
-    -t "${MQTT_TOPIC_DASHBOARD}" \
-    -C 1 -W 2 --retained-only --quiet
+    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+    -C 1 -W 2 --retained-only --quiet \
+    -t "${MQTT_TOPIC_DASHBOARD}"
 )
 
 if [ -z "${PUBLISHED_ELEMENTS}" ]; then

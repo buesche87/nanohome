@@ -11,8 +11,8 @@ var command;
 
 // Subscribe to output topic indefinitely
 function subscribeToOutput() {
-	mqtt.subscribe(outputTopic, { qos: 2 });
-	mqtt.subscribe(outputTopicLegacy, { qos: 2 });
+	mqtt.subscribe(outputTopicAll, { qos: 2 });
+	mqtt.subscribe(outputTopicAllLegacy, { qos: 2 });
 }
 
 /*
@@ -37,8 +37,8 @@ function sendCommand(device, component, description, command) {
 // Send command Shelly Legacy
 function sendCommandLegacy(device, component, description, command) {
 	let divElement = document.getElementById(outputElement);
-	let inputTopic = legacyTopicRoot + "/" + device + "/relay/" + component + "/command";
-	let statusTopic = legacyTopicRoot + "/" + device + "/relay/" + component;
+	let inputTopic = "shellies/" + device + "/relay/" + component + "/command";
+	let statusTopic = "shellies/" + device + "/relay/" + component;
 	outComponent = component;
 
 	mqttSubscribe(statusTopic, 1000);

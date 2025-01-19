@@ -12,8 +12,8 @@ var standbySaveBtnPrefix = "standbySaveBtn_";
 
 // Get Device Info - Subscribe to the MQTT topics
 function getStandbyInfo() {
-	mqttSubscribe(descriptionTopic, 2000);
-	mqttSubscribe(standbyTopic, 2000);
+	mqttSubscribe(descriptionTopicAll, 2000);
+	mqttSubscribe(standbyTopicAll, 2000);
 }
 
 /*
@@ -29,7 +29,7 @@ function saveStandby(description) {
 
 	if (/^\d+$/.test(standbyPower)) {
 		let newJsonElement = generateStandbyJson(description);
-		mqttSubscribe(standbyTopic, 1000);
+		mqttSubscribe(standbyTopicAll, 1000);
 		mqttPublish(publishTopic, JSON.stringify(newJsonElement), true);
 	} else {
 		alert("Ungültiger Wert");

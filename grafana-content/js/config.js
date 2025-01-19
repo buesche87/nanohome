@@ -21,26 +21,22 @@ var normalsubscribe = 500;
 var longsubscribe = 1000;
 var legacyKeywords = ["relay"];
 
-// MQTT Topics
-var cmdInputTopic = "input_command";
-var cmdOutputTopic = "output_command";
-var outputTopic = "+/status/+/output";
-var statusOutTopicRoot = "shellystatus";
+// Global Topics
+var cmdInputTopic = "nanohome/shell/input";
+var cmdOutputTopic = "nanohome/shell/output";
+var dashboardTopic = "nanohome/home/dashboard";
 
-// Device manager
-var connectedTopic = "+/status/+/connected";
-var descriptionTopic = "+/status/+/description";
-var dashboardTopic = "nanohome/config/dashboard";
+// Device topics
+var connectedTopicAll = "+/status/+/connected";
+var descriptionTopicAll = "+/status/+/description";
+var outputTopicAll = "+/status/+/output";
+var standbyTopicAll = "nanohome/+/standby";
 
-// Timer & standby
-var timerTopic = "nanohome/+/timer";
-var standbyTopic = "nanohome/+/standby";
+// Device topics legacy
+var outputTopicAllLegacy = "shellies/+/relay/0";
+var connectedTopicAllLegacy = "shellies/+/+/+/connected";
+var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 
-// Legacy Topics
-var legacyTopicRoot = "shellies";
-var outputTopicLegacy = "shellies/+/relay/0";
-var connectedTopicLegacy = "shellies/+/+/+/connected";
-var descriptionTopicLegacy = "shellies/+/+/+/description";
 
 // MQTT Websocket min.js
 var mqttws31minLocation = "../public/nanohome/js/mqttws31.min.js";

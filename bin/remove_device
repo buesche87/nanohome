@@ -1,0 +1,48 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# Nanohome remove a device from InfluxDB
+#/////////////////////////////////////////////////////////////////////////////////////
+
+DEVICE="$1"
+COMPONENT="$2"
+DESCRIPTION="$3"
+LEGACY="$4"
+
+# Delete Measurement
+if [ -n "${DEVICE}" ]; then
+	influx delete --bucket "${INFLUX_BUCKET_DEVICES}" \
+	  --start '1970-01-01T00:00:00Z' \
+	  --stop $(date --utc +"%Y-%m-%dT%H:%M:%SZ") \
+	  --predicate '_measurement="'"${DEVICE}"'"'
+fi
+
+# Nanohome topics
+DEVICETOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_DEVICES}" )
+HOMETOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_HOME}" )
+STANDBYTOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_STANDBY}" )
+TIMERTOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_TIMER}" )
+
+# Device topics
+if [ "${LEGACY}" == "true" ]; then
+	COMPONENTNAME=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
+	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
+
+	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_CONNECTED_LEGACY}" )
+	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_DESCRIPTION_LEGACY}" )
+	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_OUTPUT_LEGACY}" )
+else
+	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_CONNECTED}" )
+	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_DESCRIPTION}" )
+	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_OUTPUT}" )
+fi
+
+# Clean topics
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${CONNECTEDTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DESCRIPTIONTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${DEVICETOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${OUTPUTTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${STANDBYTOPIC}" -m ""
+mosquitto_pub -r -h "${MQTT_SERVER}"-u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TIMERTOPIC}" -m ""
+
+# Remove from crontab
+sed -i "/${DEVICE}/d" "${NANOHOME_CRONTABS}"

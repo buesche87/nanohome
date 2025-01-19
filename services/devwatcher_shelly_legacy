@@ -8,18 +8,6 @@
 # - Write component infos into influxdb bucket "devices"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-
-
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#  -T,
-# --filter-out
-# Suppress printing of topics that match the filter. This allows subscribing to a wildcard topic and only printing a partial set of the wildcard hierarchy.
-# 
-# For example, subscribe to the BBC tree, but suppress output from Radio 3:
-# 
-# mosquitto_sub -t bbc/# -T bbc/radio3
-# This option may be repeated to filter out multiple topics or topic trees.
-
 # debug
 MQTT_SERVER="nanohome.buesche.one"
 
