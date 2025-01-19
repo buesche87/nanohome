@@ -2,27 +2,43 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 # Nanohome Shelly timer manager
 # 
-# Subscribe to all timer topics and retreive the published json arrays
-# Go through all entries and parse the json
-# Create a crontab entry for on and off times
+# subscribe to timer topics and get all retained timer json
+# parse the timers into crontab lines
+# replace the crontab file /etc/crontabs/nanohome
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# crontab entry
-CRON_TEMPLATE="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t DEVICEID/command/COMPONENT -m MESSAGE"
-CRON_TEMPLATE_LEGACY="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
+# debug
+MQTT_SERVER="nanohome.buesche.one"
 
-# Create temporary crontab file and fill it without nanohome crons
-TEMPCRON=$(mktemp)
-sed '/# Nanohome Crontabs/q' /etc/crontabs/root > "${TEMPCRON}"
+# simplify mqtt connection
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
 
-# Subscribe to timer topic and create array with all timers
-PUBLISHEDTIMERS=$(mosquitto_sub -h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}" -t "${TOPIC_TIMER}" -W 2 --retained-only --nodelay --quiet)
-CONFIGUREDTIMERS="${PUBLISHEDTIMERS//$'\n'/}" # remove newlines
-CONFIGUREDTIMERS="${CONFIGUREDTIMERS//]/];}" # replace ] with ]; to easily create an array
-IFS=';' read -r -a TIMERARRAY <<< "$CONFIGUREDTIMERS"
+# crontab entry templates
+CRONENTRY_TEMPLATE="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t DEVICEID/command/COMPONENT -m MESSAGE"
+CRONENTRY_TEMPLATE_LEGACY="MINUTE HOUR * * PERIOD root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/DEVICEID/COMPONENTDEV/COMPONENTIDEX/command -m MESSAGE"
+
+# read crontab file without nanohome entries
+TEMPCRON=$(
+	sed '/# Nanohome Crontabs/q' /etc/crontabs/root
+)
+
+# subscribe to timer topic and create array with all timers
+TIMERS_PUBLISHED=$(
+	mosquitto_sub ${MQTT_CONNECTION_STRING[@]} \
+	-W 2 --retained-only --nodelay --quiet \
+	-t "${MQTT_TOPIC_TIMER}" 
+)
+
+TIMERS_CONFIGURED="${TIMERS_PUBLISHED//$'\n'/}" # remove newlines
+TIMERS_CONFIGURED="${TIMERS_CONFIGURED//]/];}" # replace ] with ]; to easily create an array
+IFS=';' read -r -a TIMERS_ARRAY <<< "$TIMERS_CONFIGURED"
 
 # Process each timer for every device stored in the arary
-for timer in "${TIMERARRAY[@]}"; do
+for timer in "${TIMERS_ARRAY[@]}"; do
 
 	# count timer per device and process data
 	num_objects=$(jq length <<< $timer)
@@ -43,11 +59,11 @@ for timer in "${TIMERARRAY[@]}"; do
 
 		# Legacy
 		if [[ "${COMPONENTDEV}" != "null" ]]; then
-			CRONENTRY="${CRON_TEMPLATE_LEGACY}"
+			CRONENTRY="${CRONENTRY_TEMPLATE_LEGACY}"
 			CRONENTRY=$(sed "s|COMPONENTDEV|${COMPONENTDEV}|g" <<< "${CRONENTRY}")
 			CRONENTRY=$(sed "s|COMPONENTIDEX|${COMPONENTIDEX}|g" <<< "${CRONENTRY}")
 		else
-			CRONENTRY="${CRON_TEMPLATE}"
+			CRONENTRY="${CRONENTRY_TEMPLATE}"
 			CRONENTRY=$(sed "s|COMPONENT|${COMPONENT}|g" <<< "${CRONENTRY}")
 		fi
 
