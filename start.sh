@@ -1105,16 +1105,18 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 > "${MESSAGE_TEMPFILE}" &
 
 SUBSCRIBE_PID=$!
-		
+
+mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" \
+-t "nanohome/startup" \
+-m "completed"
+
 MESSAGE_STATUS=$(
-	mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" \
-	-t "nanohome/startup" \
-	-m "completed"
+	cat "${MESSAGE_TEMPFILE}" 2>/dev/null
 )
 
 wait "$SUBSCRIBE_PID"
-
 rm "${MESSAGE_TEMPFILE}"
+
 if [[ -z "${MESSAGE_STATUS}" ]]; then
 	echo -e "${LOG_SUCC} Mosquitto: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
 	export MQTT_CONNECTION_STRING
