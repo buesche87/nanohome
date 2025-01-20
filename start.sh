@@ -1082,19 +1082,44 @@ fi
 
 # Mosquitto: 
 ############################################################
-# if connection to mosquitto fails exit
+# TODO: if connection to mosquitto fails > WARNING
 # ! mosquitto docker:
 #   - settings in mosquitto.conf must be adjusted
 #   - passwd file "/etc/mosquitto/passwd" must exist and be modified with
 #     - mosquitto_passwd -U /etc/mosquitto/passwd
 #     - mosquitto_passwd -b /etc/mosquitto/passwd "${MQTT_USER}" "${MQTT_PASSWORD}"
 
+# subscribe, wait for answer stored in temporary file
+# or goto next iteration after 2 seconds
+MESSAGE_TEMPFILE=$(mktemp)
 
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+--nodelay --quiet -C 1 -W 2 \
+-t "nanohome/startup" \
+> "${MESSAGE_TEMPFILE}" &
+
+SUBSCRIBE_PID=$!
+		
+MESSAGE_STATUS=$(
+	mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" \
+	-t "nanohome/startup" \
+	-m "completed"
+)
+
+wait "$SUBSCRIBE_PID"
+
+rm "${MESSAGE_TEMPFILE}"
+if [[ -z "${MESSAGE_STATUS}" ]]; then
+	echo -e "${LOG_SUCC} Mosquitto: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
+else
+	echo -e "${LOG_WARN} Mosquitto: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
+fi
 
 # Nanohome: Config
 ############################################################
 # configure nanohome environment
-# TODO: Crontab-File mit Header ausrüsten
+
+
 
 
 # Nanohome: Services
