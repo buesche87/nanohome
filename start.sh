@@ -1093,8 +1093,6 @@ fi
 # or goto next iteration after 2 seconds
 MESSAGE_TEMPFILE=$(mktemp)
 
-echo "${MESSAGE_TEMPFILE}"
-
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -1112,15 +1110,14 @@ mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" \
 	-t "nanohome/startup" \
 	-m "completed"
 
+wait "$SUBSCRIBE_PID"
+
 MESSAGE_STATUS=$(
 	cat "${MESSAGE_TEMPFILE}" 2>/dev/null
 )
 
-cat "${MESSAGE_TEMPFILE}"
-
 echo "${MESSAGE_STATUS}"
 
-wait "$SUBSCRIBE_PID"
 rm "${MESSAGE_TEMPFILE}"
 
 if [[ -n "${MESSAGE_STATUS}" ]]; then
