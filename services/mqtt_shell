@@ -8,6 +8,11 @@
 # Configuration
 FIFO_FILE=".mqtt_shell.cache"
 ALLOWED_COMMANDS=(${NANOHOME_SHELL_ALLOWED_COMMANDS//,/ }) # Convert comma-separated list to array
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
 
 # Cleanup function
 cleanup() {

@@ -7,13 +7,19 @@
 # For each connected component parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
 # convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
 # Main Service
-mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_STATUS}" | \
 	while read -r COMPONENTSTATUS; do
@@ -25,7 +31,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 
 	# get connected state and description of component
 	CONNECTED=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
 		-t "${DEVICEID}/status/${COMPONENT}/connected"
 	)
@@ -35,7 +41,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 	)
 
 	DESCRIPTION=$(
-			mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "${DEVICEID}/status/${COMPONENT}/description"
 	)

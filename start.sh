@@ -1089,19 +1089,18 @@ fi
 #     - mosquitto_passwd -U /etc/mosquitto/passwd
 #     - mosquitto_passwd -b /etc/mosquitto/passwd "${MQTT_USER}" "${MQTT_PASSWORD}"
 
-MQTT_CONNECTION=(
+MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
-mosquitto_sub "${MQTT_CONNECTION[@]}" \
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -C 1 -W 1 \
 	-t "nanohome/startup" 
 
 if [[ $? -ne 1 ]]; then
 	echo -e "${LOG_SUCC} MQTT: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
-	export MQTT_CONNECTION_STRING="${MQTT_CONNECTION[*]}"
 else
 	echo -e "${LOG_WARN} MQTT: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
 fi

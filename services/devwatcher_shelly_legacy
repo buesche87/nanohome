@@ -8,6 +8,12 @@
 # - Write component infos into influxdb bucket "devices"
 #/////////////////////////////////////////////////////////////////////////////////////
 
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
 # convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
@@ -15,7 +21,7 @@ convert_value() {
 
 # subscribe to "shellies/+/input/+"
 # read values for each monitored component
-mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | \
 	while read -r DEVICESTATUS; do
@@ -39,7 +45,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 	# get connected state and description of component
 	# publish connected=false for new components
 	CONNECTED=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 	)
@@ -47,13 +53,13 @@ mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
-		mosquitto_pub -r "${MQTT_CONNECTION_STRING}" \
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected" \
 		-m "false"
 	fi
 
 	DESCRIPTION=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
 		-t "${DEVICEID}/status/${COMPONENT}/description"
 	)
@@ -61,7 +67,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
 	OUTPUTVALUE=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}"
 	)
