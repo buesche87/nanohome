@@ -1095,13 +1095,11 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-echo "${MQTT_CONNECTION_STRING[@]}"
-
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -C 1 -W 1 \
 	-t "nanohome/startup" 
 
-if [[ $? -eq 0 ]]; then
+if [[ $? -ne 1 ]]; then
 	echo -e "${LOG_SUCC} MQTT: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
 	export MQTT_CONNECTION_STRING
 else
