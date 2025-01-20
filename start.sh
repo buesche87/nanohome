@@ -1100,7 +1100,7 @@ MQTT_CONNECTION_STRING=(
 )
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
---nodelay --quiet -C 1 -W 2 \
+--nodelay --quiet -C 1 -W 1 \
 -t "nanohome/startup" \
 > "${MESSAGE_TEMPFILE}" &
 
@@ -1118,10 +1118,10 @@ wait "$SUBSCRIBE_PID"
 rm "${MESSAGE_TEMPFILE}"
 
 if [[ -z "${MESSAGE_STATUS}" ]]; then
-	echo -e "${LOG_SUCC} Mosquitto: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} MQTT: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
 	export MQTT_CONNECTION_STRING
 else
-	echo -e "${LOG_WARN} Mosquitto: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
+	echo -e "${LOG_WARN} MQTT: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
 fi
 
 # Nanohome: Config
