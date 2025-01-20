@@ -80,9 +80,9 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 
 	if [[ "${PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
 		PAYLOAD="${PAYLOAD%,}"
-		echo "${PAYLOAD}"
-
-		# influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
+	else
+		echo "No suitable payload found"
 	fi
 
 	# Debug
