@@ -41,7 +41,7 @@ JSON_INDEX="7"
 
 # Main
 PUBLISHED_ELEMENTS=$(
-    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+    mosquitto_sub "${MQTT_CONNECTION_STRING}" \
     -C 1 -W 2 --retained-only --quiet \
     -t "${MQTT_TOPIC_DASHBOARD}"
 )

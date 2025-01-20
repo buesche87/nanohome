@@ -16,7 +16,7 @@
 read_measurement() {
 	while read -r line; do
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
-	done < <(mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2) &
+	done < <(mosquitto_sub "${MQTT_CONNECTION_STRING}" -t "$3" -q 2) &
 }
 
 # loop indefinitely
@@ -24,7 +24,7 @@ while /bin/true; do
 
 	# subscribe to "shellies/+/+/+/connected"
 	CONNECTED_DEVICES=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 		--retained-only --nodelay --quiet -F "%j" -W 2 \
 		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
 	)
@@ -52,7 +52,7 @@ while /bin/true; do
 
 		# get connected state and description of component
 		CONNECTED=$(
-			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+			mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 		)
@@ -62,7 +62,7 @@ while /bin/true; do
 		)
 
 		DESCRIPTION=$(
-			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+			mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
 			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
 		)

@@ -25,7 +25,7 @@ CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosqu
 
 # subscribe to timer topic and create json array with all timers
 TIMERS_PUBLISHED=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+	mosquitto_sub "${MQTT_CONNECTION_STRING}" \
 	--retained-only --nodelay --quiet -W 2 \
 	-t "${MQTT_TOPIC_TIMER}" 
 )
