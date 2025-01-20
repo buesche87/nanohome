@@ -9,7 +9,6 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # TODO: Test
-
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -29,7 +28,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	while read -r DEVICESTATUS; do
 
 	STATUSTOPIC=$( jq -r '.topic' <<< "${DEVICESTATUS}" )
-	STATUSMESSAGE=$( jq -r '.payload' <<< "${DEVICESTATUS}" )
+	OUTPUT=$( jq -r '.payload' <<< "${DEVICESTATUS}" )
 	DEVICEID=$( cut -d '/' -f 2 <<< "${STATUSTOPIC}" )
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
 	COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${STATUSTOPIC}" )
@@ -60,19 +59,13 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+	OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
 		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected" \
 		-m "false"
 	fi
-
-	# get current output to visualize on home-dashboard
-	OUTPUTVALUE=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W 1 \
-		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}"
-	)
 
 	[[ "${DESCRIPTION}" == "null" ]] && influx write \
 	-b "${INFLUX_BUCKET_DEVICES}" \
