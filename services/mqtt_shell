@@ -29,8 +29,8 @@ while read -r COMMANDLINE <"${FIFO_FILE}"; do
     # if command is allowed, execute it and publish result 
     for ALLOWED in "${ALLOWED_COMMANDS[@]}"; do
         if [[ "${ALLOWED}" == "${COMMAND}" ]]; then
-			OUTPUT=$(bash -c "$COMMANDLINE" 2>&1)
-            mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDOUTPUT}" -m "$OUTPUT"
+			OUTPUT=$(bash -c $COMMANDLINE 2>&1)
+            mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDOUTPUT}" -m "${OUTPUT}"
             break
         fi
     done
