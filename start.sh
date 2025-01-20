@@ -760,7 +760,7 @@ grafanadatasource_measurements=$(
 # Grafana: Content
 ############################################################
 # if source folder grafana-content exists
-# modify mqtt credentials ins mqttconfig.js
+# modify mqtt credentials in config.js
 # move content to "${NANOHOME_ROOTPATH}/data/grafana"
 #
 # ! grafana docker:
@@ -776,8 +776,8 @@ grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
 # i.O.
 grafanacontent_modify() {
-	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/mqttconfig.js"
-	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/mqttconfig.js"
+	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/config.js"
+	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/config.js"
 
 	if [[ $? -eq 0 ]]; then
 		echo -e "${LOG_SUCC} Grafana: Content credentials set" >> /proc/1/fd/1
