@@ -1116,6 +1116,8 @@ MESSAGE_STATUS=$(
 	cat "${MESSAGE_TEMPFILE}" 2>/dev/null
 )
 
+cat "${MESSAGE_TEMPFILE}"
+
 echo "${MESSAGE_STATUS}"
 
 rm "${MESSAGE_TEMPFILE}"
