@@ -86,7 +86,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	fi
 
 	# Debug
-	[[ $LOG_SERVICES ]] && echo "[Measurements] ${DEVICEID} - ${COMPONENT}"
-	[[ $LOG_SERVICES ]] && jq <<< "${STATUSMESSAGE}"
+	[[ $LOG_SERVICES ]] && echo "[Measurements] Added: ${DEVICEID} - ${COMPONENT}"
+	# [[ $LOG_SERVICES ]] && jq <<< "${STATUSMESSAGE}"
 	
 done

@@ -7,22 +7,20 @@
 # For each connected COMPONENT parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO:
+# - Automatically get newly connected devices
+
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
-
-# TODO: Test
-# MQTT_SERVER="nanohome.buesche.one"
-# Automatically get newly connected devices
-# MQTT-Connection Strings in start.sh exportieren
-
-# read measurements
-read_measurement() {
+# start measurement in background
+start_measurement() {
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2 | \
 	while read -r line; do
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
-	done < <(mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2) &
+	done &
 }
 
 # loop indefinitely
@@ -34,29 +32,25 @@ while /bin/true; do
 		--retained-only --nodelay --quiet -F "%j" -W 2 \
 		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
 	)
-	
+
+	# loop through all connected devices
 	CONNECTED_DEVICES_ARRAY=$(
 		jq -s '.' <<< "${CONNECTED_DEVICES}"
 	)
 
-	# loop through all connected devices
 	jq -c '.[]' <<< "${CONNECTED_DEVICES_ARRAY}" | while read -r CONNECTED_DEVICE; do
-
-		# debug
-		echo "Connected device:"
-		jq <<< "${CONNECTED_DEVICE}"
 
 		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )
 		DEVICEID=$( cut -d '/' -f 2 <<< "${CONNECTEDTOPIC}" )
 		COMPONENT=$( cut -d '/' -f 3 <<< "${CONNECTEDTOPIC}")
 		COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${CONNECTEDTOPIC}" )	
 
-		# don't monitor components excluded in config
+		# do not monitor components excluded in config
 		if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
 			continue
 		fi
 
-		# get connected state and description of component
+		# get connected state and description of current component
 		CONNECTED=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 			--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -84,14 +78,25 @@ while /bin/true; do
 		ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/energy"
 		POWERTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/power"
 		DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/temperature"
-		
-		# subscribe and write into influxdb
-		read_measurement "Energy" "${DESCRIPTION_ESCAPED}" "${ENERGYTOPIC}"
-		read_measurement "Power" "${DESCRIPTION_ESCAPED}" "${POWERTOPIC}"
-		read_measurement "Devicetemp" "${DESCRIPTION_ESCAPED}" "${TEMPERATURETOPIC}"
-		
+
+		# check if component is already monitored
+		MONITORED_ENERGY=$(
+			ps | grep "${ENERGYTOPIC}" | grep -v "grep"
+		)
+
+		MONITORED_POWER=$(
+			ps | grep "${POWERTOPIC}" | grep -v "grep"
+		)
+
+		MONITORED_DEVICETEMP=$(
+			ps | grep "${DEVICETEMPTOPIC}" | grep -v "grep"
+		)
+
+		# subscribe and write into influxdb if not already monitored
+		[[ -z "${MONITORED_ENERGY}" ]] && start_measurement "Energy" "${DESCRIPTION_ESCAPED}" "${ENERGYTOPIC}"
+		[[ -z "${MONITORED_POWER}" ]] && start_measurement "Power" "${DESCRIPTION_ESCAPED}" "${POWERTOPIC}"
+		[[ -z "${MONITORED_DEVICETEMP}" ]] && start_measurement "Devicetemp" "${DESCRIPTION_ESCAPED}" "${TEMPERATURETOPIC}"
 	done
 	
-	# TODO: monitor new devices
-	tail -f /dev/null
+	sleep $NANOHOME_DEVWATCHER_INTERVAL
 done
