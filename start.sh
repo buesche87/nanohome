@@ -8,7 +8,7 @@ export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
 export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="echo,clear_element,create_panel,create_timer,remove_device"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="echo,clear_measurement,create_panel,create_timer,remove_device"
 
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
