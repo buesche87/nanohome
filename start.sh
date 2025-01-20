@@ -1114,6 +1114,8 @@ MESSAGE_STATUS=$(
 	cat "${MESSAGE_TEMPFILE}" 2>/dev/null
 )
 
+echo "${MESSAGE_STATUS}"
+
 wait "$SUBSCRIBE_PID"
 rm "${MESSAGE_TEMPFILE}"
 
