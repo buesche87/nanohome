@@ -1095,6 +1095,8 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
+echo "${MQTT_CONNECTION_STRING[@]}"
+
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -C 1 -W 1 \
 	-t "nanohome/startup" 
