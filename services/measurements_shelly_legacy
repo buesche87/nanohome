@@ -12,16 +12,6 @@
 # Automatically get newly connected devices
 # MQTT-Connection Strings in start.sh exportieren
 
-# debug
-MQTT_SERVER="nanohome.buesche.one"
-
-# simplify mqtt connection
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
 # read measurements
 read_measurement() {
 	while read -r line; do

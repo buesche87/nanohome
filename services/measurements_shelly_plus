@@ -7,15 +7,6 @@
 # For each connected component parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# debug
-MQTT_SERVER="nanohome.buesche.one"
-
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
 # convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
