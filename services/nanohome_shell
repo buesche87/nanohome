@@ -1,0 +1,34 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# nanohome MQTT shell
+#
+# execute allowed shell commands published to "nanohome/shell/input"
+# pulish result to "nanohome/shell/output"
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Configuration
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+FIFO_FILE=".nanohome_shell.cache"
+ALLOWED_COMMANDS=(${NANOHOME_SHELL_ALLOWED_COMMANDS//,/ })
+
+# Ensure FIFO exists
+rm -f "${FIFO_FILE}" && mkfifo "${FIFO_FILE}"
+
+# Start MQTT subscription
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDINPUT}" > "${FIFO_FILE}" &
+
+# If command is allowed, execute it and publish result
+while read -r COMMANDLINE <"${FIFO_FILE}"; do
+    COMMAND=${COMMANDLINE%% *}
+
+    if [[ " ${ALLOWED_COMMANDS[*]} " == *" ${COMMAND} "* ]]; then
+        OUTPUT=$(bash -c "${COMMANDLINE}" 2>&1)
+        [[ -n "${OUTPUT}" ]] && RESULT=$OUTPUT || RESULT="command executed"
+        mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDOUTPUT}" -m "${RESULT}"
+    fi
+done

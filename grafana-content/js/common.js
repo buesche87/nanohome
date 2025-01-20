@@ -93,7 +93,7 @@ function checkElement(element) {
 	return typeof element !== "undefined" && element !== null;
 }
 
-// Send command with mqtt_shell
+// Execute command with nanohome shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);
 	console.log('Execute: ' + payload);
