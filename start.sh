@@ -1093,6 +1093,12 @@ fi
 # or goto next iteration after 2 seconds
 MESSAGE_TEMPFILE=$(mktemp)
 
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 --nodelay --quiet -C 1 -W 2 \
 -t "nanohome/startup" \
@@ -1111,6 +1117,7 @@ wait "$SUBSCRIBE_PID"
 rm "${MESSAGE_TEMPFILE}"
 if [[ -z "${MESSAGE_STATUS}" ]]; then
 	echo -e "${LOG_SUCC} Mosquitto: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
+	export MQTT_CONNECTION_STRING
 else
 	echo -e "${LOG_WARN} Mosquitto: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
 fi
