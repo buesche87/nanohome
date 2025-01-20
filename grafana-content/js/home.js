@@ -1,4 +1,14 @@
-// Dashboard variables
+// TODO:
+// - Allgemeine Funktionen umsetzen (getDeviceCommands und so)
+// - onMessageArrived optimieren
+
+
+/*
+---------------------------------------------------------------
+	Attributes and html elements on dashboard
+---------------------------------------------------------------
+*/
+
 var outputElement = "statusOutput";
 var outComponent = "";
 var command;
@@ -54,6 +64,7 @@ function sendCommandLegacy(device, component, description, command) {
 */
 
 function onMessageArrived(message) {
+
 	let payload = message.payloadString;
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");

@@ -1,8 +1,16 @@
-// id prefixes of elements on dashboard
-var standbyDivPrefix = "standbyActive_";
-var standbyPowerPrefix = "standbyPower_";
-var standbyWaitPrefix = "standbyWait_";
-var standbySaveBtnPrefix = "standbySaveBtn_";
+// TODO:
+// - Überarbeiten
+
+/*
+---------------------------------------------------------------
+	Attributes and html element prefixes on dashboard
+---------------------------------------------------------------
+*/
+
+var standby_activePrefix = "standbyActive_";
+var standby_powerPrefix = "standbyPower_";
+var standby_waitPrefix = "standbyWait_";
+var standby_saveBtnPrefix = "standbySaveBtn_";
 
 /*
 ---------------------------------------------------------------
@@ -24,7 +32,7 @@ function getStandbyInfo() {
 
 // Save standby values
 function saveStandby(description) {
-	let standbyPower = document.getElementById(standbyPowerPrefix + description).value;
+	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
 	let publishTopic = nanohomeRootTopic + "/" + description + "/standby";
 
 	if (/^\d+$/.test(standbyPower)) {
@@ -80,8 +88,8 @@ function onMessageArrived(message) {
 // Fill standby settings with content from mqtt message
 function populateStandby(description, payload) {
 	let standbyData = JSON.parse(payload);
-	let standbyPower = document.getElementById(standbyPowerPrefix + description);
-	let standbyWait = document.getElementById(standbyWaitPrefix + description);
+	let standbyPower = document.getElementById(standby_powerPrefix + description);
+	let standbyWait = document.getElementById(standby_waitPrefix + description);
 
 	if (/^\d+$/.test(standbyData.standby)) {
 		standbyPower.value = standbyData.standby;
@@ -94,8 +102,8 @@ function populateStandby(description, payload) {
 
 // Clear standby elements
 function clearStandby(description) {
-	var standbyPower = document.getElementById(standbyPowerPrefix + description);
-	var standbyWait = document.getElementById(standbyWaitPrefix + description);
+	var standbyPower = document.getElementById(standby_powerPrefix + description);
+	var standbyWait = document.getElementById(standby_waitPrefix + description);
 	
 	standbyPower.value = "";
 	standbyWait.value = "";
@@ -104,7 +112,7 @@ function clearStandby(description) {
 
 // Populate json data from mqtt to element holding the data
 function populateStandbyJson(description, dataElement, payload) {
-	let jsonDataElement = document.getElementById(standbyDivPrefix + description);
+	let jsonDataElement = document.getElementById(standby_activePrefix + description);
 	
 	if (checkElement(jsonDataElement)) {
 		jsonDataElement.setAttribute(dataElement, JSON.stringify(payload));
@@ -113,8 +121,8 @@ function populateStandbyJson(description, dataElement, payload) {
 
 // Set active state on elements
 function getActiveStandby(description) {
-	let standbyActive = document.getElementById(standbyDivPrefix + description);
-	let standbyPower = document.getElementById(standbyPowerPrefix + description).value;
+	let standbyActive = document.getElementById(standby_activePrefix + description);
+	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
 	
 	if (checkElement(standbyPower) && standbyPower != "" ) {
 		standbyActive.innerText = "Active";
@@ -135,9 +143,9 @@ function getActiveStandby(description) {
 
 // Generate Json for TimerData
 function generateStandbyJson(description) {
-	let jsonAttribute = document.getElementById(standbyDivPrefix + description);
-	let standbyPower = document.getElementById(standbyPowerPrefix + description).value;
-	let standbyWait = document.getElementById(standbyWaitPrefix + description).value;
+	let jsonAttribute = document.getElementById(standby_activePrefix + description);
+	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
+	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
 	let deviceJson = JSON.parse(jsonAttribute.getAttribute(deviceAttribute));
 
 	if (! checkElement(standbyWait)) { standbyWait = 0; }
@@ -154,7 +162,7 @@ function generateStandbyJson(description) {
 
 // Validate format of input
 function validateStandbyInput(description, inputField) {
-	let saveButton = document.getElementById(standbySaveBtnPrefix + description);
+	let saveButton = document.getElementById(standby_saveBtnPrefix + description);
 	let isValid = /^\d+$/.test(inputField.value)
 	
 	if (! isValid) { inputField.value = "";	} 		

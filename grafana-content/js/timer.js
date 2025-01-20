@@ -1,6 +1,12 @@
-// Variables
-var deviceAttribute = "deviceData";
-var timerAttribute  = "timerData";
+// TODO:
+// - Überarbeiten
+
+/*
+---------------------------------------------------------------
+	Attributes and html element prefixes on dashboard
+---------------------------------------------------------------
+*/
+
 
 /*
  ---------------------------------------------------------------

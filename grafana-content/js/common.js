@@ -1,4 +1,11 @@
-// Attributes to store json data
+// TODO: Test
+
+/*
+---------------------------------------------------------------
+	Attributes and html element prefixes on dashboard
+---------------------------------------------------------------
+*/
+
 var deviceAttribute = "deviceData";
 var timerAttribute = "timerData";
 var standbyAttribute = "standbyData";

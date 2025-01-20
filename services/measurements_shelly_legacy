@@ -7,8 +7,7 @@
 # For each connected COMPONENT parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# TODO:
-# - Automatically get newly connected devices
+# TODO: Test
 
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
@@ -18,6 +17,9 @@ MQTT_CONNECTION_STRING=(
 
 # start measurement in background
 start_measurement() {
+	# debug
+	[[ $LOG_SERVICES ]] && echo "[Measurements] Starting: $3" >> /proc/1/fd/1
+	
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2 | \
 	while read -r line; do
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"

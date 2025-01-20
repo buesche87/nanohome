@@ -14,6 +14,8 @@
 #   - write VALUEs into influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Test
+
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -90,9 +92,17 @@ while /bin/true; do
 				-t "${DEVICEID}/status/${COMPONENT}/connected"
 			)
 
+			DESCRIPTION=$(
+				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+				--retained-only --nodelay --quiet -C 1 -W 1  \
+				-t "${DEVICEID}/status/${COMPONENT}/description"
+			)
+
 			CONNECTEDVALUE=$(
 				convert_value "${CONNECTED}"
 			)
+
+			DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
 			if [[ $CONNECTEDVALUE -eq 0 ]]; then
 				mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
@@ -100,16 +110,7 @@ while /bin/true; do
 				-m "false"
 			fi
 
-			# get description of component
-			DESCRIPTION=$(
-				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-				--retained-only --nodelay --quiet -C 1 -W 1  \
-				-t "${DEVICEID}/status/${COMPONENT}/description"
-			)
-			
-			DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
-
-			# publish output value for nanohome dashboard
+			# get current output to visualize on home-dashboard
 			# TODO: Braucht es den Output fürs Dashbaord? > 
 			# Falls ja, kann das der measurement-teil übernehmen?
 			SWITCHPOWER=$(

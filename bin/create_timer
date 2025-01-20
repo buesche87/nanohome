@@ -7,6 +7,8 @@
 # replace the crontab file /etc/crontabs/nanohome
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Complete & Test
+
 # simplify mqtt connection
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
@@ -20,13 +22,14 @@ echo "" > "${NANOHOME_CRONTABS}"
 CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t _DEVICEID_/command/_COMPONENT_ -m _MESSAGE_"
 CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
-# subscribe to timer topic and create json array with all timers
+# subscribe to timer topic
 TIMERS_PUBLISHED=$(
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--retained-only --nodelay --quiet -W 2 \
 	-t "${MQTT_TOPIC_TIMER}" 
 )
 
+# loop through all configured timers 
 TIMERS_CONFIGURED=$(
 	jq -s 'add' <<< "${TIMERS_PUBLISHED}"
 )
@@ -91,7 +94,7 @@ jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
 		echo "${CRONENTRY_OFF}"
 
 		# Append entry to crontab
-		echo "${CRONENTRY_ON}" > "${NANOHOME_CRONTABS}"
+		echo "${CRONENTRY_ON}" >> "${NANOHOME_CRONTABS}"
 	fi
 
 	# If on time create on entry
@@ -118,7 +121,7 @@ jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
 		echo "${CRONENTRY_OFF}"
 
 		# Append entry to crontab
-		echo "${CRONENTRY_OFF}" > "${NANOHOME_CRONTABS}"
+		echo "${CRONENTRY_OFF}" >> "${NANOHOME_CRONTABS}"
 	fi
 		
 done

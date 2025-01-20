@@ -7,6 +7,8 @@
 # Compare the standby value with the current output power and do some magic
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Umschreiben
+
 # Main Service
 mosquitto_sub -v -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t ${TOPIC_STATUS} -q 2 | while read -r DEVICESTATUS; do
 
@@ -32,7 +34,6 @@ mosquitto_sub -v -h ${MQTT_SERVER} -u ${MQTT_USER} -P ${MQTT_PASSWORD} -t ${TOPI
 	STANDBYWAIT=$(echo ${STANDBYJSON} | jq -r .wait )
 	[[ "$STANDBYWAIT" == "null" ]] && STANDBYWAIT=1
 	
-
 	# Manage standby if value found
 	if jq -e . >/dev/null 2>&1 <<<"$STATUSMESSAGE" && [ -n "$STANDBYVALUE" ] && [[ "$DESCRIPTION" == "$STANDBYDESCRIPTION" ]]; then
 

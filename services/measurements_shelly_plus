@@ -7,6 +7,8 @@
 # For each connected component parse the status json and write values to influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Test
+
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -86,7 +88,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	fi
 
 	# Debug
-	[[ $LOG_SERVICES ]] && echo "[Measurements] Added: ${DEVICEID} - ${COMPONENT}"
+	[[ $LOG_SERVICES ]] && echo "[Measurements] Added: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 	# [[ $LOG_SERVICES ]] && jq <<< "${STATUSMESSAGE}"
-	
 done

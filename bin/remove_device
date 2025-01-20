@@ -3,6 +3,8 @@
 # Nanohome remove a device from InfluxDB
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: TEST
+
 DEVICE="$1"
 COMPONENT="$2"
 DESCRIPTION="$3"

@@ -5,6 +5,8 @@
 # create buttons or slider on the home dashbaord
 #/////////////////////////////////////////////////////////////////////////////////////
 
+# TODO: Merge HTML & JSON
+
 # simplify mqtt connection
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
