@@ -65,38 +65,25 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
 	# TODO: Nur string zum schreiben vorbereiten
+
+	PAYLOAD="${DESCRIPTION_ESCAPED} "
+
 	# write fields with value to influxdb
-	[[ "${POWER}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Power=$POWER"
-	)
+	[[ "${POWER}" != "null" ]] && PAYLOAD+="Power=${POWER},"
+	[[ "${ENERGY}" != "null" ]] && PAYLOAD+="Energy=${ENERGY},"
+	[[ "${VOLTAGE}" != "null" ]] && PAYLOAD+="Voltage=${VOLTAGE},"
+	[[ "${CURRENT}" != "null" ]] && PAYLOAD+="Current=${CURRENT},"
+	[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD+="DeviceTemp=${DEVICETEMP},"
+	[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD+="Temperature=${ROOM_TEMP},"
+	[[ "${ROOM_HUM}" != "null" ]] && PAYLOAD+="Humidity=${ROOM_HUM},"
+	[[ "${BATTERY}" != "null" ]] && PAYLOAD+="Battery=${BATTERY},"
 
-	[[ "${ENERGY}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Energy=$ENERGY"
-	)
+	if [[ "${PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
+		PAYLOAD="${PAYLOAD%,}"
+		echo "${PAYLOAD}"
 
-	[[ "${VOLTAGE}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Voltage=$VOLTAGE"
-	)
-
-	[[ "${CURRENT}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Current=$CURRENT"
-	)
-
-	[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED DeviceTemp=$DEVICETEMP"
-	)
-
-	[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Temperature=$ROOM_TEMP"
-	)
-
-	[[ "${ROOM_HUM}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Humidity=$ROOM_HUM"
-	)
-
-	[[ "${BATTERY}" != "null" ]] && PAYLOAD=$(
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$DESCRIPTION_ESCAPED Battery=$BATTERY"
-	)
+		# influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
+	fi
 
 	# Debug
 	[[ $LOG_SERVICES ]] && echo "[Measurements] ${DEVICEID} - ${COMPONENT}"
