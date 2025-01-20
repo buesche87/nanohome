@@ -1093,6 +1093,8 @@ fi
 # or goto next iteration after 2 seconds
 MESSAGE_TEMPFILE=$(mktemp)
 
+echo "${MESSAGE_TEMPFILE}"
+
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -1100,7 +1102,7 @@ MQTT_CONNECTION_STRING=(
 )
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--nodelay --quiet -C 1 -W 1 \
+	--nodelay --quiet -C 1 -W 2 \
 	-t "nanohome/startup" \
 	> "${MESSAGE_TEMPFILE}" &
 
