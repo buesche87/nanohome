@@ -1,15 +1,17 @@
 // TODO: 
-// - Übernahme ID Prefixes auf Dashbaord
+// - Dashbaord: Übernahme ID Prefixes
 // - Dashbaord: getdetailsInfo > getDeviceStatus
 // - Dashbaord: getDeviceDetails > getComponentDetails
 // - Dashbaord: connectDevice > connectComponent
-
 
 /*
   ---------------------------------------------------------------
 	Attributes and html element prefixes on dashboard
   ---------------------------------------------------------------
 */
+
+var devmgr_deviceDataJsonStore = "deviceData"; // HTML element
+var devmgr_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
 
 var devmgr_componentPrefix = "component_";
 var devmgr_connectedPrefix = "connected_";
@@ -70,68 +72,6 @@ function getDeviceStatus(device) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
-// Connect or disconnect component
-function connectComponent(device) {
-	let componentDetails = getComponentDetails(device);
-	let mqttTopics = getMqttTopics(device, componentDetails);
-
-	// Get current connected value
-	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
-
-	// Publish and refresh
-	mqttPublish(mqttTopics.connected, payload, true);
-	getDeviceInfo(device);
-}
-
-// Save device details
-// TODO - Replace description in json (html element attribute, mqtt topics)
-// TODO - Delete old mqtt topics in nanohome/
-function saveDevice(device) {
-	let componentDetails = getComponentDetails(device);
-	let mqttTopics = getMqttTopics(device, componentDetails);
-
-	let jsonElement = generateDeviceJson(device, componentDetails);
-	let payload = JSON.stringify(jsonElement);
-
-	// Publish and refresh
-	mqttPublish(mqttTopics.device, payload, true);
-	mqttPublish(mqttTopics.description, componentDetails.description, true);
-	getDeviceInfo(device);
-	getDashboardInfo();
-}
-
-// Create dashboard element
-function createDashboardElement(device) {
-	let componentDetails = getComponentDetails(device);
-	let mqttTopics = getMqttTopics(device, componentDetails);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
-
-	// Confirm creation of element
-	let confirmDialog = confirm('Create Dashbaord element "' + componentDetails.description + '" for device: "' + device + '/' + componentDetails.component + '"?');
-
-	if (confirmDialog) {
-		let jsonStore = document.getElementById("deviceData");
-		let existingJson = JSON.parse(jsonStore.getAttribute("componentDetails"));
-
-		// TODO - Search and replace existing element
-
-		// Define new index
-		let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
-
-		// Add entry to json
-		let newJsonElement = generateDashboardJson(device, componentDetails, jsonIndex);
-		existingJson.push(newJsonElement);
-
-		// Save modified attribute
-		jsonStore.setAttribute("componentDetails", JSON.stringify(existingJson));
-		mqttPublish(mqttTopics.home, JSON.stringify(newJsonElement), true);
-		createPayload = deviceCommands.createPanel + ' "' + jsonIndex + '"'
-		shellCommand(createPayload);
-		console.log ('Shell command: ' + createPayload)
-	}
-}
-
 // clear measurement
 function clearMeasurement(device) {
 	let componentDetails = getComponentDetails(device);
@@ -140,13 +80,82 @@ function clearMeasurement(device) {
 	shellCommand(deviceCommands.clearMeasurement);
 }
 
-// remove device
+// TODO: Test
+// Connect or disconnect component
+function connectComponent(device) {
+	let componentDetails = getComponentDetails(device);
+	let mqttTopics = getMqttTopics(device, componentDetails);
+
+	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
+
+	mqttPublish(mqttTopics.connected, payload, true);
+	getDeviceStatus(device);
+}
+
+// TODO: 
+// - Search and replace existing element
+
+// create json for new dashboard element
+// merge new json into existing one from jsonStore
+// publish merged json to "nanohome/devices/description"
+function createDashboardElement(device) {
+	let componentDetails = getComponentDetails(device);
+	let mqttTopics = getMqttTopics(device, componentDetails);
+	let deviceCommands = getDeviceCommands(device, componentDetails);
+
+	// confirm creation of element
+	let confirmDialog = confirm('Create Dashbaord element "' + componentDetails.description + '" for device: "' + device + '/' + componentDetails.component + '"?');
+
+	if (confirmDialog) {
+		let deviceDatajsonStore = document.getElementById(devmgr_deviceDataJsonStore);
+		let existingJson = JSON.parse(deviceDatajsonStore.getAttribute(devmgr_deviceDataAttribute));
+
+		// define new index
+		let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
+
+		// add entry to json
+		let newJsonElement = createDashboardJson(device, componentDetails, jsonIndex);
+		existingJson.push(newJsonElement);
+
+		// publish new json element to "nanohome/home/description" 
+		mqttPublish(mqttTopics.home, JSON.stringify(newJsonElement), true);
+
+		// save modified json into deviceData attribute
+		// run "create_panel" through nanohome shell
+		deviceDatajsonStore.setAttribute(devmgr_deviceDataAttribute, JSON.stringify(existingJson));
+		createPanel = deviceCommands.createPanel + ' "' + jsonIndex + '" "false"'
+		shellCommand(createPanel);
+		console.log ('Shell command: ' + createPanel)
+	}
+}
+
+// TODO: Test
+// clear measurements and remove device with nanohome shell command "remove_device"
 function removeDevice(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceCommands = getDeviceCommands(device, componentDetails);
 
 	shellCommand(deviceCommands.clearMeasurement);
 	shellCommand(deviceCommands.removeDevice);
+}
+
+// TODO:
+// - Replace description in json (html element attribute, mqtt topics)
+// - Delete old mqtt topics in nanohome/
+
+// save device details
+function saveDevice(device) {
+	let componentDetails = getComponentDetails(device);
+	let mqttTopics = getMqttTopics(device, componentDetails);
+
+	let jsonElement = createComponentJson(device, componentDetails);
+	let payload = JSON.stringify(jsonElement);
+
+	// Publish and refresh
+	mqttPublish(mqttTopics.device, payload, true);
+	mqttPublish(mqttTopics.description, componentDetails.description, true);
+	getDeviceStatus(device);
+	getDashboardInfo();
 }
 
 /*
@@ -163,8 +172,6 @@ function onMessageArrived(message) {
 	let topicSplit = topic.split("/");
 
 	if ( topicSplit[0] == "nanohome" ) {
-
-		let description = topicSplit[2]
 
 		if ( topicSplit[1] == "devices" ) {
 			// tbd
@@ -211,16 +218,16 @@ function onMessageArrived(message) {
 
 		// shelly-deviceid/status/component/connected
 		else if (topicSplit[3] == "connected") {
-			fillComponents(deviceid, component);
-			fillStatusElements(deviceid, component, topicSplit[3], payload);
-			fillExampleElements(deviceid, component, topicSplit[3], payload);
+			fillComponentElement(deviceid, component);
+			fillStatusElement(deviceid, component, topicSplit[3], payload);
+			// setExampleElementDescription(deviceid, component, topicSplit[3], payload);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
 		// shelly-deviceid/status/component/description
 		else if (topicSplit[3] == "description") {
-			fillStatusElements(deviceid, component, topicSplit[3], payload);
-			fillExampleElements(deviceid, component, topicSplit[3], payload);
+			fillStatusElement(deviceid, component, topicSplit[3], payload);
+			setExampleElementDescription(deviceid, component, payload);
 			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 
@@ -233,17 +240,17 @@ function onMessageArrived(message) {
 
 		// shellies/shelly-deviceid/componentdev/componentindex/connected
 		if (topicSplit[4] == "connected") {
-			fillComponents(deviceid, componentMerged);
-			fillStatusElements(deviceid, componentMerged, topicSplit[4], payload);
-			fillExampleElements(deviceid, componentMerged, topicSplit[4], payload);
+			fillComponentElement(deviceid, componentMerged);
+			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
+			// setExampleElementDescription(deviceid, componentMerged, topicSplit[4], payload);
 			setStatusLegacy(deviceid);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
 		// shellies/shelly-deviceid/componentdev/componentindex/description
 		else if (topicSplit[4] == "description") {
-			fillStatusElements(deviceid, componentMerged, topicSplit[4], payload);
-			fillExampleElements(deviceid, componentMerged, topicSplit[4], payload);
+			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
+			setExampleElementDescription(deviceid, componentMerged, payload);
 			setStatusLegacy(deviceid);
 			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
@@ -263,9 +270,10 @@ function onMessageArrived(message) {
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // Legacy - Set Status-Element to Legacy
 function setStatusLegacy(device) {
-	let htmlElements = getHtmlElements(device);
+	let htmlElements = getDevicesHtmlElements(device);
 	let statusText = "Legacy";
 
 	if (checkElement(htmlElements.status)) {
@@ -281,84 +289,10 @@ function setStatusLegacy(device) {
 ---------------------------------------------------------------
 */
 
-// Fill status elements with content from mqtt message
-function fillStatusElements(device, component, element, payload) {
-	let htmlElements = getHtmlElements(device);
-	let divElement = document.getElementById(element + "_" + device);
-
-	if (checkElement(divElement) && checkElement(htmlElements.component) && component == htmlElements.component.value) {
-		if (element == "description" && checkElement(payload)) {
-			divElement.value = payload;
-		} else if (element == "description") {
-			divElement.value = "";
-		}
-
-		if (element == "connected" && payload == "true") {
-			divElement.textContent = "Connected";
-			divElement.classList.add('statusgreen');
-			divElement.classList.remove('statusfalse');
-		} else if (element == "connected" && payload == "false") {
-			divElement.textContent = "Disconnected";
-			divElement.classList.add('statusfalse');
-			divElement.classList.remove('statusgreen');
-		}
-	}
-}
-
-// Fill network with returned from JSON
-function fillNetworkElement(device, payload) {
-	let htmlElement = document.getElementById(devmgr_statusPrefix + device);
-	let statusData = JSON.parse(payload);
-
-	console.log("setting networkElement");
-	console.log(statusData);
-
-	let ipaddress = statusData?.result?.wifi?.sta_ip;
-	let update = statusData?.result?.sys?.available_updates?.stable?.version;
-	let statusText = "Offline";
-
-	if (checkElement(htmlElement)){
-		if (checkElement(update) && checkElement(ipaddress)) {
-			statusText = ipaddress;
-			statusText += "\n";
-			statusText += "(Update: v" + update + ")";
-			htmlElement.innerText = statusText;
-			htmlElement.classList.remove('statusfalse');
-			htmlElement.classList.add('statusorange');
-		} else if (checkElement(ipaddress)) {
-			htmlElement.innerText = ipaddress;
-			htmlElement.classList.remove('statusfalse');
-			htmlElement.classList.add('statusgreen');
-		}
-	}
-}
-
-// Fill example elements with content from mqtt message
-function fillExampleElements(device, component, element, payload) {
-	let htmlElements = getHtmlElements(device);
-	let btnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
-	let sliderDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
-
-	if (checkElement(btnDescription) && checkElement(htmlElements.component) && component == htmlElements.component.value) {
-		if (element == "description" && checkElement(payload)) {
-			btnDescription.textContent = payload;
-		} else if (element == "description") {
-			btnDescription.textContent = "";
-		}
-	}
-
-	if (checkElement(sliderDescription) && checkElement(htmlElements.component) && component == htmlElements.component.value) {
-		if (element == "description" && checkElement(payload)) {
-			sliderDescription.textContent = payload;
-		} else if (element == "description") {
-			sliderDescription.textContent = "";
-		}
-	}
-}
-
-// Fill components extracted from message if they don't already exist
-function fillComponents(device, component) {
-	let htmlElements = getHtmlElements(device);
+// TODO: Test
+// fill component element with content from mqtt message if it does not already exist
+function fillComponentElement(device, component) {
+	let htmlElements = getDevicesHtmlElements(device);
 	let optionExists = false;
 
 	if (checkElement(htmlElements.component)) {
@@ -374,6 +308,33 @@ function fillComponents(device, component) {
 	}
 }
 
+// TODO: Test
+// fill example element with content from mqtt message
+function setExampleElementDescription(device, component, element, payload) {
+	let htmlElements = getDevicesHtmlElements(device);
+	let exBtnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
+	let exSliderDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
+
+	// exit if htmlElement is hidden or missing
+    if (!checkElement(htmlElements.component)) {
+		console.log("setExampleElementDescription: exit function because of hidden or missing component element");
+        return;
+    }
+
+	// set description to be displayed on example element
+	let description = checkElement(payload) ? payload : "";
+
+	// set textContent of example element
+	if ( component == htmlElements.component.value ) {
+		if ( checkElement(exBtnDescription) ) {
+			exBtnDescription.textContent = description;
+		} else if ( checkElement(exSliderDescription) ) {
+			exSliderDescription.textContent = description;
+		}
+	}
+}
+
+// TODO: Test
 // Set icon on example element with data from dashboard json
 function setExampleElementIcon(payload) {
 	let dashboardData = JSON.parse(payload);
@@ -398,39 +359,85 @@ function setExampleElementIcon(payload) {
 	}
 }
 
+// TODO: Test
+// Fill network with returned from JSON
+function fillNetworkElement(device, payload) {
+	let htmlElements = getDevicesHtmlElements(device);
+	let statusData = JSON.parse(payload);
+
+	let networkElement = htmlElements.status;
+
+	// exit if networkElement is hidden or missing
+    if (!checkElement(networkElement)) {
+		console.log("setExampleElementDescription: exit function because of hidden or missing network element");
+        return;
+    }
+
+	let ipaddress = statusData?.result?.wifi?.sta_ip;
+	let update = statusData?.result?.sys?.available_updates?.stable?.version;
+	let statusText = "Offline";
+
+	if (checkElement(update) && checkElement(ipaddress)) {
+		statusText = ipaddress;
+		statusText += "\n";
+		statusText += "(Update: v" + update + ")";
+		networkElement.innerText = statusText;
+		networkElement.classList.remove('statusfalse');
+		networkElement.classList.add('statusorange');
+	} else if (checkElement(ipaddress)) {
+		networkElement.innerText = ipaddress;
+		networkElement.classList.remove('statusfalse');
+		networkElement.classList.add('statusgreen');
+	}
+}
+
+// TODO: Funktion aufteilen in fillConnectedElement und fillStatusElement ?
+// Fill status elements with content from mqtt message
+function fillStatusElement(device, component, element, payload) {
+	let htmlElements = getDevicesHtmlElements(device);
+	let divElement = document.getElementById(element + "_" + device);
+
+	if (checkElement(divElement) && checkElement(htmlElements.component) && component == htmlElements.component.value) {
+		if (element == "description" && checkElement(payload)) {
+			divElement.value = payload;
+		} else if (element == "description") {
+			divElement.value = "";
+		}
+
+		if (element == "connected" && payload == "true") {
+			divElement.textContent = "Connected";
+			divElement.classList.add('statusgreen');
+			divElement.classList.remove('statusfalse');
+		} else if (element == "connected" && payload == "false") {
+			divElement.textContent = "Disconnected";
+			divElement.classList.add('statusfalse');
+			divElement.classList.remove('statusgreen');
+		}
+	}
+}
+
 /*
 ---------------------------------------------------------------
 	Helper Functions
 ---------------------------------------------------------------
 */
 
-// Check HTML Elements
-function checkElementsStatus(device) {
-	let htmlElements = getHtmlElements(device);
-
-
-	if(htmlElements.status && htmlElements.description && htmlElements.component && htmlElements.connected) {
-		getDeviceInfo(device);
-	} else {
-		window.setTimeout(checkElementsStatus, 50);
-		console.log("MQTT not connected. Retrying");
-	}
-}
-
-function getHtmlElements(device) {
+// get current devices html elements
+function getDevicesHtmlElements(device) {
 	return {
-		description:         document.getElementById(devmgr_descriptionPrefix + device),
-		component:           document.getElementById(devmgr_componentPrefix + device),
-		connected:           document.getElementById(devmgr_connectedPrefix + device),
-		status:              document.getElementById(devmgr_statusPrefix + device),
-		manage:              document.getElementById(devmgr_managePrefix + device),
-		manageSum:           document.getElementById(devmgr_summaryPrefix + device),
-		saveButton:          document.getElementById(devmgr_saveBtnPrfix + device)
+		description: document.getElementById(devmgr_descriptionPrefix + device),
+		component:   document.getElementById(devmgr_componentPrefix + device),
+		connected:   document.getElementById(devmgr_connectedPrefix + device),
+		status:      document.getElementById(devmgr_statusPrefix + device),
+		manage:      document.getElementById(devmgr_managePrefix + device),
+		manageSum:   document.getElementById(devmgr_summaryPrefix + device),
+		saveButton:  document.getElementById(devmgr_saveBtnPrfix + device)
 	}
 }
 
+// get current components values
 function getComponentDetails(device) {
-	let htmlElements = getHtmlElements(device);
+	let htmlElements = getDevicesHtmlElements(device);
 
 	if (checkElement(htmlElements.component)) {
 		let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
@@ -460,40 +467,15 @@ function getComponentDetails(device) {
 	}
 }
 
-// Populate json data from mqtt to element holding the data
+// save json data retreived from mqtt to json store element
 function saveDeviceAttribute(payload) {
-	let jsonStore = document.getElementById("deviceData");
-	jsonStore.setAttribute("componentDetails", payload);
-}
-
-// Generate Json for TimerData
-function generateDashboardJson(device, componentDetails, index) {
-	let newElement = {
-		"index": index,
-		"usage": "dashboard",
-		"deviceId": device,
-		"component": componentDetails.component,
-		"description": componentDetails.description,
-		"icon": componentDetails.exButtonImage
-	};
-	return newElement;
-}
-
-// Generate Json for DeviceData
-function generateDeviceJson(device, componentDetails) {
-	let newElement = {
-		"usage": "device",
-		"deviceId": device,
-		"component": componentDetails.component,
-		"description": componentDetails.description,
-		"legacy": componentDetails.legacy
-	};
-	return newElement;
+	let jsonStore = document.getElementById(devmgr_deviceDataJsonStore);
+	jsonStore.setAttribute(devmgr_deviceDataAttribute, payload);
 }
 
 // Description changed
 function descriptionChanged(device) {
-	let htmlElements = getHtmlElements(device);
+	let htmlElements = getDevicesHtmlElements(device);
 	let componentDetails = getComponentDetails(device);
 
 	if (checkElement(htmlElements.manage)) {
@@ -519,7 +501,7 @@ function showExampleElement(device, element) {
 
 // Make the whole details div clickable
 function detailsClickable(device) {
-	let htmlElements = getHtmlElements(device);
+	let htmlElements = getDevicesHtmlElements(device);
 	let summaryElement = document.getElementById(devmgr_summaryPrefix + device);
 
 	if (checkElement(htmlElements.manage)) {

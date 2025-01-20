@@ -24,6 +24,12 @@ var normalsubscribe = 500;
 var longsubscribe = 1000;
 var legacyKeywords = ["relay"];
 
+/*
+---------------------------------------------------------------
+	MQTT Topics
+---------------------------------------------------------------
+*/
+
 // Global Topics
 var cmdInputTopic = "nanohome/shell/input";
 var cmdOutputTopic = "nanohome/shell/output";
@@ -40,6 +46,11 @@ var outputTopicAllLegacy = "shellies/+/relay/0";
 var connectedTopicAllLegacy = "shellies/+/+/+/connected";
 var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 
+/*
+---------------------------------------------------------------
+	3rd party js
+---------------------------------------------------------------
+*/
 
 // MQTT Websocket min.js
 var mqttws31minLocation = "../public/nanohome/js/mqttws31.min.js";

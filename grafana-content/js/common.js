@@ -1,8 +1,9 @@
 // TODO: Test
 
+
 /*
 ---------------------------------------------------------------
-	Attributes and html element prefixes on dashboard
+	Attributes and html element prefixes on dashboard (REMOVE)
 ---------------------------------------------------------------
 */
 
@@ -16,7 +17,7 @@ var standbyAttribute = "standbyData";
 ---------------------------------------------------------------
 */
 
-// Device commands
+// return device commands for current device
 function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
 		return {
@@ -33,6 +34,7 @@ function getDeviceCommands(device, deviceDetails) {
 	}
 }
 
+// return mqtt topics for current device
 function getMqttTopics(device, deviceDetails) {
 	if (deviceDetails.legacy) {
 		let componentSplit = deviceDetails.component.split(":");
@@ -46,7 +48,6 @@ function getMqttTopics(device, deviceDetails) {
 		}
 	} else {
 		return {
-
 			connected:    device + "/status/" + deviceDetails.component + "/connected",
 			description:  device + "/status/" + deviceDetails.component + "/description",
 			device:      "nanohome/devices/" + deviceDetails.description,
@@ -59,11 +60,39 @@ function getMqttTopics(device, deviceDetails) {
 	}
 }
 
+// OLD: REMOVE
 function getTimerTopics(description) {
 	return {
 		deviceTopic: "nanohome/" + description + "/device",
 		timerTopic:  "nanohome/" + description + "/timer"
 	}
+}
+
+// generate component json for deviceData Attribute
+// gets published to "nanohome/devices/description"
+function createComponentJson(device, componentDetails) {
+	let newElement = {
+		"usage": "device",
+		"deviceId": device,
+		"component": componentDetails.component,
+		"description": componentDetails.description,
+		"legacy": componentDetails.legacy
+	};
+	return newElement;
+}
+
+// create a json to be used for "create_panel"
+// gets merged into json from "nanohome/devices/description"
+function createDashboardJson(device, componentDetails, index) {
+	let newElement = {
+		"index": index,
+		"usage": "dashboard",
+		"deviceId": device,
+		"component": componentDetails.component,
+		"description": componentDetails.description,
+		"icon": componentDetails.exButtonImage
+	};
+	return newElement;
 }
 
 
@@ -73,7 +102,7 @@ function getTimerTopics(description) {
 ---------------------------------------------------------------
 */
 
-// Check index in timer json
+// check latest index in json
 function checkJsonIndex(payload) {
 	let jsonIndex = 1;
 
@@ -88,12 +117,12 @@ function checkJsonIndex(payload) {
 	return jsonIndex;
 }
 
-// Check if element defined
+// check if html element is defined eg. not hidden or missing
 function checkElement(element) {
 	return typeof element !== "undefined" && element !== null;
 }
 
-// Send command with mqtt_shell
+// send command with mqtt_shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);
 	console.log('Execute: ' + payload);

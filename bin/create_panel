@@ -15,9 +15,8 @@ MQTT_CONNECTION_STRING=(
 )
 
 # Parameter & Variables
-COMPONENT_DESCRIPTION=$1
+JSON_INDEX=$1
 LEGACY=$2
-JSON_INDEX=$3
 RANDOM="$(date +%s)"
 
 # Grafana dashboard panels
