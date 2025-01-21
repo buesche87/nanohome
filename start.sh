@@ -8,7 +8,7 @@ export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
 export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="echo,create_dashboardelement,create_timer,delete_device,delete_measurement"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="echo,clear_measurement,create_panel,create_timer,remove_device"
 
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
@@ -57,10 +57,6 @@ export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 # Script logging      
 ############################################################
 
-export LOG_START=true
-export LOG_SCRIPT=true
-export LOG_SERVICES=true
-
 export LOG_BLU="\033[1;36m"
 export LOG_GRN="\033[1;32m"
 export LOG_YLW="\033[1;93m"
@@ -70,7 +66,7 @@ export LOG_NOC="\033[0m"
 export LOG_INFO="[${LOG_BLU}Verbose${LOG_NOC}]"
 export LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
 export LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
-export LOG_ERRO="[${LOG_RED}Error  ${LOG_NOC}]"
+export LOG_ERRO="[${LOG_RED}-Error-${LOG_NOC}]"
 
 # InfluxDB: Config
 ############################################################
@@ -127,33 +123,19 @@ influxconfig_create() {
 	fi
 }
 
-# i.O.
-influxconfig_validate() {
-
-	local answer=$(
-		influx org list \
-		--json
-	)
-
-	local result=$(
-		jq -e '.[] | has("name")' <<< "${answer}"
-	)
-
-	if [[ "${result}" == "true" ]]; then
-		echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUX_HOST} failed" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
-		exit 1
-	fi	
-}
-
 influxconfig=$(
 	influxconfig_search || influxconfig_create
 )
 
-influxconfig_validate
+# Validate configuration
+influx ping > /dev/null 2>&1
+
+if [[ $? -ne 0 ]]; then
+	echo -e "${LOG_ERRO} Influx CLI: Connection to ${INFLUX_HOST} failed" >> /proc/1/fd/1
+	exit 1
+fi
+
+echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
 
 # i.O.
 [[ $LOG_START ]] && jq <<< "${influxconfig}" >> /proc/1/fd/1
@@ -1117,12 +1099,11 @@ fi
 
 crond -f &
 
-#/bin/bash /opt/nanohome/services/mqtt_shell -s &
+/bin/bash /opt/nanohome/services/nanohome_shell &
 #/bin/bash /opt/nanohome/services/devwatcher_shelly_legacy &
 #/bin/bash /opt/nanohome/services/devwatcher_shelly_plus &
 #/bin/bash /opt/nanohome/services/measurements_shelly_legacy &
 #/bin/bash /opt/nanohome/services/measurements_shelly_plus &
 #/bin/bash /opt/nanohome/services/standby_shelly_plus &
-
 
 exec bash

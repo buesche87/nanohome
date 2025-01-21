@@ -14,48 +14,45 @@
 #   - write VALUEs into influxdb
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# TODO: Test
-
+# Configuration
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
-# convert string-boolean to 1 or 0
+# Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
-# loop every $NANOHOME_DEVWATCHER_INTERVAL second
+# Execute every NANOHOME_DEVWATCHER_INTERVAL seconds
 while /bin/true; do
 
-	# subscribe to "+/online"
+	# Subscribe to "+/online"
 	AVAILABLE_DEVICES=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -W 2 -F "%j" \
 		-t "${MQTT_TOPIC_ONLINE}"
 	)
 	
-	# create array from retreived messages
+	# For each device found get device status
 	AVAILABLE_DEVICES_ARRAY=$(
 		jq -s '.' <<< "${AVAILABLE_DEVICES}"
 	)
 
-	# foreach device found subscribe to "shelly-deviceid/status"
-	# publish "status_update" to "shelly-deviceid/command"
-	# parse message and write into influxsb
 	jq -c '.[]' <<< "${AVAILABLE_DEVICES_ARRAY}" | while read -r AVAILABLE_DEVICE; do
 
+		# Extract payload and device details from topic 
 		ONLINETOPIC=$( jq -r '.topic' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEMESSAGE=$( jq -r '.payload' <<< "${AVAILABLE_DEVICE}" )
 		ONLINEVALUE=$( convert_value "${ONLINEMESSAGE}" )
 		DEVICEID=$( cut -d '/' -f 1 <<< "${ONLINETOPIC}" )
 
-		# subscribe, wait for answer stored in temporary file
-		# or goto next iteration after 2 seconds
+		# Create temporary file to store answer-message
 		MESSAGE_TEMPFILE=$(mktemp)
 
+		# Subscribe to status response topic for two seconds
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--nodelay --quiet -C 1 -W 2 -F "%j" \
 		-t "${DEVICEID}/status" \
@@ -63,29 +60,32 @@ while /bin/true; do
 
 		SUBSCRIBE_PID=$!
 		
+		# Publish "status_update" to "shelly-deviceid/command"
 		mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" \
 		-t "${DEVICEID}/command" \
 		-m "status_update"
 
+		# Wait for answer to be stored in temporary file
 		wait "$SUBSCRIBE_PID"
 
+		# Exctract message payload
 		MESSAGE_STATUS=$(
 			jq -r '.payload' "${MESSAGE_TEMPFILE}" 2>/dev/null
 		)
 
-		rm "${MESSAGE_TEMPFILE}"
-		[[ -z "${MESSAGE_STATUS}" ]] && continue
+		# Remove temp file and goto next iteration if file was empty
+		rm "${MESSAGE_TEMPFILE}" && [[ -z "${MESSAGE_STATUS}" ]] && continue
 
-		# loop through every component not filtered with $NANOHOME_NOT_MONITORED_COMPONENTS
+		# Process devices components 
 		jq -r 'to_entries[] | "\(.key), \(.value)"' <<< "${MESSAGE_STATUS}" | \
-		while IFS=, read -r COMPONENT VALUE; do
+			while IFS=, read -r COMPONENT VALUE; do
 
+			# Exclude components defined in NANOHOME_NOT_MONITORED_COMPONENTS
 			if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " =~ " ${COMPONENT} " ]]; then
 				continue
 			fi
 
-			# get connected state and description of component
-			# publish connected=false for new components
+			# Get connected state and description of component
 			CONNECTED=$(
 				mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 				--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -104,15 +104,14 @@ while /bin/true; do
 
 			DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
+			# Publish connected = false for newly discovered devices
 			if [[ $CONNECTEDVALUE -eq 0 ]]; then
 				mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 				-t "${DEVICEID}/status/${COMPONENT}/connected" \
 				-m "false"
 			fi
 
-			# get current output to visualize on home-dashboard
-			# TODO: Braucht es den Output fürs Dashbaord? > 
-			# Falls ja, kann das der measurement-teil übernehmen?
+			# Get current output value (used in home dashboard)
 			SWITCHPOWER=$(
 				jq -r '.apower' <<< "${VALUE}"
 			)
@@ -124,11 +123,12 @@ while /bin/true; do
 			[ "${SWITCHPOWER}" != "null" ] && OUTPUTVALUE="${SWITCHPOWER}"
 			[ "${CURRENTPOSITION}" != "null" ] && OUTPUTVALUE="${CURRENTPOSITION}"
 
+			# Publish current output value (used in home dashboard)
 			mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 			-t "${DEVICEID}/status/${COMPONENT}/output" \
 			-m "${OUTPUTVALUE}"
 
-			# write measurements into influxdb
+			# Write device into influx bucket "Devices"
 			[[ "${DESCRIPTION}" == "null" ]] && influx write \
 			-b "${INFLUX_BUCKET_DEVICES}" \
 			-p s "${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
@@ -137,11 +137,10 @@ while /bin/true; do
 			-b "${INFLUX_BUCKET_DEVICES}" \
 			-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
-			# LOG
-			[[ $LOG_SERVICES ]] && echo "[Devwatcher] Component: ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-			# [[ $LOG_SERVICES ]] && jq <<< "${MESSAGE_STATUS}" >> /proc/1/fd/1
+			# Log
+			[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
+			[[ $LOG_DEBUG ]] && jq <<< "${MESSAGE_STATUS}" >> /proc/1/fd/1
 		done
 	done
-
 	sleep $NANOHOME_DEVWATCHER_INTERVAL
 done
