@@ -1,17 +1,12 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# Nanohome Shelly Plus device watcher
+# nanohome - devwatcher service
 #
-# - loop forever, iterate every n seconds defined in $devwatcher_interval from config
-# - subscribe to $MQTT_TOPIC_ONLINE to get all available shellies and their
-#   - online status
-#   - COMPONENT configuration
-# - for every COMPONENT not filtered through $not_monitored_COMPONENTs get
-#   - connected state
-#   - COMPONENT description
-#   - output and/or position and publish this VALUE retained for dashboard elements
-#   - publish connected=false if the device is not known
-#   - write VALUEs into influxdb
+# Discover shelly gen 3 devices
+# - Subscribe to all devices "online" topic
+# - Get and filter components not monitored with nanohome
+# - Write component infos into influx bucket "Devices"
+# - Publish connected = false to the components "connected" topic
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration

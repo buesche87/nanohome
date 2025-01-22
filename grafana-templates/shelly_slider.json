@@ -1,13 +1,13 @@
 {
   "datasource": null,
-  "content": "_PANELTEMPLATE_",
+  "content": {},
   "gridPos": {
-    "h": 4,
-    "w": 12,
     "x": 0,
-    "y": 19
+    "y": 19,
+    "h": 4,
+    "w": 12
   },
-  "id": 9490,
+  "id": _UNIQUE_,
   "links": [],
   "mode": "html",
   "options": {},

@@ -1,10 +1,13 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# Nanohome Shelly Legacy measurement watcher
+# nanohome - measurements service legacy
 #
-# Subscribe to the status topic of all devices
-# Check the connected status of each COMPONENT not filtered in config
-# For each connected COMPONENT parse the status json and write values to influxdb
+# Get measurements from shelly gen1 pm devices
+# - Subscribe to the "connected" topic of all devices components
+# - Filter messages from not connected or not monitored components
+# - For each monitored component start a background process that:
+#   - Subscribes to the relevant topics
+#   - And writes the values into influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration
@@ -33,18 +36,18 @@ convert_value() {
 while /bin/true; do
 
 	# Subscribe to "shellies/+/+/+/connected"
-	CONNECTED_DEVICES=$(
+	CONNECTED_COMPONENTS=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -F "%j" -W 2 \
 		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
 	)
 
 	# For each component connected and online get device status
-	CONNECTED_DEVICES_ARRAY=$(
-		jq -s '.' <<< "${CONNECTED_DEVICES}"
+	CONNECTED_COMPONENTS_ARRAY=$(
+		jq -s '.' <<< "${CONNECTED_COMPONENTS}"
 	)
 
-	jq -c '.[]' <<< "${CONNECTED_DEVICES_ARRAY}" | while read -r CONNECTED_DEVICE; do
+	jq -c '.[]' <<< "${CONNECTED_COMPONENTS_ARRAY}" | while read -r CONNECTED_DEVICE; do
 
 		# Extract payload and device details from topic
 		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )

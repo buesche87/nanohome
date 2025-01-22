@@ -50,7 +50,7 @@ function saveTimer(description) {
 	let timerDetails = getTimerHtmlElements(description);
 	let mqttTopics = getMqttTopics(description);
 
-	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timerAttribute));
+	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_timerDataAttribute));
 
 	// define new index
 	let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
@@ -81,7 +81,7 @@ function removeTimer(description) {
 	var selectedData = timerDetails.timerList.options[selectedIndex].value;
 
 	// get active timer json from jsonStore and remove entry from json
-	let activeTimerJson = JSON.parse(timerDetails.timerStatus.getAttribute(timerAttribute));
+	let activeTimerJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_timerDataAttribute));
 
 	activeTimerJson = activeTimerJson.filter(function(obj) {
 		let objString = JSON.stringify(obj);
@@ -96,7 +96,7 @@ function removeTimer(description) {
 	// publish timer json to "nanohome/timer/description"
 	// run "create_timer" through nanohome shell
 	mqttPublish(mqttTopics.timer, JSON.stringify(activeTimerJson), true);
-	mqttPublish(cmdInputTopic, "create.timer", false);
+	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
 /*
@@ -109,20 +109,16 @@ function removeTimer(description) {
 function onMessageArrived(message) {
 	let payload = message.payloadString;
 	let topic = message.destinationName;
-	//let topicSplit = topic.split("/");
+	let topicSplit = topic.split("/");
 
 	jsonPayload = JSON.parse(payload);
 
-	if (Array.isArray(jsonPayload)) {
-		if (jsonPayload[0].usage == "timer") {
-			populateTimerAttribute(jsonPayload);
-			populateTimerList(jsonPayload);
-			setTimerActive(jsonPayload);
-		}
-	} else {
-		if (jsonPayload.usage == "device") {
-			populateDeviceAttribute(jsonPayload);
-		}
+	if (topicSplit[1] == "timer") {
+		populateTimerAttribute(jsonPayload);
+		populateTimerList(jsonPayload);
+		setTimerActive(jsonPayload);
+	} else if (topicSplit[1]== "device") {
+		populateDeviceAttribute(jsonPayload);
 	}
 }
 
@@ -138,7 +134,7 @@ function populateDeviceAttribute(deviceJson) {
 	let description = deviceJson.description;
 	let timerDetails = getTimerHtmlElements(description);
 
-	timerDetails.timerStatus.setAttribute(deviceAttribute, JSON.stringify(deviceJson));
+	timerDetails.timerStatus.setAttribute(timer_deviceDataAttribute, JSON.stringify(deviceJson));
 
 	// debug
 	console.log("Device JSON Populated: ");
@@ -151,7 +147,7 @@ function populateTimerAttribute(timerJson) {
 	let description = timerJson[0].description;
 	let timerDetails = getTimerHtmlElements(description);
 
-	timerDetails.timerStatus.setAttribute(timerAttribute, JSON.stringify(timerJson));
+	timerDetails.timerStatus.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
 
 	// debug
 	console.log("Timer JSON Populated: ");
@@ -223,14 +219,13 @@ function getTimerHtmlElements(description) {
 // Generate Json for TimerData
 function generateTimerJson(description, index) {
 	let timerDetails = getTimerHtmlElements(description);
-	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute(deviceAttribute));
+	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_deviceDataAttribute));
 
 	let selectedIndex = timerDetails.timerPeriod.selectedIndex;
 	let selectedText = timerDetails.timerPeriod.options[selectedIndex].textContent;
 
 	let newElement = {
 		"index": index,
-		"usage": "timer",
 		"deviceId": deviceJson.deviceId,
 		"component": deviceJson.component,
 		"description": timerDetails.description,

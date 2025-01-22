@@ -54,7 +54,7 @@ function getDeviceStatus(device) {
 	if (checkElement(componentDetails)) {
 		let mqttTopics = getMqttTopics(device, componentDetails);
 
-		if (componentDetails.legacy) {
+		if (componentDetails.legacy == "true") {
 			setStatusLegacy(device);
 		} else {
 			let payload = '{"id":999, "src":"' + mqttTopics.device + '", "method":"Shelly.GetStatus"}';
@@ -467,7 +467,7 @@ function getComponentDetails(device) {
 	}
 }
 
-// save json data retreived from mqtt to json store element
+// Save json data retreived from mqtt to json store element
 function saveDeviceAttribute(payload) {
 	let jsonStore = document.getElementById(devmgr_deviceDataJsonStore);
 	jsonStore.setAttribute(devmgr_deviceDataAttribute, payload);

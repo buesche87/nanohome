@@ -1,16 +1,3 @@
-// TODO: Test
-
-
-/*
----------------------------------------------------------------
-	Attributes and html element prefixes on dashboard (REMOVE)
----------------------------------------------------------------
-*/
-
-var deviceAttribute = "deviceData";
-var timerAttribute = "timerData";
-var standbyAttribute = "standbyData";
-
 /*
 ---------------------------------------------------------------
 	Global Functions
@@ -48,53 +35,43 @@ function getMqttTopics(device, deviceDetails) {
 		}
 	} else {
 		return {
-			connected:    device + "/status/" + deviceDetails.component + "/connected",
-			description:  device + "/status/" + deviceDetails.component + "/description",
+			connected:   device + "/status/" + deviceDetails.component + "/connected",
+			description: device + "/status/" + deviceDetails.component + "/description",
 			device:      "nanohome/devices/" + deviceDetails.description,
 			home:        "nanohome/home/" + deviceDetails.description, 
 			standby:     "nanohome/standby/" + deviceDetails.description,
 			timer:       "nanohome/timer/" + deviceDetails.description,
-			rpc:          device + "/rpc",
+			rpc:         device + "/rpc",
 			rpcStatus:   "nanohome/devices/" + deviceDetails.description + "/status/rpc"
 		}
 	}
 }
 
-// OLD: REMOVE
-function getTimerTopics(description) {
-	return {
-		deviceTopic: "nanohome/" + description + "/device",
-		timerTopic:  "nanohome/" + description + "/timer"
-	}
-}
-
-// generate component json for deviceData Attribute
-// gets published to "nanohome/devices/description"
+// Generate component json for deviceData Attribute
+// Gets published to "nanohome/devices/#"
 function createComponentJson(device, componentDetails) {
-	let newElement = {
-		"usage": "device",
+	let newComponentJson = {
 		"deviceId": device,
 		"component": componentDetails.component,
 		"description": componentDetails.description,
 		"legacy": componentDetails.legacy
 	};
-	return newElement;
+	return newComponentJson;
 }
 
-// create a json to be used for "create_panel"
-// gets merged into json from "nanohome/devices/description"
+// Create timer json entry for "create_panel"
+// Gets merged into json from "nanohome/devices/#"
 function createDashboardJson(device, componentDetails, index) {
-	let newElement = {
+	let newPanelJson = {
 		"index": index,
-		"usage": "dashboard",
 		"deviceId": device,
 		"component": componentDetails.component,
 		"description": componentDetails.description,
-		"icon": componentDetails.exButtonImage
+		"icon": componentDetails.exButtonImage,
+		"legacy": componentDetails.legacy
 	};
-	return newElement;
+	return newPanelJson;
 }
-
 
 /*
 ---------------------------------------------------------------
@@ -102,7 +79,7 @@ function createDashboardJson(device, componentDetails, index) {
 ---------------------------------------------------------------
 */
 
-// check latest index in json
+// Check latest index in json
 function checkJsonIndex(payload) {
 	let jsonIndex = 1;
 
@@ -117,16 +94,12 @@ function checkJsonIndex(payload) {
 	return jsonIndex;
 }
 
-// check if html element is defined eg. not hidden or missing
+// Check if html element is defined eg. not hidden or missing
 function checkElement(element) {
 	return typeof element !== "undefined" && element !== null;
 }
 
-<<<<<<< HEAD
-// send command with mqtt_shell
-=======
 // Execute command with nanohome shell
->>>>>>> 60b495722120c405da9cb7647a39dd9e3ec1e938
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);
 	console.log('Execute: ' + payload);

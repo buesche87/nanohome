@@ -1,23 +1,29 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# nanohome panel creator
+# nanohome - create_panel
 #
-# create buttons or slider on the home dashbaord
+# Create a panel on the home dashboard
+# - Get the current dashboard json from mqtt
+# - Load the json entry with index passed to script
+# - Load and prepare the panel templates
+# - Get the current home dashboard and merge the new panel 
+# - Upload the updated dashboard
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# TODO: Merge HTML & JSON
+# Parameter & Variables
+JSON_INDEX=$1
+LEGACY=$2
+UNIQUE="$(date +%s)"
 
-# simplify mqtt connection
+# DEV - TEST
+MQTT_HOST="nanohome.buesche.one"
+JSON_INDEX="7"
+
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
-
-# Parameter & Variables
-JSON_INDEX=$1
-LEGACY=$2
-RANDOM="$(date +%s)"
 
 # Grafana dashboard panels
 SWITCHTEMPLATE_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
@@ -33,104 +39,98 @@ MODIFIEDDASHBOARD=$(mktemp)
 FINALDASHBOARD=$(mktemp)
 PANEL_TEMPLATE=$(mktemp)
 
-# DEV - TEST
-MQTT_HOST="nanohome.buesche.one"
-JSON_INDEX="7"
-
-# Main
-PUBLISHED_ELEMENTS=$(
+# Get dashboard json from "nanohome/home/dashboard"
+PUBLISHED_DASHBOARD_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
     -C 1 -W 2 --retained-only --quiet \
     -t "${MQTT_TOPIC_DASHBOARD}"
 )
 
-if [ -z "${PUBLISHED_ELEMENTS}" ]; then
-    echo -e "${LOG_ERRO} No retained messages found on \"${MQTT_TOPIC_DASHBOARD}\"" >> /proc/1/fd/1
+if [ -z "${PUBLISHED_DASHBOARD_JSON}" ]; then
+    echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DASHBOARD}\"" >> /proc/1/fd/1
     exit 1
 fi
 
-NEW_ELEMENT=$(
+# Get the json entry with index number passed to script
+NEW_PANEL_JSON=$(
     jq --argjson idx "${JSON_INDEX}" \
     '.[] | select(.index == $idx)' \
-    <<< "${PUBLISHED_ELEMENTS}"
+    <<< "${PUBLISHED_DASHBOARD_JSON}"
 )
 
-if [ -z "${NEW_ELEMENT}" ]; then
-    echo -e "${LOG_ERRO} Element with index \"${JSON_INDEX}\" not found" >> /proc/1/fd/1
+if [ -z "${NEW_PANEL_JSON}" ]; then
+    echo -e "${LOG_ERRO} Nanohome: Element with index \"${JSON_INDEX}\" not found" >> /proc/1/fd/1
     exit 1
-else
-    DEVICEID=$(
-        jq -r '.deviceId' <<< "${NEW_ELEMENT}"
-    )
-    COMPONENT=$(
-        jq -r '.component' <<< "${NEW_ELEMENT}"
-    )
-    COMPONENT_DESCRIPTION=$(
-        jq -r '.description' <<< "${NEW_ELEMENT}"
-    )
-    ICON=$(
-        jq -r '.icon' <<< "${NEW_ELEMENT}"
-    )
 fi
 
-# Check legacy device and if panel got copied
+# Extract payload and device details from topic
+DEVICEID=$(
+    jq -r '.deviceId' <<< "${NEW_PANEL_JSON}"
+)
+COMPONENT=$(
+    jq -r '.component' <<< "${NEW_PANEL_JSON}"
+)
+DESCRIPTION=$(
+    jq -r '.description' <<< "${NEW_PANEL_JSON}"
+)
+ICON=$(
+    jq -r '.icon' <<< "${NEW_PANEL_JSON}"
+)
+ICON=$(
+    jq -r '.legacy' <<< "${NEW_PANEL_JSON}"
+)
+
+DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
+
+# Replace component with component index if legacy device
 [ "${LEGACY}" == "true" ] && COMPONENT="${COMPONENT#*:}"
 
-# Copy panel template
-# TODO: NEU = JSON + HTML > HIER MERGEN
+# Define panel template
 case "${COMPONENT}" in
     "switch"*)
-        PANEL_TEMPLATE_HTML=$(<"${SWITCHTEMPLATE_HTML}")
-        PANEL_TEMPLATE_JSON=$(<"${SWITCHTEMPLATE_JSON}")
-
-
+        TEMPLATE_HTML_FILE="${SWITCHTEMPLATE_HTML}"
+        TEMPLATE_JSON_FILE="${SWITCHTEMPLATE_JSON}"
         ;;
     "relay"*)
-        PANEL_TEMPLATE_HTML=$(<"${SWITCHTEMPLATE_HTML_LEGACY}")
-        PANEL_TEMPLATE_JSON=$(<"${SWITCHTEMPLATE_JSON_LEGACY}")
-
-
+        TEMPLATE_HTML_FILE="${SWITCHTEMPLATE_HTML_LEGACY}"
+        TEMPLATE_JSON_FILE="${SWITCHTEMPLATE_JSON_LEGACY}"
         ;;
     "cover"*)
-        PANEL_TEMPLATE_HTML=$(<"${COVERTEMPLATE_HTML}")
-        PANEL_TEMPLATE_JSON=$(<"${COVERTEMPLATE_JSON}")
-
-
+        TEMPLATE_HTML_FILE="${COVERTEMPLATE_HTML}"
+        TEMPLATE_JSON_FILE="${COVERTEMPLATE_JSON}"
         ;;
     *)
-        echo -e "${LOG_ERRO} No dashboard element for component \"${COMPONENT}\" available" >> /proc/1/fd/1
+        echo -e "${LOG_ERRO} Nanohome: No dashboard element for component \"${COMPONENT}\" available" >> /proc/1/fd/1
         exit 1
         ;;
 esac
 
+PANEL_TEMPLATE_HTML=$(<"${TEMPLATE_HTML_FILE}")
+PANEL_TEMPLATE_JSON=$(<"${TEMPLATE_JSON_FILE}")
 
+# Replace device strings in html template
+PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DEVICEID_/${DEVICEID}}
+PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_COMPONENT_/${COMPONENT}}
+PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DESCRIPTION_/${DESCRIPTION_ESCAPED}}
+PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_ICON_/${ICON}}
 
+# Replace attributes in json template
+PANEL_TEMPLATE_JSON=${PANEL_TEMPLATE_JSON//_UNIQUE_/${UNIQUE}}
 
-if [ -z "${PANEL_TEMPLATE_JSON}" ] || [ -z "${PANEL_TEMPLATE_HTML}" ] ; then
-    echo -e "${LOG_ERRO} Error loading template \"${PANEL_TEMPLATE}\"" >> /proc/1/fd/1
+# Merge html into json
+PANEL_JSON=$(
+    jq --arg html "$PANEL_TEMPLATE_HTML" \
+    '.content = $html' <<<"$PANEL_TEMPLATE_JSON"
+)
+
+if [ -z "${PANEL_JSON}" ]; then
+    echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     exit 1
 else
-    echo -e "${LOG_SUCC} Panel template for component \"${COMPONENT}\" loaded" >> /proc/1/fd/1
+    echo -e "${LOG_SUCC} Nanohome: Panel template for \"${DESCRIPTION}\" loaded" >> /proc/1/fd/1
 fi
 
-# HTML
-
-# Replace device strings in template
-COMPONENT_DESCRIPTION_ESCAPED=$(echo "${COMPONENT_DESCRIPTION}" | sed 's/[\/&]/\\&/g')
-
-PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DEVID_/${DEVICEID}}
-PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_COMPONENT_/${COMPONENT}}
-PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DESCRIPTION_/${COMPONENT_DESCRIPTION_ESCAPED}}
-PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_ICON_/${ICON}}
-PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_RANDOM_/${RANDOM}}
-
-
-# TODO
-# PANEL_TEMPLATE = MERGE PANEL_TEMPLATE_JSON & PANEL_TEMPLATE_HTML
-
-# JSON
-
-# Download home dashboard from grafana to temporary file
+# Download home dashboard from grafana
 DASHBOARD_CURRENT_JSON=$(
     curl -s \
         -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
@@ -139,29 +139,33 @@ DASHBOARD_CURRENT_JSON=$(
         -- json
 )
 
+# Extract dashboard content
 DASHBOARD_CURRENT=$(
     jq '.dashboard' <<< "${DASHBOARD_CURRENT}"
 )
 
 if [ -z "${DASHBOARD_CURRENT}" ]; then
-    echo -e "${LOG_ERRO} Could not download dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\"" >> /proc/1/fd/1
     exit 1
 else
-    echo -e "${LOG_SUCC} Dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\" loaded" >> /proc/1/fd/1
+    echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\" loaded" >> /proc/1/fd/1
 fi
 
+# Merge new panel into dashboard
 DASHBOARD_PREPARED=$(
-    jq --argjson PANEL "${PANEL_TEMPLATE}" \
+    jq --argjson PANEL "${PANEL_JSON}" \
     '.dashboard.panels += [$PANEL]' <<< "${DASHBOARD_CURRENT}"
 )
 
+# Prepare metadata for dashboard upload
 DASHBOARD_DATA='{
 	"dashboard": {},
 	"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
-	"message": "Nanohome: Panel '"${COMPONENT_DESCRIPTION}"' added",
+	"message": "Nanohome: Panel '"${DESCRIPTION}"' added",
 	"overwrite": true
 }'
 
+# Merge dashboard and metadata
 DASHBOARD_NEW=$(
 	jq --argjson dashboard "${DASHBOARD_PREPARED}" \
 	'.dashboard = $dashboard' \
@@ -169,10 +173,10 @@ DASHBOARD_NEW=$(
 )
 
 if [ -z "${DASHBOARD_NEW}" ]; then
-    echo -e "${LOG_ERRO} Nanohome: Could prepare dashbard" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
     exit 1
 else
-    echo -e "${LOG_SUCC} Nanohome: Dashboard prepared" >> /proc/1/fd/1
+    echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
 fi
 
 # Upload dashboard to grafana
@@ -183,9 +187,9 @@ curl -s --insecure \
     -X POST "${GRAFANA_HOST}/api/dashboards/db"
 
 if [ $? -eq 0 ]; then
-	echo -e "${LOG_SUCC} Nanohome: Modified dashbaord uploaded" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
 	return 0
 else
-	echo -e "${LOG_ERRO} Nanohome: Failed uploading modified dashbaord" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
 	exit 1
 fi	

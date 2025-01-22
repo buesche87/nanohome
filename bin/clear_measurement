@@ -1,9 +1,11 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# Nanohome clear a measurement from influx bucket "Measurement"
+# nanohome - clear_measurement
+#
+# Clear a measurement from influx bucket "Measurement"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Catch Parameters
+# Parameter & Variables
 MEASUREMENT="$1"
 
 # Delete measurement

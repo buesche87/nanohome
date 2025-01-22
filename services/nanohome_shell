@@ -1,9 +1,11 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# nanohome MQTT shell
+# nanohome - mqtt shell service
 #
-# execute allowed shell commands published to "nanohome/shell/input"
-# pulish result to "nanohome/shell/output"
+# Execute allowed shell command
+# - Subscribe to "nanohome/shell/input"
+# - Execute the command if allowed
+# - Publish the result to "nanohome/shell/output"
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration
@@ -13,8 +15,8 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-FIFO_FILE=".nanohome_shell.cache"
 ALLOWED_COMMANDS=(${NANOHOME_SHELL_ALLOWED_COMMANDS//,/ })
+FIFO_FILE=".nanohome_shell.cache"
 
 # Ensure FIFO exists
 rm -f "${FIFO_FILE}" && mkfifo "${FIFO_FILE}"

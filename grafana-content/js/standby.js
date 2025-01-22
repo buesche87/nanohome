@@ -7,6 +7,11 @@
 ---------------------------------------------------------------
 */
 
+var deviceAttribute = "deviceData"; // OLD
+
+var standby_deviceDataJsonStore = "deviceData"; // HTML element
+var standby_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
+
 var standby_activePrefix = "standbyActive_";
 var standby_powerPrefix = "standbyPower_";
 var standby_waitPrefix = "standbyWait_";

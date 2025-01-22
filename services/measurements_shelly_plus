@@ -1,10 +1,11 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# Nanohome Shelly Plus measurement watcher
+# nanohome - measurements service
 #
-# Subscribe to the status topic of all devices
-# Check the connected status of each component not filtered in config
-# For each connected component parse the status json and write values to influxdb
+# Get measurements from shelly gen3 pm devices
+# - Subscribe to the status topic of all devices
+# - Filter messages from not connected or not monitored components
+# - Parse the json payload and write it to the influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration

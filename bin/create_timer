@@ -1,55 +1,53 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# Nanohome Shelly timer manager
-# 
-# subscribe to timer topics and get all retained timer json
-# parse the timers into crontab lines
-# replace the crontab file /etc/crontabs/nanohome
+# nanohome - create_timer
+#
+# Create a timer
+# - Get retainded timer json from each component
+# - Clear the crontab file "/etc/crontabs/nanohome"
+# - Create a new crontab entry for every timer published
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# TODO: Complete & Test
-
-# simplify mqtt connection
+# Parameter & Variables
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
-# clear crontab file
-echo "" > "${NANOHOME_CRONTABS}"
-
 CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t _DEVICEID_/command/_COMPONENT_ -m _MESSAGE_"
 CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
-# subscribe to timer topic
-TIMERS_PUBLISHED=$(
+# Get timer json from "nanohome/timer/+"
+PUBLISHED_TIMER_JSON=$(
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--retained-only --nodelay --quiet -W 2 \
 	-t "${MQTT_TOPIC_TIMER}" 
 )
 
-# loop through all configured timers 
-TIMERS_CONFIGURED=$(
-	jq -s 'add' <<< "${TIMERS_PUBLISHED}"
+if [ -z "${PUBLISHED_DASHBOARD_JSON}" ]; then
+    echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_TIMER}\"" >> /proc/1/fd/1
+    exit 1
+fi
+
+# Clear current crontab file
+echo "" > "${NANOHOME_CRONTABS}"
+
+# Add every timer from json to the crontab file
+CONFIGURED_TIMER_JSON=$(
+	jq -s 'add' <<< "${PUBLISHED_TIMER_JSON}"
 )
 
-jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
+jq -c '.[]' <<< "${CONFIGURED_TIMER_JSON}" | \
+while read -r TIMER; do
 
-	# debug
-	echo ""
-	jq <<< "${TIMER}"
-
-	# Fill Variables
+	# Extract payload and device details from topic
 	DEVICEID=$( jq -r .deviceId <<< "${TIMER}" )
 	COMPONENT=$( jq -r .component <<< "${TIMER}" )
 	DESCRIPTION=$( jq -r .description <<< "${TIMER}" )
 	TIMERPERIOD=$( jq -r .timerPeriodValue <<< "${TIMER}" )
-
 	TIMERON=$( jq -r .timerOn <<< "${TIMER}" )
 	TIMEROFF=$( jq -r .timerOff <<< "${TIMER}" )
-
-	# Legacy
 	LEGACY=$( jq -r .legacy <<< "${TIMER}" )
 
 	if [[ "${LEGACY}" == "true" ]]; then
@@ -72,7 +70,6 @@ jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
 
 	# If timerOn set create a cron entry to switch on component
 	if [[ -n "${TIMERON}" ]]; then
-		
 		CRONENTRY_ON="${CRONENTRY}"
 
 		# Parse hour and minute from time string
@@ -85,19 +82,16 @@ jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
 			"cover"*) MESSAGE="open" ;;
 		esac
 
-		# Fill cron entry with on values
+		# Fill cron entry with "on" values
 		CRONENTRY_ON="${CRONENTRY_ON//_MINUTE_/${MINUTE}}"
 		CRONENTRY_ON="${CRONENTRY_ON//_HOUR_/${HOUR}}"
 		CRONENTRY_ON="${CRONENTRY_ON//_MESSAGE_/${MESSAGE}}"
-
-		# debug
-		echo "${CRONENTRY_OFF}"
 
 		# Append entry to crontab
 		echo "${CRONENTRY_ON}" >> "${NANOHOME_CRONTABS}"
 	fi
 
-	# If on time create on entry
+	# If timerOff set create a cron entry to switch off component
 	if [[ -n "${TIMEROFF}" ]]; then
 	
 		CRONENTRY_OFF="${CRONENTRY}"
@@ -112,13 +106,10 @@ jq -c '.[]' <<< "${TIMERS_CONFIGURED}" | while read -r TIMER; do
 			"cover"*) MESSAGE="close" ;;
 		esac
 
-		# Fill cron entry with off values
+		# Fill cron entry with "off" values
 		CRONENTRY_OFF="${CRONENTRY_OFF//_MINUTE_/${MINUTE}}"
 		CRONENTRY_OFF="${CRONENTRY_OFF//_HOUR_/${HOUR}}"
 		CRONENTRY_OFF="${CRONENTRY_OFF//_MESSAGE_/${MESSAGE}}"
-
-		# debug
-		echo "${CRONENTRY_OFF}"
 
 		# Append entry to crontab
 		echo "${CRONENTRY_OFF}" >> "${NANOHOME_CRONTABS}"

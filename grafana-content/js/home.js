@@ -51,7 +51,7 @@ function sendCommand(device, component, description, command) {
 	// document.getElementById(home_outputElement).textContent = description + " - ";
 }
 
-// TODO: Test
+// TODO: getMqttTopic
 // send command Shelly Legacy
 function sendCommandLegacy(device, component, description, command) {
 	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";

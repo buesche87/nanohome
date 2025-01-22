@@ -1,11 +1,11 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# nanohome Shelly legacy device watcher service
+# nanohome - devwatcher service legacy
 #
-# - MQTT Subscribe to devices online topic
-# - Get all available devices, their online status and component configuration
-# - Filter components not monitored
-# - Write component infos into influxdb bucket "devices"
+# Discover shelly gen 1 devices
+# - Subscribe to all devices "input" topic
+# - Get and filter components not monitored with nanohome
+# - Write component infos into influx bucket "Devices"
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration
