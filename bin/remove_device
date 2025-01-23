@@ -56,3 +56,5 @@ mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${TIMERTOPIC}" -m ""
 
 # Remove device from crontab file
 sed -i "/${DEVICE}/d" "${NANOHOME_CRONTABS}"
+
+# Log

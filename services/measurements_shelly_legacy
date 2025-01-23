@@ -8,6 +8,9 @@
 # - For each monitored component start a background process that:
 #   - Subscribes to the relevant topics
 #   - And writes the values into influx bucket "Measurements"
+#
+# TODO:
+# - stop / kill services for removed components
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration
@@ -19,12 +22,16 @@ MQTT_CONNECTION_STRING=(
 
 # Start component monitoring in background
 start_measurement() {
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "$3" -q 2 | \
-		while read -r line; do
-			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "$2 $1=$line"
+	local measurement=$1
+	local description=$2
+	local topic=$3
+
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${topic}" -q 2 | \
+		while read -r value; do
+			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${description} ${measurement}=$value"
 		done &
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement started: $3" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement started: ${topic}" >> /proc/1/fd/1
 }
 
 # Convert string-boolean to 1 or 0
@@ -47,7 +54,8 @@ while /bin/true; do
 		jq -s '.' <<< "${CONNECTED_COMPONENTS}"
 	)
 
-	jq -c '.[]' <<< "${CONNECTED_COMPONENTS_ARRAY}" | while read -r CONNECTED_DEVICE; do
+	jq -c '.[]' <<< "${CONNECTED_COMPONENTS_ARRAY}" | \
+		while read -r CONNECTED_DEVICE; do
 
 		# Extract payload and device details from topic
 		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )

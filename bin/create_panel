@@ -25,20 +25,6 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# Grafana dashboard panels
-SWITCHTEMPLATE_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
-SWITCHTEMPLATE_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button_legacy.html"
-SWITCHTEMPLATE_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.json"
-COVERTEMPLATE_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.html"
-COVERTEMPLATE_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
-COVERTEMPLATE_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
-
-# Tempfiles > geet rid of them
-ORIGINALDASHBOARD=$(mktemp)
-MODIFIEDDASHBOARD=$(mktemp)
-FINALDASHBOARD=$(mktemp)
-PANEL_TEMPLATE=$(mktemp)
-
 # Get dashboard json from "nanohome/home/dashboard"
 PUBLISHED_DASHBOARD_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
@@ -46,8 +32,8 @@ PUBLISHED_DASHBOARD_JSON=$(
     -t "${MQTT_TOPIC_DASHBOARD}"
 )
 
-if [ -z "${PUBLISHED_DASHBOARD_JSON}" ]; then
-    echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DASHBOARD}\"" >> /proc/1/fd/1
+if [[ -z "${PUBLISHED_DASHBOARD_JSON}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DASHBOARD}\"" >> /proc/1/fd/1
     exit 1
 fi
 
@@ -58,46 +44,36 @@ NEW_PANEL_JSON=$(
     <<< "${PUBLISHED_DASHBOARD_JSON}"
 )
 
-if [ -z "${NEW_PANEL_JSON}" ]; then
-    echo -e "${LOG_ERRO} Nanohome: Element with index \"${JSON_INDEX}\" not found" >> /proc/1/fd/1
+if [[ -z "${NEW_PANEL_JSON}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Element with index \"${JSON_INDEX}\" not found" >> /proc/1/fd/1
     exit 1
 fi
 
 # Extract payload and device details from topic
-DEVICEID=$(
-    jq -r '.deviceId' <<< "${NEW_PANEL_JSON}"
-)
-COMPONENT=$(
-    jq -r '.component' <<< "${NEW_PANEL_JSON}"
-)
-DESCRIPTION=$(
-    jq -r '.description' <<< "${NEW_PANEL_JSON}"
-)
-ICON=$(
-    jq -r '.icon' <<< "${NEW_PANEL_JSON}"
-)
-ICON=$(
-    jq -r '.legacy' <<< "${NEW_PANEL_JSON}"
-)
+DEVICEID=$( jq -r '.deviceId' <<< "${NEW_PANEL_JSON}" )
+COMPONENT=$( jq -r '.component' <<< "${NEW_PANEL_JSON}" )
+DESCRIPTION=$( jq -r '.description' <<< "${NEW_PANEL_JSON}" )
+ICON=$( jq -r '.icon' <<< "${NEW_PANEL_JSON}" )
+LEGACY=$( jq -r '.legacy' <<< "${NEW_PANEL_JSON}" )
 
 DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
 
 # Replace component with component index if legacy device
-[ "${LEGACY}" == "true" ] && COMPONENT="${COMPONENT#*:}"
+[[ "${LEGACY}" == "true" ]] && COMPONENT="${COMPONENT#*:}"
 
 # Define panel template
 case "${COMPONENT}" in
     "switch"*)
-        TEMPLATE_HTML_FILE="${SWITCHTEMPLATE_HTML}"
-        TEMPLATE_JSON_FILE="${SWITCHTEMPLATE_JSON}"
+        TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML}"
+        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON}"
         ;;
     "relay"*)
-        TEMPLATE_HTML_FILE="${SWITCHTEMPLATE_HTML_LEGACY}"
-        TEMPLATE_JSON_FILE="${SWITCHTEMPLATE_JSON_LEGACY}"
+        TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML_LEGACY}"
+        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON_LEGACY}"
         ;;
     "cover"*)
-        TEMPLATE_HTML_FILE="${COVERTEMPLATE_HTML}"
-        TEMPLATE_JSON_FILE="${COVERTEMPLATE_JSON}"
+        TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_COVER_HTML}"
+        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_COVER_JSON}"
         ;;
     *)
         echo -e "${LOG_ERRO} Nanohome: No dashboard element for component \"${COMPONENT}\" available" >> /proc/1/fd/1
@@ -123,11 +99,11 @@ PANEL_JSON=$(
     '.content = $html' <<<"$PANEL_TEMPLATE_JSON"
 )
 
-if [ -z "${PANEL_JSON}" ]; then
+if [[ -z "${PANEL_JSON}" ]]; then
     echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     exit 1
 else
-    echo -e "${LOG_SUCC} Nanohome: Panel template for \"${DESCRIPTION}\" loaded" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel template for \"${DESCRIPTION}\" loaded" >> /proc/1/fd/1
 fi
 
 # Download home dashboard from grafana
@@ -144,11 +120,11 @@ DASHBOARD_CURRENT=$(
     jq '.dashboard' <<< "${DASHBOARD_CURRENT}"
 )
 
-if [ -z "${DASHBOARD_CURRENT}" ]; then
-    echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\"" >> /proc/1/fd/1
+if [[ -z "${DASHBOARD_CURRENT}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\"" >> /proc/1/fd/1
     exit 1
 else
-    echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\" loaded" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\" loaded" >> /proc/1/fd/1
 fi
 
 # Merge new panel into dashboard
@@ -172,11 +148,11 @@ DASHBOARD_NEW=$(
 	<<< "${DASHBOARD_DATA}"
 )
 
-if [ -z "${DASHBOARD_NEW}" ]; then
-    echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
+if [[ -z "${DASHBOARD_NEW}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
     exit 1
 else
-    echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
 fi
 
 # Upload dashboard to grafana
@@ -186,10 +162,10 @@ curl -s --insecure \
     -d "${DASHBOARD_NEW}" \
     -X POST "${GRAFANA_HOST}/api/dashboards/db"
 
-if [ $? -eq 0 ]; then
-	echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
+if [[ $? -eq 0 ]]; then
+	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
 	return 0
 else
-	echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
+	[[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
 	exit 1
 fi	

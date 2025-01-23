@@ -36,7 +36,8 @@ while /bin/true; do
 		jq -s '.' <<< "${AVAILABLE_DEVICES}"
 	)
 
-	jq -c '.[]' <<< "${AVAILABLE_DEVICES_ARRAY}" | while read -r AVAILABLE_DEVICE; do
+	jq -c '.[]' <<< "${AVAILABLE_DEVICES_ARRAY}" | \
+		while read -r AVAILABLE_DEVICE; do
 
 		# Extract payload and device details from topic 
 		ONLINETOPIC=$( jq -r '.topic' <<< "${AVAILABLE_DEVICE}" )

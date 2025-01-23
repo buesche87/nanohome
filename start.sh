@@ -8,7 +8,7 @@ export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
 export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="echo,clear_measurement,create_panel,create_timer,remove_device"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="clear_measurement,create_panel,create_standbymgr,create_timer,remove_device"
 
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
@@ -39,6 +39,8 @@ export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
 
+export GRAFANA_DATASOURCE_DEVICES="Devices"
+export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 export GRAFANA_DASHFOLDER_NAME="nanohome"
 export GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
 export GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
@@ -50,8 +52,13 @@ export GRAFANA_DASHBOARD_UID_STANDBY="adjak60hekvswd"
 export GRAFANA_DASHBOARD_FILE_STANDBY="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
 export GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
 export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
-export GRAFANA_DATASOURCE_DEVICES="Devices"
-export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
+
+export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
+export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button_legacy.html"
+export GRAFANA_PANEL_TEMPLATE_SWITCH_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.json"
+export GRAFANA_PANEL_TEMPLATE_COVER_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.html"
+export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
+export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
 
 # Script logging      
@@ -1104,6 +1111,6 @@ crond -f &
 #/bin/bash /opt/nanohome/services/devwatcher_shelly_plus &
 #/bin/bash /opt/nanohome/services/measurements_shelly_legacy &
 #/bin/bash /opt/nanohome/services/measurements_shelly_plus &
-#/bin/bash /opt/nanohome/services/standby_shelly_plus &
+#/bin/bash /opt/nanohome/bin/create_standbymgr
 
 exec bash

@@ -159,8 +159,9 @@ function generateStandbyJson(description) {
 		"deviceId": deviceJson.deviceID,
 		"component": deviceJson.component,
 		"description": description,
-		"standby": standbyPower,
-		"wait": standbyWait
+		"threshold": standbyPower,
+		"wait": standbyWait,
+		"state": "off"
 	};
 	return newElement;
 }

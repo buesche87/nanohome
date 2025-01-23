@@ -1,0 +1,111 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# nanohome - standbymanager service
+#
+# Turn off output if power goes below threshold
+# - Subscribe to the components status topic
+# - Extract current output power from every message
+# - Check if power is below threshold 
+# - Turn off output if so
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Parameter & Variables
+STANDBYCONFIG_JSON=$1
+
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+# Extract payload and device details from topic
+DEVICEID=$( jq -r '.deviceId' <<< "${STANDBYCONFIG_JSON}" )
+COMPONENT=$( jq -r '.component' <<< "${STANDBYCONFIG_JSON}" )
+DESCRIPTION=$( jq -r '.description' <<< "${STANDBYCONFIG_JSON}" )
+THRESHOLD=$( jq -r .threshold <<< "${STANDBYCONFIG_JSON}" )
+STANDBYWAIT=$( jq -r .wait <<< "${STANDBYCONFIG_JSON}" )
+
+[[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
+
+STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
+STATUSTOPIC="${DEVICEID}/command/${COMPONENT}"
+CONTROLTOPIC="${DEVICEID}/command/${COMPONENT}"
+
+# Get last published state
+get_last_state() {
+
+	local standbyconfig=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --quiet -C 1 -W 2 \
+		-t "${STANDBYTOPIC}"
+	)
+
+	local state=$( jq -r .state <<< "${standbyconfig}" )
+
+	return "${state}"
+}
+
+# Subscribe to devices status topic
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" | \
+	while read -r COMPONENTSTATUS; do
+
+	# Extract current power
+	CURRENTPOWER=$( jq -r .apower <<< "${COMPONENTSTATUS}" )
+
+	# Get last state
+	LAST_STATE=$( get_last_state )
+
+	# Manage standby - don't kill the device if it just started
+	if awk 'BEGIN { exit !('$CURRENTPOWER' == 0) }'; then
+
+		LOGMESSAGE="Off - nothing to do"
+		NEW_STATE="off"
+		
+	elif awk 'BEGIN { exit !('$CURRENTPOWER' < '$THRESHOLD') }'; then
+		case "${LAST_STATE}" in
+			"off")
+				NEW_STATE="on"
+				LOGMESSAGE="Just started"
+				sleep $STANDBYWAIT
+				;;
+			"on")
+				NEW_STATE="off"
+				LOGMESSAGE="Below threshold - turning off"
+				mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" -t "${CONTROLTOPIC}" -m "off"
+				;;
+			*)
+				NEW_STATE="off"
+				LOGMESSAGE="Something happened that shouldn't"
+				;;
+		esac
+	elif awk 'BEGIN { exit !('$CURRENTPOWER' > '$THRESHOLD') }'; then
+		case "${LAST_STATE}" in
+			"off")
+				NEW_STATE="on"
+				LOGMESSAGE="Just started"
+				sleep $STANDBYWAIT
+				;;
+			"on")
+				NEW_STATE="on"
+				LOGMESSAGE="On - nothing to do"
+				;;
+			*)
+				NEW_STATE="off"
+				LOGMESSAGE="Something happened that shouldn't"
+				;;
+		esac
+	fi
+
+	# Update and publish the json with new state
+	if [[ "${NEW_STATE}" != "${LAST_STATE}" ]]
+		
+		STANDBYCONFIG_JSON_UPDATED=$(
+			jq --arg state "${NEW_STATE}" '.state = "$state"' <<< "${STANDBYCONFIG_JSON}"
+		)
+
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
+		-t "${STANDBYTOPIC}" -m "${STANDBYCONFIG_JSON_UPDATED}"
+	fi
+
+	# Log
+	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbymanager: ${DESCRIPTION}: ${LOGMESSAGE}"
+done

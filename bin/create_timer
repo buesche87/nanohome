@@ -25,8 +25,8 @@ PUBLISHED_TIMER_JSON=$(
 	-t "${MQTT_TOPIC_TIMER}" 
 )
 
-if [ -z "${PUBLISHED_DASHBOARD_JSON}" ]; then
-    echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_TIMER}\"" >> /proc/1/fd/1
+if [[ -z "${PUBLISHED_TIMER_JSON}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_TIMER}\"" >> /proc/1/fd/1
     exit 1
 fi
 
@@ -39,7 +39,7 @@ CONFIGURED_TIMER_JSON=$(
 )
 
 jq -c '.[]' <<< "${CONFIGURED_TIMER_JSON}" | \
-while read -r TIMER; do
+	while read -r TIMER; do
 
 	# Extract payload and device details from topic
 	DEVICEID=$( jq -r .deviceId <<< "${TIMER}" )
@@ -89,6 +89,9 @@ while read -r TIMER; do
 
 		# Append entry to crontab
 		echo "${CRONENTRY_ON}" >> "${NANOHOME_CRONTABS}"
+
+		# Log
+		[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Cron entry "on" for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
 	fi
 
 	# If timerOff set create a cron entry to switch off component
@@ -113,8 +116,10 @@ while read -r TIMER; do
 
 		# Append entry to crontab
 		echo "${CRONENTRY_OFF}" >> "${NANOHOME_CRONTABS}"
+
+		# Log
+		[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Cron entry "off" for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
 	fi
-		
 done
 
 chmod 600 "${NANOHOME_CRONTABS}"

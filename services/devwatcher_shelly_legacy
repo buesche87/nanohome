@@ -21,10 +21,8 @@ convert_value() {
 }
 
 # Infinitely subscribe to "shellies/+/input/+" 
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--nodelay --quiet -F "%j" \
-	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | \
-	while read -r DEVICESTATUS; do
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
+	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | while read -r DEVICESTATUS; do
 
 		# Extract payload and device details from topic 
 		STATUSTOPIC=$( jq -r '.topic' <<< "${DEVICESTATUS}" )
