@@ -1,0 +1,43 @@
+
+
+TODO: panels zusammenführen
+
+<div class="devmgr statusfalse" id="standbyActive_${Description}">
+	Inactive
+</div>
+<script>
+	setTimeout(() => {
+		if (checkMqttStatus()) {
+			getStandbyInfo();
+		}
+	}, 500);
+</script>
+
+
+<input  class="devmgr boldText" 
+        id="standbyPower_${Description}"
+        placeholder="Max Standby (W)"
+        onkeypress='return event.charCode >= 48 && event.charCode <= 57'
+        onfocusout='validateStandbyInput("${Description}", this)' 
+        onfocus='this.value = ""' 
+        autocomplete="off" />
+
+<input  class="devmgr" 
+        id="standbyWait_${Description}"
+        placeholder="Startup wait (s)"
+        onkeypress='return event.charCode >= 48 && event.charCode <= 57'
+        onfocus='this.value = ""'
+        autocomplete="off" />
+
+<button class="devmgr"
+        id="standbyRemoveBtn_${Description}"
+        onclick='removeStandby("${Description}")'>
+  Remove
+</button>
+
+<button class="devmgr" 
+        id="standbySaveBtn_${Description}"
+        onclick='saveStandby("${Description}")'
+        disabled>
+  Save
+</button>
