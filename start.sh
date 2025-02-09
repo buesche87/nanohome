@@ -965,7 +965,7 @@ grafanadashboard_create() {
 
 	if [[ "${result}" == "true" ]]; then
 		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
-		jq <<< "${result}"
+		jq <<< "${answer}"
 		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed" >> /proc/1/fd/1
