@@ -74,7 +74,7 @@
       "type": "text"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -82,94 +82,115 @@
         "y": 2
       },
       "id": 4,
-      "panels": [],
+      "panels": [
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 10,
+            "x": 0,
+            "y": 3
+          },
+          "id": 95,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<select class=\"devmgr listBox\"\n        id=\"timerList_${Description}\"\n        size=\"6\"\n        onchange='timerSelected(\"${Description}\")' />\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimerInfo(\"${Description}\"); \n     }\n  }, 500);\n</script>",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 9,
+            "x": 10,
+            "y": 3
+          },
+          "id": 190,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<details class=\"manage\" id=\"manage_${Description}\">\r\n\t<summary id=\"summary_${Description}\"></summary>\r\n\t\t<div class=\"statusDiv\">\r\n\t\t\t<div class=\"statusGroup\">\r\n\t\t\t\t<select class=\"detailValue\" id=\"timerPeriod_${Description}\">\r\n\t\t\t\t\t<option value=\"*\" selected>Täglich</option>\r\n\t\t\t\t\t<option value=\"1\">Montag</option>\r\n\t\t\t\t\t<option value=\"2\">Dienstag</option>\r\n\t\t\t\t\t<option value=\"3\">Mittwoch</option>\r\n\t\t\t\t\t<option value=\"4\">Donnerstag</option>\r\n\t\t\t\t\t<option value=\"5\">Freitag</option>\r\n\t\t\t\t\t<option value=\"6\">Samstag</option>\r\n\t\t\t\t\t<option value=\"0\">Sonntag</option>\r\n\t\t\t\t\t<option value=\"6-7\">Wochenende</option>\r\n\t\t\t\t\t<option value=\"1-5\">Werktags</option>\r\n\t\t\t\t</select>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"statusGroup\">\r\n  \t\t\t<label class=\"detailLabel\" for=\"timerOn_${Description}\">Ein / Auf:</label>\r\n\t\t\t\t<input \r\n\t\t\t\t\tclass=\"detailValue\"\r\n\t\t\t\t\tid=\"timerOn_${Description}\"\r\n\t\t\t\t\ttype=\"time\"\r\n\t\t\t\t\tstep=\"3600\"\r\n\t\t\t\t\tmin=\"00:00\"\r\n\t\t\t\t\tmax=\"23:59\"\r\n\t\t\t\t\tpattern=\"[0-9]{2}:[0-9]{2}\"\r\n\t\t\t\t\tonchange=\"timerInput('${Description}')\" />\r\n\t\t\t</div>\r\n\t\t<div class=\"statusGroup\">\r\n  \t\t<label class=\"detailLabel\" for=\"timerOff_${Description}\">Aus / Zu:</label>\r\n\t\t\t<input \r\n\t\t\t\t\tclass=\"detailValue\"\r\n\t\t\t\t\tid=\"timerOff_${Description}\"\r\n\t\t\t\t\ttype=\"time\"\r\n\t\t\t\t\tstep=\"3600\"\r\n\t\t\t\t\tmin=\"00:00\"\r\n\t\t\t\t\tmax=\"23:59\"\r\n\t\t\t\t\tpattern=\"[0-9]{2}:[0-9]{2}\"\r\n\t\t\t\t\tonchange=\"timerInput('${Description}')\"/>\r\n\t\t</div>\r\n\t</div>\r\n</details>\r\n",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 5,
+            "x": 19,
+            "y": 3
+          },
+          "id": 191,
+          "options": {
+            "code": {
+              "language": "plaintext",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<div class=\"statusDiv\">\n  <div class=\"statusGroup\">\n    <div class=\"statusElement statusfalse\"\n          id=\"timerStatus_${Description}\">\n      Inactive\n    </div>\n  </div>\n  <div class=\"statusGroup\">\n    <button class=\"statusElement\"\n            id=\"timerSaveBtn_${Description}\"\n            onclick='saveTimer(\"${Description}\")'\n            disabled>\n      Save\n    </button>\n  </div>\n  <div class=\"statusGroup\">\n    <button class=\"statusElement\"\n            id=\"timerRemoveBtn_${Description}\"\n            onclick='removeTimer(\"${Description}\")'\n            disabled>\n      Remove\n    </button>\n  </div>\n</div>",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        },
+        {
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "id": 188,
+          "options": {
+            "code": {
+              "language": "html",
+              "showLineNumbers": false,
+              "showMiniMap": false
+            },
+            "content": "<div style=\"margin-top: -10px;\"><hr></div>",
+            "mode": "html"
+          },
+          "pluginVersion": "11.4.0",
+          "title": "",
+          "transparent": true,
+          "type": "text"
+        }
+      ],
       "repeat": "Description",
       "title": "$Description",
       "type": "row"
-    },
-    {
-      "gridPos": {
-        "h": 5,
-        "w": 10,
-        "x": 0,
-        "y": 3
-      },
-      "id": 95,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<select class=\"devmgr listBox\"\n        id=\"timerList_${Description}\"\n        size=\"6\"\n        onchange='timerSelected(\"${Description}\")' />\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimerInfo(\"${Description}\"); \n     }\n  }, 500);\n</script>",
-        "mode": "html"
-      },
-      "pluginVersion": "11.4.0",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "gridPos": {
-        "h": 5,
-        "w": 9,
-        "x": 10,
-        "y": 3
-      },
-      "id": 190,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<details class=\"manage\" id=\"manage_${Description}\">\r\n\t<summary id=\"summary_${Description}\"></summary>\r\n\t\t<div class=\"statusDiv\">\r\n\t\t\t<div class=\"statusGroup\">\r\n\t\t\t\t<select class=\"detailValue\" id=\"timerPeriod_${Description}\">\r\n\t\t\t\t\t<option value=\"*\" selected>Täglich</option>\r\n\t\t\t\t\t<option value=\"1\">Montag</option>\r\n\t\t\t\t\t<option value=\"2\">Dienstag</option>\r\n\t\t\t\t\t<option value=\"3\">Mittwoch</option>\r\n\t\t\t\t\t<option value=\"4\">Donnerstag</option>\r\n\t\t\t\t\t<option value=\"5\">Freitag</option>\r\n\t\t\t\t\t<option value=\"6\">Samstag</option>\r\n\t\t\t\t\t<option value=\"0\">Sonntag</option>\r\n\t\t\t\t\t<option value=\"6-7\">Wochenende</option>\r\n\t\t\t\t\t<option value=\"1-5\">Werktags</option>\r\n\t\t\t\t</select>\r\n\t\t\t</div>\r\n\t\t\t<div class=\"statusGroup\">\r\n  \t\t\t<label class=\"detailLabel\" for=\"timerOn_${Description}\">Ein / Auf:</label>\r\n\t\t\t\t<input \r\n\t\t\t\t\tclass=\"detailValue\"\r\n\t\t\t\t\tid=\"timerOn_${Description}\"\r\n\t\t\t\t\ttype=\"time\"\r\n\t\t\t\t\tstep=\"3600\"\r\n\t\t\t\t\tmin=\"00:00\"\r\n\t\t\t\t\tmax=\"23:59\"\r\n\t\t\t\t\tpattern=\"[0-9]{2}:[0-9]{2}\"\r\n\t\t\t\t\tonchange=\"timerInput('${Description}')\" />\r\n\t\t\t</div>\r\n\t\t<div class=\"statusGroup\">\r\n  \t\t<label class=\"detailLabel\" for=\"timerOff_${Description}\">Aus / Zu:</label>\r\n\t\t\t<input \r\n\t\t\t\t\tclass=\"detailValue\"\r\n\t\t\t\t\tid=\"timerOff_${Description}\"\r\n\t\t\t\t\ttype=\"time\"\r\n\t\t\t\t\tstep=\"3600\"\r\n\t\t\t\t\tmin=\"00:00\"\r\n\t\t\t\t\tmax=\"23:59\"\r\n\t\t\t\t\tpattern=\"[0-9]{2}:[0-9]{2}\"\r\n\t\t\t\t\tonchange=\"timerInput('${Description}')\"/>\r\n\t\t</div>\r\n\t</div>\r\n</details>\r\n",
-        "mode": "html"
-      },
-      "pluginVersion": "11.4.0",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "gridPos": {
-        "h": 5,
-        "w": 5,
-        "x": 19,
-        "y": 3
-      },
-      "id": 191,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<div class=\"statusDiv\">\n  <div class=\"statusGroup\">\n    <div class=\"statusElement statusfalse\"\n          id=\"timerStatus_${Description}\">\n      Inactive\n    </div>\n  </div>\n  <div class=\"statusGroup\">\n    <button class=\"statusElement\"\n            id=\"timerSaveBtn_${Description}\"\n            onclick='saveTimer(\"${Description}\")'\n            disabled>\n      Save\n    </button>\n  </div>\n  <div class=\"statusGroup\">\n    <button class=\"statusElement\"\n            id=\"timerRemoveBtn_${Description}\"\n            onclick='removeTimer(\"${Description}\")'\n            disabled>\n      Remove\n    </button>\n  </div>\n</div>",
-        "mode": "html"
-      },
-      "pluginVersion": "11.4.0",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
-      },
-      "id": 188,
-      "options": {
-        "code": {
-          "language": "html",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<div style=\"margin-top: -10px;\"><hr></div>",
-        "mode": "html"
-      },
-      "pluginVersion": "11.4.0",
-      "transparent": true,
-      "type": "text"
     }
   ],
   "schemaVersion": 40,
@@ -209,6 +230,6 @@
   "timezone": "browser",
   "title": "Timer",
   "uid": "ae489b6q64nwgf",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
