@@ -400,7 +400,7 @@ grafanaapibasicauth_test
 # - create a service account if needed
 # - recreate auth token
 
-# TODO: TEST
+# i.O.
 grafanaserviceaccount_find() {
 
 	local answer=$(
@@ -461,7 +461,7 @@ grafanaserviceaccount_create() {
 	fi
 }
 
-# TODO: TEST
+# i.O.
 grafanaserviceaccounttoken_find() {
 
 	local said=$1
@@ -487,7 +487,7 @@ grafanaserviceaccounttoken_find() {
 	fi
 }
 
-# TODO: TEST
+# i.O.
 grafanaserviceaccounttoken_delete() {
 
 	local grafanaserviceaccount_id=$1
@@ -511,7 +511,7 @@ grafanaserviceaccounttoken_delete() {
 	fi
 }
 
-# TODO: TEST
+# i.O.
 grafanaserviceaccounttoken_create() {
 
 	local grafanaserviceaccount_id=$1
@@ -561,7 +561,7 @@ then
 		jq length <<< ${grafanaserviceaccount_token}
 	)
 
-	# Delete existing tokens | TODO: TEST
+	# Delete existing tokens
 	for (( i = 0; i < grafanaserviceaccount_token_objects; i++ ))
 	do
 		grafanaserviceaccount_token_current=$(
@@ -579,7 +579,7 @@ then
 		[[ $LOG_START ]] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
 	done
 
-	# Create a new token | TODO: TEST
+	# Create a new token
 	grafanaserviceaccount_token=$(
 		grafanaserviceaccounttoken_create "${grafanaserviceaccount_id}"
 	)
@@ -588,7 +588,6 @@ then
 		jq -r .key <<< "${grafanaserviceaccount_token}"
 	)
 
-	# TODO: TEST
 	[[ $LOG_START ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 else
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
@@ -634,7 +633,7 @@ grafanaapiauthtoken_test
 ############################################################
 # if datasource does not exist create it
 
-# TODO: TEST
+# i.O.
 grafanadatasource_search() {
 
 	local dsname=$1
@@ -983,7 +982,7 @@ grafanadashboard_home_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"
 )
 
-# Test
+# i.O.
 if [[ -z "${grafanadashboard_home_exists}" ]]
 then
 	grafanadashboard_home_json=$(
@@ -1002,7 +1001,7 @@ grafanadashboard_devices_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"
 )
 
-# Test
+# i.O.
 if [[ -z "${grafanadashboard_devices_exists}" ]]
 then
 	grafanadashboard_devices_json=$(
@@ -1021,7 +1020,7 @@ grafanadashboard_timer_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"
 )
 
-# Test
+# i.O.
 if [[ -z "${grafanadashboard_timer_exists}" ]]
 then
 	grafanadashboard_timer_json=$(
@@ -1040,7 +1039,7 @@ grafanadashboard_standby_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}"
 )
 
-# TODO: log
+# i.O.
 if [[ -z "${grafanadashboard_standby_exists}" ]]
 then
 	grafanadashboard_standby_json=$(
@@ -1059,7 +1058,7 @@ grafanadashboard_measurements_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
 )
 
-# Test
+# i.O.
 if [[ -z "${grafanadashboard_measurements_exists}" ]]
 then
 	grafanadashboard_measurements_json=$(
@@ -1088,6 +1087,7 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
+# i.O.
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -C 1 -W 1 \
 	-t "nanohome/startup" 
@@ -1110,6 +1110,7 @@ fi
 
 crond -f &
 
+# i.O.
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
