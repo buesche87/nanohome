@@ -963,9 +963,13 @@ grafanadashboard_create() {
 		jq -e '.status == "success"' <<< "${answer}"
 	)
 
+	local output=$(
+		jq -e '. | {uid, slug, url, folderUid}' <<< "${answer}"
+	)
+
 	if [[ "${result}" == "true" ]]; then
 		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
-		jq <<< "${answer}"
+		jq <<< "${output}"
 		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed" >> /proc/1/fd/1
