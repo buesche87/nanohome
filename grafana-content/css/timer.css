@@ -42,6 +42,17 @@ hr.thight {
  ---------------------------------------------------------------
 */
 
+.manage {
+	background-color: var(--background-color);
+	color: var(--text-color);
+	cursor: pointer;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	padding: 10px;
+	width: 100%;
+	height: auto;
+}
+
 .statusDiv {
 	display: flex;
 	flex-direction: column;
@@ -69,102 +80,6 @@ hr.thight {
 	width: var(--button-width);
 }
 
-/*
- ---------------------------------------------------------------
-	Listbox
- ---------------------------------------------------------------
-*/
-
-select.listBox {
-	background-color: var(--background-color);
-	color: var(--text-color);
-	cursor: pointer;
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	padding: 10px;
-	width: 100%;
-	height: 100%;
-	text-align: left;
-	text-align-last: left;
-	font-family: Consolas,monaco,monospace;
-}
-
-select[size].listBox {
-	height: 100%;
-}
-
-/*
- ---------------------------------------------------------------
-	Manage
- ---------------------------------------------------------------
-*/
-
-.manage {
-	background-color: var(--background-color);
-	color: var(--text-color);
-	cursor: pointer;
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	padding: 10px;
-	width: 100%;
-	height: auto;
-}
-
-.manageGroup {
-	color: var(--text-color);
-	background-color: var(--background-color);
-	border-radius: var(--border-radius);
-	width: 100%;
-}
-
-.manageElement {
-	color: var(--text-color);
-	background-color: var(--background-color);
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	padding: 8px 0px 8px 0px;
-	width: 100%;
-	height: 14px;
-	font-size: 12px;
-	line-height: 14px;
-}
-
-.detailsButtons {
-	background-color: var(--background-color);
-	text-decoration: none;
-	cursor: pointer;
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 10px;
-	width: var(--button-width);
-	height: var(--button-height);
-}
-
-/*
- ---------------------------------------------------------------
-	Detail
- ---------------------------------------------------------------
-*/
-
-.detailDiv {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	width: 100%;
-	align-items: flex-start;
-}
-
-.detailGroup {
-	display: flex;
-	align-items: center;
-	width: 100%;
-	gap: 5px; /* Space between label and input */
-}
-
 .detailLabel {
 	flex: 1; /* Label takes up space proportionally */
 	height: auto;
@@ -184,6 +99,32 @@ select.detailValue {
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 }
+
+/*
+ ---------------------------------------------------------------
+	Listbox
+ ---------------------------------------------------------------
+*/
+
+select.listBox {
+	background-color: var(--background-color);
+	color: var(--text-color);
+	cursor: pointer;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	padding: 10px;
+	width: 100%;
+	height: 100%;
+	text-align: left;
+	text-align-last: left;
+	font-family: Consolas,monaco,monospace;
+	overflow: hidden;
+}
+
+select[size].listBox {
+	height: 100%;
+}
+
 
 /*
 ---------------------------------------------------------------

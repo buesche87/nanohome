@@ -52,15 +52,16 @@ function getDeviceStatus(device) {
 	let componentDetails = getComponentDetails(device);
 
 	if (checkElement(componentDetails)) {
-		let mqttTopics = getMqttTopics(device, componentDetails);
+		let deviceTopics = getDeviceTopics(device, componentDetails);
+		let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 		if (componentDetails.legacy == "true") {
 			setStatusLegacy(device);
 		} else {
-			let payload = '{"id":999, "src":"' + mqttTopics.device + '", "method":"Shelly.GetStatus"}';
+			let payload = '{"id":999, "src":"' + nanohomeTopics.device + '", "method":"Shelly.GetStatus"}';
 
-			mqttSubscribe(mqttTopics.rpcStatus, normalsubscribe);
-			mqttPublish(mqttTopics.rpc, payload, false);
+			mqttSubscribe(deviceTopics.rpcStatus, normalsubscribe);
+			mqttPublish(deviceTopics.rpc, payload, false);
 		}
 	}
 	getDashboardInfo();
@@ -85,11 +86,11 @@ function clearMeasurement(device) {
 // Connect or disconnect component
 function connectComponent(device) {
 	let componentDetails = getComponentDetails(device);
-	let mqttTopics = getMqttTopics(device, componentDetails);
+	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
-	mqttPublish(mqttTopics.connected, payload, true);
+	mqttPublish(nanohomeTopics.connected, payload, true);
 	getDeviceStatus(device);
 }
 
@@ -101,7 +102,7 @@ function connectComponent(device) {
 // publish merged json to "nanohome/devices/description"
 function createDashboardElement(device) {
 	let componentDetails = getComponentDetails(device);
-	let mqttTopics = getMqttTopics(device, componentDetails);
+	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 	let deviceCommands = getDeviceCommands(device, componentDetails);
 
 	// confirm creation of element
@@ -119,7 +120,7 @@ function createDashboardElement(device) {
 		existingJson.push(newJsonElement);
 
 		// publish new json element to "nanohome/home/description" 
-		mqttPublish(mqttTopics.home, JSON.stringify(newJsonElement), true);
+		mqttPublish(nanohomeTopics.home, JSON.stringify(newJsonElement), true);
 
 		// save modified json into deviceData attribute
 		// run "create_panel" through nanohome shell
@@ -147,14 +148,14 @@ function removeDevice(device) {
 // save device details
 function saveDevice(device) {
 	let componentDetails = getComponentDetails(device);
-	let mqttTopics = getMqttTopics(device, componentDetails);
+	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 	let jsonElement = createComponentJson(device, componentDetails);
 	let payload = JSON.stringify(jsonElement);
 
 	// Publish and refresh
-	mqttPublish(mqttTopics.device, payload, true);
-	mqttPublish(mqttTopics.description, componentDetails.description, true);
+	mqttPublish(nanohomeTopics.device, payload, true);
+	mqttPublish(nanohomeTopics.description, componentDetails.description, true);
 	getDeviceStatus(device);
 	getDashboardInfo();
 }

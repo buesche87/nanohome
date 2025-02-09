@@ -24,28 +24,31 @@ function getDeviceCommands(device, deviceDetails) {
 
 // TODO: Test
 // return mqtt topics for current device
-function getMqttTopics(device, deviceDetails) {
+function getDeviceTopics(device, deviceDetails) {
 	if (deviceDetails.legacy) {
 		let componentSplit = deviceDetails.component.split(":");
 		return {
 			connected:   "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
 			description: "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
-			device:      "nanohome/devices/" + deviceDetails.description,
-			home:        "nanohome/home/" + deviceDetails.description, 
-			standby:     "nanohome/standby/" + deviceDetails.description,
-			timer:       "nanohome/timer/" + deviceDetails.description
 		}
 	} else {
 		return {
 			connected:   device + "/status/" + deviceDetails.component + "/connected",
 			description: device + "/status/" + deviceDetails.component + "/description",
-			device:      "nanohome/devices/" + deviceDetails.description,
-			home:        "nanohome/home/" + deviceDetails.description, 
-			standby:     "nanohome/standby/" + deviceDetails.description,
-			timer:       "nanohome/timer/" + deviceDetails.description,
 			rpc:         device + "/rpc",
 			rpcStatus:   "nanohome/devices/" + deviceDetails.description + "/status/rpc"
 		}
+	}
+}
+
+// TODO: Test
+// return mqtt topics for current device
+function getNanohomeTopics(description) {
+	return {
+		device:      "nanohome/devices/" + description,
+		home:        "nanohome/home/" + description, 
+		standby:     "nanohome/standby/" + description,
+		timer:       "nanohome/timer/" + description
 	}
 }
 

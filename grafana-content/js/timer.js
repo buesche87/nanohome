@@ -31,10 +31,10 @@ var timer_removeButtonPrefix = "timerRemoveBtn_"
 
 // Get Device Info - Subscribe to the MQTT topics
 function getTimerInfo(description) {
-	let mqttTopics = getMqttTopics(description);
+	let nanohomeTopics = getNanohomeTopics(description);
 
-	mqttSubscribe(mqttTopics.device, fastsubscribe);
-	mqttSubscribe(mqttTopics.timer, fastsubscribe);
+	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
+	mqttSubscribe(nanohomeTopics.timer, fastsubscribe);
 }
 
 /*
@@ -48,7 +48,7 @@ function getTimerInfo(description) {
 // save json to the components status element
 function saveTimer(description) {
 	let timerDetails = getTimerHtmlElements(description);
-	let mqttTopics = getMqttTopics(description);
+	let nanohomeTopics = getNanohomeTopics(description);
 
 	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_timerDataAttribute));
 
@@ -66,7 +66,7 @@ function saveTimer(description) {
 
 	// publish timer json to "nanohome/timer/description"
 	// run "create_timer" through nanohome shell
-	mqttPublish(mqttTopics.timer, JSON.stringify(existingJson), true);
+	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingJson), true);
 	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
@@ -74,7 +74,7 @@ function saveTimer(description) {
 // Remove selected timer
 function removeTimer(description) {
 	let timerDetails = getTimerHtmlElements(description);
-	let mqttTopics = getMqttTopics(description);
+	let nanohomeTopics = getNanohomeTopics(description);
 
 	// get index of selected timer
 	let selectedIndex = timerDetails.timerList.selectedIndex;
@@ -95,7 +95,7 @@ function removeTimer(description) {
 
 	// publish timer json to "nanohome/timer/description"
 	// run "create_timer" through nanohome shell
-	mqttPublish(mqttTopics.timer, JSON.stringify(activeTimerJson), true);
+	mqttPublish(nanohomeTopics.timer, JSON.stringify(activeTimerJson), true);
 	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
