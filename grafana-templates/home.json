@@ -698,7 +698,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<div class=\"slider\" >\n  <span>Sonnenschutz Rechts</span>\n</div>\n<div class=\"slider\">\n<input\n  type=\"range\"\n  id=\"shellyplus2pm-08b61fcc5314_cover:0\"\n  min=\"45\"\n  max=\"100\"\n  onchange='sendCommand(\"shellyplus2pm-08b61fcc5314\", \"cover:0\", \"Sonnenschutz Rechts\", \"pos,\" + this.value)\n  oninput=\"statusOutput.textContent = this.value + '% offen'\"/>\n<br></div>",
+        "content": "<div class=\"slider\" >\n  <span>Sonnenschutz Rechts</span>\n</div>\n<div class=\"slider\">\n<input\n  type=\"range\"\n  id=\"shellyplus2pm-08b61fcc5314_cover:0\"\n  min=\"45\"\n  max=\"100\"\n  onchange='sendCommand(\"shellyplus2pm-08b61fcc5314\", \"cover:0\", \"Sonnenschutz Rechts\", \"pos,\" + this.value)'\n  oninput=\"statusOutput.textContent = this.value + '% offen'\"/>\n</div>",
         "mode": "html"
       },
       "pluginVersion": "11.4.0",
@@ -719,9 +719,9 @@
   "timepicker": {
     "hidden": true
   },
-  "timezone": "",
+  "timezone": "Europe/Zurich",
   "title": "Home",
   "uid": "XieEaLmRk",
-  "version": 251,
+  "version": 253,
   "weekStart": ""
 }

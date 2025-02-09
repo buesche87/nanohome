@@ -34,12 +34,6 @@
       "id": "timeseries",
       "name": "Time series",
       "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "volkovlabs-variable-panel",
-      "name": "Variable",
-      "version": "2.5.0"
     }
   ],
   "annotations": {
@@ -66,120 +60,12 @@
   "liveNow": true,
   "panels": [
     {
-      "collapsed": true,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 2,
-      "panels": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_MEASUREMENTS}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 3,
-            "w": 24,
-            "x": 0,
-            "y": 1
-          },
-          "id": 4,
-          "options": {
-            "alwaysVisibleFilter": false,
-            "autoScroll": false,
-            "customValue": false,
-            "displayMode": "button",
-            "emptyValue": false,
-            "favorites": false,
-            "filter": false,
-            "groupSelection": false,
-            "header": true,
-            "padding": 15,
-            "persistent": false,
-            "saveSelectedGroup": false,
-            "saveSelectedGroupKey": "",
-            "showLabel": false,
-            "showName": false,
-            "statusSort": false,
-            "sticky": false,
-            "variable": "Devices"
-          },
-          "pluginVersion": "2.5.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "influxdb",
-                "uid": "${DS_MEASUREMENTS}"
-              },
-              "groupBy": [
-                {
-                  "params": [
-                    "$__interval"
-                  ],
-                  "type": "time"
-                },
-                {
-                  "params": [
-                    "null"
-                  ],
-                  "type": "fill"
-                }
-              ],
-              "measurement": "Büro",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "query": "show tag values with key=Description where Component =~ /(?:switch|cover|relay)/",
-              "rawQuery": true,
-              "refId": "A",
-              "resultFormat": "time_series",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "value"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "mean"
-                  }
-                ]
-              ],
-              "tags": []
-            }
-          ],
-          "title": "",
-          "transparent": true,
-          "type": "volkovlabs-variable-panel"
-        }
-      ],
-      "title": "Device Picker",
-      "type": "row"
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 1
+        "y": 0
       },
       "id": 5,
       "panels": [],
@@ -288,10 +174,10 @@
         ]
       },
       "gridPos": {
-        "h": 3,
+        "h": 2,
         "w": 3,
         "x": 0,
-        "y": 2
+        "y": 1
       },
       "id": 3,
       "options": {
@@ -308,9 +194,7 @@
           "values": false
         },
         "showPercentChange": false,
-        "text": {
-          "valueSize": 42
-        },
+        "text": {},
         "textMode": "value",
         "wideLayout": true
       },
@@ -374,11 +258,12 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": true,
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
+            "axisGridShow": true,
             "axisLabel": "",
-            "axisPlacement": "left",
+            "axisPlacement": "auto",
             "axisSoftMin": 0,
             "barAlignment": 0,
             "barWidthFactor": 0.6,
@@ -412,7 +297,6 @@
           },
           "fieldMinMax": false,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -503,10 +387,10 @@
         ]
       },
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 21,
         "x": 3,
-        "y": 2
+        "y": 1
       },
       "id": 6,
       "options": {
@@ -514,7 +398,8 @@
           "calcs": [
             "lastNotNull",
             "min",
-            "max"
+            "max",
+            "mean"
           ],
           "displayMode": "table",
           "placement": "right",
@@ -547,7 +432,7 @@
           "measurement": "/^$Devices$/",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT last(\"Energy\") /60 FROM /^$Devices$/ WHERE $timeFilter GROUP BY time($__interval) fill(null)",
+          "query": "SELECT last(\"Power\") FROM /^$Devices$/ WHERE $timeFilter GROUP BY time($__interval) fill(null)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -675,10 +560,10 @@
         ]
       },
       "gridPos": {
-        "h": 3,
+        "h": 2,
         "w": 3,
         "x": 0,
-        "y": 5
+        "y": 3
       },
       "id": 7,
       "options": {
@@ -695,9 +580,7 @@
           "values": false
         },
         "showPercentChange": false,
-        "text": {
-          "valueSize": 42
-        },
+        "text": {},
         "textMode": "value",
         "wideLayout": true
       },
@@ -765,6 +648,7 @@
       {
         "current": {},
         "definition": "show measurements",
+        "includeAll": true,
         "label": "Devices",
         "multi": true,
         "name": "Devices",
@@ -783,10 +667,12 @@
     "from": "now-24h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "nowDelay": "1s"
+  },
   "timezone": "browser",
   "title": "Messungen",
   "uid": "ee8v5d70ojpj4b",
-  "version": 12,
+  "version": 18,
   "weekStart": ""
 }

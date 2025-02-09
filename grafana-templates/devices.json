@@ -1,14 +1,6 @@
 {
   "__inputs": [
     {
-      "name": "DS_MEASUREMENTS",
-      "label": "Measurements",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "influxdb",
-      "pluginName": "InfluxDB"
-    },
-    {
       "name": "DS_DEVICES",
       "label": "Devices",
       "description": "",
@@ -42,12 +34,6 @@
       "id": "timeseries",
       "name": "Time series",
       "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "volkovlabs-variable-panel",
-      "name": "Variable",
-      "version": "2.5.0"
     }
   ],
   "annotations": {
@@ -101,113 +87,6 @@
         "x": 0,
         "y": 2
       },
-      "id": 451,
-      "panels": [
-        {
-          "datasource": {
-            "type": "influxdb",
-            "uid": "${DS_MEASUREMENTS}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 12,
-            "w": 7,
-            "x": 0,
-            "y": 3
-          },
-          "id": 419,
-          "options": {
-            "alwaysVisibleFilter": false,
-            "autoScroll": false,
-            "customValue": false,
-            "displayMode": "button",
-            "emptyValue": false,
-            "favorites": false,
-            "filter": false,
-            "groupSelection": false,
-            "header": false,
-            "padding": 10,
-            "persistent": false,
-            "saveSelectedGroup": false,
-            "saveSelectedGroupKey": "",
-            "showLabel": false,
-            "showName": false,
-            "statusSort": false,
-            "sticky": true,
-            "variable": "Device"
-          },
-          "pluginVersion": "2.5.0",
-          "targets": [
-            {
-              "datasource": {
-                "type": "influxdb",
-                "uid": "${DS_MEASUREMENTS}"
-              },
-              "groupBy": [
-                {
-                  "params": [
-                    "$__interval"
-                  ],
-                  "type": "time"
-                },
-                {
-                  "params": [
-                    "null"
-                  ],
-                  "type": "fill"
-                }
-              ],
-              "hide": false,
-              "measurement": "/^$Device$/",
-              "orderByTime": "ASC",
-              "policy": "default",
-              "refId": "A",
-              "resultFormat": "time_series",
-              "select": [
-                [
-                  {
-                    "params": [
-                      "value"
-                    ],
-                    "type": "field"
-                  },
-                  {
-                    "params": [],
-                    "type": "mean"
-                  }
-                ]
-              ],
-              "tags": []
-            }
-          ],
-          "title": "",
-          "transparent": true,
-          "type": "volkovlabs-variable-panel"
-        }
-      ],
-      "title": "Device Picker",
-      "type": "row"
-    },
-    {
-      "collapsed": true,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 3
-      },
       "id": 2,
       "panels": [
         {
@@ -219,7 +98,7 @@
             "h": 5,
             "w": 9,
             "x": 0,
-            "y": 4
+            "y": 16
           },
           "id": 46,
           "options": {
@@ -245,7 +124,7 @@
             "h": 5,
             "w": 8,
             "x": 9,
-            "y": 4
+            "y": 16
           },
           "id": 390,
           "options": {
@@ -271,7 +150,7 @@
             "h": 5,
             "w": 7,
             "x": 17,
-            "y": 4
+            "y": 16
           },
           "id": 345,
           "options": {
@@ -405,7 +284,7 @@
             "h": 2,
             "w": 24,
             "x": 0,
-            "y": 9
+            "y": 21
           },
           "id": 452,
           "options": {
@@ -529,9 +408,8 @@
         },
         "definition": "show measurements",
         "hide": 2,
-        "includeAll": false,
+        "includeAll": true,
         "label": "Device",
-        "multi": true,
         "name": "Device",
         "options": [],
         "query": "show measurements",
@@ -545,10 +423,12 @@
     "from": "now-1y",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "hidden": true
+  },
   "timezone": "Europe/Zurich",
   "title": "Devices",
   "uid": "fe47pva0wy8lcb",
-  "version": 109,
+  "version": 112,
   "weekStart": "monday"
 }
