@@ -72,6 +72,7 @@ function getDeviceStatus(device) {
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // clear measurement
 function clearMeasurement(device) {
 	let componentDetails = getComponentDetails(device);
@@ -141,7 +142,7 @@ function removeDevice(device) {
 
 // TODO:
 // - Replace description in json (html element attribute, mqtt topics)
-// - Delete old mqtt topics in nanohome/
+// - Delete old mqtt topics in nanohome
 
 // save device details
 function saveDevice(device) {
@@ -174,7 +175,7 @@ function onMessageArrived(message) {
 	if ( topicSplit[0] == "nanohome" ) {
 
 		if ( topicSplit[1] == "devices" ) {
-			// tbd
+			console.log('onMessageArrived - nanohome/devices: ' + payload);
 		} else if ( topicSplit[1] == "home" ) {
 
 			// nanohome/home/dashboard
@@ -185,9 +186,9 @@ function onMessageArrived(message) {
 			}
 
 		} else if ( topicSplit[1] == "timer" ) {
-			// tbd
+			console.log('onMessageArrived - nanohome/timer: ' + payload);
 		} else if ( topicSplit[1] == "standby" ) {
-			// tbd
+			console.log('onMessageArrived - nanohome/standby: ' + payload);
 		} 
 
 	} else if ( topicSplit[0].startsWith("shelly") ) {
@@ -422,6 +423,7 @@ function fillStatusElement(device, component, element, payload) {
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // get current devices html elements
 function getDevicesHtmlElements(device) {
 	return {
@@ -435,6 +437,7 @@ function getDevicesHtmlElements(device) {
 	}
 }
 
+// TODO: Test
 // get current components values
 function getComponentDetails(device) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -467,12 +470,14 @@ function getComponentDetails(device) {
 	}
 }
 
+// TODO: Test
 // Save json data retreived from mqtt to json store element
 function saveDeviceAttribute(payload) {
 	let jsonStore = document.getElementById(devmgr_deviceDataJsonStore);
 	jsonStore.setAttribute(devmgr_deviceDataAttribute, payload);
 }
 
+// TODO: Test
 // Description changed
 function descriptionChanged(device) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -489,6 +494,7 @@ function descriptionChanged(device) {
 	}
 }
 
+// TODO: Test
 // Show example element
 function showExampleElement(device, element) {
 	let divElement = document.getElementById(element + "_" + device);
@@ -499,6 +505,7 @@ function showExampleElement(device, element) {
 	}
 }
 
+// TODO: Test
 // Make the whole details div clickable
 function detailsClickable(device) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -521,6 +528,7 @@ function detailsClickable(device) {
 	Execute
  ---------------------------------------------------------------
 */
+
 setTimeout(() => {
 	if (checkMqttStatus()) {
 		getDashboardInfo();

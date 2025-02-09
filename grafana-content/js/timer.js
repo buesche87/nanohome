@@ -180,6 +180,7 @@ function populateTimerList(timerJson) {
 	});
 }
 
+// TODO: Test
 // Set active state if json data available
 function setTimerActive(timerJson) {
 	let description = timerJson[0].description;
@@ -202,6 +203,7 @@ function setTimerActive(timerJson) {
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // get current devices html elements
 function getTimerHtmlElements(description) {
 	return {
@@ -216,6 +218,7 @@ function getTimerHtmlElements(description) {
 	}
 }
 
+// TODO: Test
 // Generate Json for TimerData
 function generateTimerJson(description, index) {
 	let timerDetails = getTimerHtmlElements(description);
@@ -237,6 +240,7 @@ function generateTimerJson(description, index) {
 	return newElement;
 }
 
+// TODO: Test
 // timer selected
 function timerSelected(description) {
 	let timerDetails = getTimerHtmlElements(description);
@@ -255,6 +259,7 @@ function timerSelected(description) {
 	timerDetails.timerOff.value = selectedTimer.timerOff
 }
 
+// TODO: Test
 // timer input
 function timerInput(description) {
 	let timerDetails = getTimerHtmlElements(description);

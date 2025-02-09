@@ -4,6 +4,7 @@
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // return device commands for current device
 function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
@@ -21,6 +22,7 @@ function getDeviceCommands(device, deviceDetails) {
 	}
 }
 
+// TODO: Test
 // return mqtt topics for current device
 function getMqttTopics(device, deviceDetails) {
 	if (deviceDetails.legacy) {
@@ -47,6 +49,7 @@ function getMqttTopics(device, deviceDetails) {
 	}
 }
 
+// TODO: Test
 // Generate component json for deviceData Attribute
 // Gets published to "nanohome/devices/#"
 function createComponentJson(device, componentDetails) {
@@ -59,6 +62,7 @@ function createComponentJson(device, componentDetails) {
 	return newComponentJson;
 }
 
+// TODO: Test
 // Create timer json entry for "create_panel"
 // Gets merged into json from "nanohome/devices/#"
 function createDashboardJson(device, componentDetails, index) {
@@ -79,6 +83,7 @@ function createDashboardJson(device, componentDetails, index) {
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // Check latest index in json
 function checkJsonIndex(payload) {
 	let jsonIndex = 1;
@@ -94,11 +99,13 @@ function checkJsonIndex(payload) {
 	return jsonIndex;
 }
 
+// TODO: Test
 // Check if html element is defined eg. not hidden or missing
 function checkElement(element) {
 	return typeof element !== "undefined" && element !== null;
 }
 
+// TODO: Test
 // Execute command with nanohome shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);

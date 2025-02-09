@@ -47,11 +47,10 @@ function sendCommand(device, component, description, command) {
 	mqttSubscribe(statusTopic, 1000);
 	mqttPublish(commandTopic, command, false);
 
-	// not needed anymore
-	// document.getElementById(home_outputElement).textContent = description + " - ";
+	console.log('Command sent for: ' + description);
 }
 
-// TODO: getMqttTopic
+// TODO: Test
 // send command Shelly Legacy
 function sendCommandLegacy(device, component, description, command) {
 	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";
@@ -63,8 +62,7 @@ function sendCommandLegacy(device, component, description, command) {
 	mqttSubscribe(statusTopic, 1000);
 	mqttPublish(commandTopic, command, false);
 
-	// not needed anymore
-	// document.getElementById(home_outputElement).textContent = description + " - ";
+	console.log('Command sent for: ' + description);
 }
 
 /*
@@ -90,7 +88,6 @@ function onMessageArrived(message) {
 			setElementStatus(deviceid, component, payload);
 		} 
 
-		// TODO: optimieren
 		// Status topic (plus)
 		if (topicSplit[3] != "output" && home_outputComponent != "") {
 			statusData = JSON.parse(payload);
@@ -103,16 +100,14 @@ function onMessageArrived(message) {
 			}
 			
 			if (checkElement(output)) {
-				// setMessageValue(output);
 				setElementStatus(deviceid, component, output);
 			}
 		}
+
 	} else if ( topicSplit[0] == "shellies" ) {
 
 		let deviceid = topicSplit[1]
-		let componentdev = topicSplit[2]
 		let componentidx = topicSplit[3]
-		let componentMerged = componentdev + ":" + componentidx;
 
 		// set panel color active/passive
 		if ( topicSplit[4] == "output" ) {
@@ -121,7 +116,6 @@ function onMessageArrived(message) {
 
 		// Status topic (legacy)
 		if (topicSplit[4] != "output" && home_outputComponent != "") {
-			// setMessageValue(payload);
 			setElementStatus(deviceid, componentidx, payload);
 		}
 	}
@@ -133,6 +127,7 @@ function onMessageArrived(message) {
 ---------------------------------------------------------------
 */
 
+// TODO: Test
 // Set element status from output mnessage
 function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
@@ -149,29 +144,5 @@ function setElementStatus(device, component, payload) {
 			default:
 				panelElement.classList.add('statusgreen');
 		} 
-	}
-}
-
-// TODO: REMOVE
-// Add value to output message
-function setMessageValue(value) {
-	let statusElement = document.getElementById(home_outputElement);
-	
-	switch(value) {
-		case false:
-		case "off":
-			outputText = "Off";
-			break;
-		case true:
-		case "on":
-			outputText = "On";
-			break;
-		default:
-			outputText = value;
-	} 
-
-	if (home_outputComponent != "") {
-		statusElement.textContent += outputText;
-		home_outputComponent = "";
 	}
 }
