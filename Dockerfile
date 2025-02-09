@@ -1,19 +1,19 @@
 FROM alpine:latest
 LABEL maintainer="buesche"
 RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients 
-RUN mkdir -p /opt/nanohome/config
-RUN mkdir -p /opt/nanohome/data
-RUN mkdir -p /opt/nanohome/log
-COPY bin /opt/nanohome/bin
-RUN chmod +x /opt/nanohome/bin/*
-RUN ln -sf /opt/nanohome/bin/* /usr/local/bin/
-COPY services /opt/nanohome/services
-RUN chmod +x /opt/nanohome/services/*
-COPY grafana-content /opt/nanohome/grafana-content
-COPY grafana-templates /opt/nanohome/grafana-templates
+RUN mkdir -p /nanohome/config
+RUN mkdir -p /nanohome/data
+RUN mkdir -p /nanohome/log
+COPY bin /nanohome/bin
+RUN chmod +x /nanohome/bin/*
+RUN ln -sf /nanohome/bin/* /usr/local/bin/
+COPY services /nanohome/services
+RUN chmod +x /nanohome/services/*
+COPY grafana-content /nanohome/grafana-content
+COPY grafana-templates /nanohome/grafana-templates
 RUN wget -qO- https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz | tar -xzf - -C "/usr/local/bin/" "./influx"
-WORKDIR /opt/nanohome
+WORKDIR /nanohome
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
-VOLUME /opt/nanohome
+VOLUME /nanohome
 CMD ["/start.sh"]
