@@ -3,7 +3,7 @@
 # nanohome Environment         
 ############################################################
 
-export NANOHOME_ROOTPATH="/opt/nanohome"
+export NANOHOME_ROOTPATH="/nanohome"
 export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
 export NANOHOME_DEVWATCHER_INTERVAL=30
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
@@ -1106,11 +1106,11 @@ fi
 
 crond -f &
 
-/bin/bash /opt/nanohome/services/nanohome_shell &
-#/bin/bash /opt/nanohome/services/devwatcher_shelly_legacy &
-#/bin/bash /opt/nanohome/services/devwatcher_shelly_plus &
-#/bin/bash /opt/nanohome/services/measurements_shelly_legacy &
-#/bin/bash /opt/nanohome/services/measurements_shelly_plus &
-#/bin/bash /opt/nanohome/bin/create_standbymgr
+/bin/bash /${NANOHOME_ROOTPATH}/services/nanohome_shell &
+#/bin/bash /${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
+#/bin/bash /${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
+#/bin/bash /${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
+#/bin/bash /${NANOHOME_ROOTPATH}/services/measurements_shelly_plus &
+#/bin/bash /${NANOHOME_ROOTPATH}/bin/create_standbymgr
 
 exec bash
