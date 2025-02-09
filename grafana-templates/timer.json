@@ -53,6 +53,10 @@
   "links": [],
   "panels": [
     {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 2,
         "w": 24,
@@ -70,6 +74,7 @@
         "mode": "html"
       },
       "pluginVersion": "11.4.0",
+      "title": "",
       "transparent": true,
       "type": "text"
     },
@@ -193,15 +198,23 @@
       "type": "row"
     }
   ],
+  "preload": false,
   "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "influxdb",
-          "uid": "${DS_DEVICES}"
+          "uid": "fea74rl5ms1dsb"
         },
         "definition": "show tag values with key=Description where Component =~ /(?:switch|cover|relay)/",
         "includeAll": true,

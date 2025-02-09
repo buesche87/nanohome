@@ -1,8 +1,8 @@
 {
   "__inputs": [
     {
-      "name": "DS_DEVICES",
-      "label": "Devices",
+      "name": "DS_MEASUREMENTS",
+      "label": "Measurements",
       "description": "",
       "type": "datasource",
       "pluginId": "influxdb",
@@ -87,8 +87,8 @@
     },
     {
       "datasource": {
-        "type": "influxdb",
-        "uid": "aea74rleif1mof"
+        "type": "datasource",
+        "uid": "grafana"
       },
       "fieldConfig": {
         "defaults": {},
@@ -153,9 +153,10 @@
       "targets": [
         {
           "datasource": {
-            "type": "influxdb",
-            "uid": "aea74rleif1mof"
+            "type": "datasource",
+            "uid": "grafana"
           },
+          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
