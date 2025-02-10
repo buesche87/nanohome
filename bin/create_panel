@@ -119,10 +119,8 @@ fi
 # Merge new panel into dashboard
 DASHBOARD_PREPARED=$(
     jq --argjson PANEL "${PANEL_JSON}" \
-    '.dashboard.panels += [$PANEL]' <<< "${DASHBOARD_CURRENT}"
+    '.panels += [$PANEL]' <<< "${DASHBOARD_CURRENT}"
 )
-
-jq <<< "${DASHBOARD_PREPARED}" >> /proc/1/fd/1
 
 # Prepare metadata for dashboard upload
 DASHBOARD_DATA='{
@@ -138,9 +136,6 @@ DASHBOARD_NEW=$(
 	'.dashboard = $dashboard' \
 	<<< "${DASHBOARD_DATA}"
 )
-
-
-
 
 if [[ -z "${DASHBOARD_NEW}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
