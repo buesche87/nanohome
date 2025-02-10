@@ -144,6 +144,8 @@ else
     [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
 fi
 
+jq <<< $DASHBOARD_NEW
+
 # Upload dashboard to grafana
 curl --insecure \
     -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
