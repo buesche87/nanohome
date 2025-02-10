@@ -97,7 +97,7 @@ function removeTimer(description) {
 
 	// save modified json into timerData attribute
 	// populate timer list
-	populateTimerAttribute(activeTimerJson);
+	populateTimerAttribute(activeTimerJson, description);
 	populateTimerList(activeTimerJson);
 
 	// publish timer json to "nanohome/timer/description"
@@ -151,8 +151,11 @@ function populateDeviceAttribute(deviceJson) {
 
 // TODO: Remove last timer...
 // Populate json data from mqtt to element holding the data
-function populateTimerAttribute(timerJson) {
-	let description = timerJson[0].description;
+function populateTimerAttribute(timerJson, description) {
+
+	if (! checkElement(description)) {
+		description = timerJson[0].description;
+	}
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
 	jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
