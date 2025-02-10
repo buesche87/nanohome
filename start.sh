@@ -681,7 +681,6 @@ grafanadatasource_prepare() {
 		"readOnly":false
 	}'
 
-	echo "${result}"
 	jq <<< "${result}"
 }
 
@@ -1071,6 +1070,12 @@ then
 
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
 fi
+
+
+# Set home dashboard
+curl -s "${grafanaapiheaders_token[@]}" \
+	-X PUT -d '{"homeDashboardId":'$GRAFANA_DASHBOARD_UID_HOME'}' "http://${GRAFANA_SERVICE}/api/org/preferences"
+
 
 # Mosquitto: 
 ############################################################
