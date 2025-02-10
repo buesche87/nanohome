@@ -154,9 +154,15 @@ function saveDevice(device) {
 	let jsonElement = createComponentJson(device, componentDetails);
 	let payload = JSON.stringify(jsonElement);
 
-	// Publish and refresh
+	// Publish device json to nanohome/devices
 	mqttPublish(nanohomeTopics.device, payload, true);
+
+	console.log('Publish: ' + nanohomeTopics.device + ' - ' + payload);
+
+	// Publish description to deviceid/status/component/description
 	mqttPublish(deviceTopics.description, componentDetails.description, true);
+
+	console.log('Publish: ' + deviceTopics.description + ' - ' + componentDetails.description);
 
 	getDeviceStatus(device);
 	getDashboardInfo();
@@ -289,7 +295,7 @@ function setStatusLegacy(device) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// i.O.
 // fill component element with content from mqtt message if it does not already exist
 function fillComponentElement(device, component) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -359,7 +365,7 @@ function setExampleElementIcon(payload) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // Fill network with returned from JSON
 function fillNetworkElement(device, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
