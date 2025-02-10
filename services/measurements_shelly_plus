@@ -38,21 +38,49 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	)
 
 	CONNECTEDVALUE=$(
-			convert_value "${CONNECTED}"
+		convert_value "${CONNECTED}"
 	)
 
+	# Publish connected = false for newly discovered devices
+	if [[ $CONNECTEDVALUE -eq 0 ]]; then
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
+		-t "${DEVICEID}/status/${COMPONENT}/connected" \
+		-m "false"
+	fi
+
 	DESCRIPTION=$(
-			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
-			-t "${DEVICEID}/status/${COMPONENT}/description"
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--retained-only --nodelay --quiet -C 1 -W 1 \
+		-t "${DEVICEID}/status/${COMPONENT}/description"
 	)
 
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+
+
+
+	# DEVICES
+
+
+	# Write device into influx bucket "Devices"
+	[[ "${DESCRIPTION}" == "null" ]] && influx write \
+	-b "${INFLUX_BUCKET_DEVICES}" \
+	-p s "${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
+
+	[[ "${DESCRIPTION}" != "null" ]] && influx write \
+	-b "${INFLUX_BUCKET_DEVICES}" \
+	-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
+
+
+
+
+	# MEASUREMENTS
+
 
 	# Only monitor connected components and those with a description
 	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
 		continue
 	fi
+
 
 	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
@@ -64,6 +92,16 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	ROOM_TEMP=$( jq -r '.tC' <<< "${STATUSMESSAGE}" )
 	ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
 	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
+
+
+	# Publish current output value (used in home dashboard)
+	[ "${POWER}" != "null" ] && OUTPUTVALUE="${SWITCHPOWER}"
+	[ "${CURRENTPOSITION}" != "null" ] && OUTPUTVALUE="${CURRENTPOSITION}"
+
+	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
+	-t "${DEVICEID}/status/${COMPONENT}/output" \
+	-m "${OUTPUTVALUE}"
+
 
 	# Prepare string for influx cli (line protocol)
 	PAYLOAD="${DESCRIPTION_ESCAPED} "

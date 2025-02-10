@@ -21,6 +21,15 @@ convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
+
+# Infinitely subscribe to "+/online" 
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
+	-t "${MQTT_TOPIC_ONLINE}" | while read -r DEVICESTATUS; do
+
+
+
+
+
 # Execute every NANOHOME_DEVWATCHER_INTERVAL seconds
 while /bin/true; do
 
