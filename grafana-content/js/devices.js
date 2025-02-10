@@ -50,7 +50,7 @@ function getDeviceStatus(device) {
 	if (checkElement(componentDetails)) {
 		let deviceTopics = getDeviceTopics(device, componentDetails);
 
-		if (componentDetails.legacy == "true") {
+		if ( componentDetails.legacy ) {
 			setStatusLegacy(device);
 		} else {
 			let payload = '{"id":999, "src":"' + deviceTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
