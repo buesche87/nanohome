@@ -1145,12 +1145,18 @@ fi
 
 crond -f &
 
-# Test
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
-/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome shell started" >> /proc/1/fd/1
+
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher started" >> /proc/1/fd/1
+
+/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome legacy devwatcher started" >> /proc/1/fd/1
+
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
-# /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_plus &
-#/bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome legacy measurements started" >> /proc/1/fd/1
+
+# /bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
 
 exec bash
