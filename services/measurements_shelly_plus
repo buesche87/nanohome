@@ -63,7 +63,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	# DEVICES
 
-
 	# Write device into influx bucket "Devices"
 	[[ "${DESCRIPTION}" == "" ]] && influx write \
 	-b "${INFLUX_BUCKET_DEVICES}" \
@@ -76,18 +75,14 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	# Log
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}" >> /proc/1/fd/1
-
-
+	# [[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}" >> /proc/1/fd/1
 
 	# MEASUREMENTS
-
 
 	# Only monitor connected components and those with a description
 	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
 		continue
 	fi
-
 
 	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
@@ -100,7 +95,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	ROOM_HUM=$( jq -r '.rh' <<< "${STATUSMESSAGE}" )
 	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
-
 	# Publish current output value (used in home dashboard)
 	[ "${POWER}" != "null" ] && OUTPUTVALUE="${SWITCHPOWER}"
 	[ "${CURRENTPOSITION}" != "null" ] && OUTPUTVALUE="${CURRENTPOSITION}"
@@ -108,7 +102,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 	-t "${DEVICEID}/status/${COMPONENT}/output" \
 	-m "${OUTPUTVALUE}"
-
 
 	# Prepare string for influx cli (line protocol)
 	PAYLOAD="${DESCRIPTION_ESCAPED} "

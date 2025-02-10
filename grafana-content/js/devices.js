@@ -203,9 +203,12 @@ function onMessageArrived(message) {
 		// nanohome/devices/description/status
 		// deviceid/status
 		if (topicSplit[1] == "status") {
-
+			
+			fillComponentElement(deviceid, component);
+			fillStatusElement(deviceid, component, topicSplit[3], payload);
 			fillNetworkElement(deviceid, payload);
-			console.log('Network status: "' + payload + '" (' +  deviceid + ')');
+
+			console.log('Device status: "' + deviceid);
 
 			// Show example button
 			if (component.includes("switch")) {
@@ -222,16 +225,16 @@ function onMessageArrived(message) {
 
 		// shelly-deviceid/status/component/connected
 		else if (topicSplit[3] == "connected") {
-			fillComponentElement(deviceid, component);
-			fillStatusElement(deviceid, component, topicSplit[3], payload);
+			//fillComponentElement(deviceid, component);
+			//fillStatusElement(deviceid, component, topicSplit[3], payload);
 			// setExampleElementDescription(deviceid, component, topicSplit[3], payload);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
 		// shelly-deviceid/status/component/description
 		else if (topicSplit[3] == "description") {
-			fillStatusElement(deviceid, component, topicSplit[3], payload);
-			setExampleElementDescription(deviceid, component, payload);
+			//fillStatusElement(deviceid, component, topicSplit[3], payload);
+			//tExampleElementDescription(deviceid, component, payload);
 			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 
