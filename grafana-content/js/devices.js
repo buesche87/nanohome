@@ -54,7 +54,6 @@ function getDeviceStatus(device) {
 
 	if (checkElement(componentDetails)) {
 		let deviceTopics = getDeviceTopics(device, componentDetails);
-		let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 		if (componentDetails.legacy == "true") {
 			setStatusLegacy(device);
@@ -245,7 +244,7 @@ function onMessageArrived(message) {
 		else if (topicSplit[3] == "connected") {
 			//fillComponentElement(deviceid, component);
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
-			setExampleElementDescription(deviceid, component, topicSplit[3], payload);
+			// setExampleElementDescription(deviceid, component, topicSplit[3], payload);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
@@ -267,7 +266,7 @@ function onMessageArrived(message) {
 		if (topicSplit[4] == "connected") {
 			fillComponentElement(deviceid, componentMerged);
 			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			setExampleElementDescription(deviceid, componentMerged, topicSplit[4], payload);
+			// setExampleElementDescription(deviceid, componentMerged, topicSplit[4], payload);
 			setStatusLegacy(deviceid);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
