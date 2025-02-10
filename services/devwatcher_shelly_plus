@@ -68,27 +68,29 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# DEVICES
 	#===============================================================
 
-	# Write device into influx bucket "Devices"
-	if [[ -n "${DESCRIPTION}" ]]; then
-		influx write -b "${INFLUX_BUCKET_DEVICES}" \
-			-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
-	else
-		influx write -b "${INFLUX_BUCKET_DEVICES}" \
-			-p s "${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
-	fi		
+	# Skip measurements if component does not have a description
+	if [[ -z "${DESCRIPTION}" ]]; then
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
+		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-	# Log
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Message recived from ${DEVICEID}/${COMPONENT}" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devawtcher: ${DEVICEID} - ${DESCRIPTION} - connected:c${CONNECTED}" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Message recived from component without description [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Line protocol payoad [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		continue
+	fi
+
+	# Skip measurements if component is not connected
+	if [[ $CONNECTEDVALUE -eq 0 ]] ; then
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
+		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
+
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Message recived from not conected component [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Line protocol payoad [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		continue
+	fi
 
 	#===============================================================
 	# MEASUREMENTS
 	#===============================================================
-
-	# Only monitor connected components and those with a description
-	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
-		continue
-	fi
 
 	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
@@ -109,25 +111,33 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		-t "${DEVICEID}/status/${COMPONENT}/output" \
 		-m "${OUTPUTVALUE}"
 
-	# Prepare string for influx cli (line protocol)
-	PAYLOAD="${DESCRIPTION_ESCAPED} "
+	# Write device details into Devices bucket
+	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=1,Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-	[[ "${POWER}" != "null" ]] && PAYLOAD+="Power=${POWER},"
-	[[ "${ENERGY}" != "null" ]] && PAYLOAD+="Energy=${ENERGY},"
-	[[ "${VOLTAGE}" != "null" ]] && PAYLOAD+="Voltage=${VOLTAGE},"
-	[[ "${CURRENT}" != "null" ]] && PAYLOAD+="Current=${CURRENT},"
-	[[ "${DEVICETEMP}" != "null" ]] && PAYLOAD+="DeviceTemp=${DEVICETEMP},"
-	[[ "${ROOM_TEMP}" != "null" ]] && PAYLOAD+="Temperature=${ROOM_TEMP},"
-	[[ "${ROOM_HUM}" != "null" ]] && PAYLOAD+="Humidity=${ROOM_HUM},"
-	[[ "${BATTERY}" != "null" ]] && PAYLOAD+="Battery=${BATTERY},"
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Message received from [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Line protocol payoad [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1	
+
+	# Prepare measurement string for influx cli (line protocol)
+	MEASUREMENT_PAYLOAD="${DESCRIPTION_ESCAPED} "
+
+	[[ "${POWER}" != "null" ]] && MEASUREMENT_PAYLOAD+="Power=${POWER},"
+	[[ "${ENERGY}" != "null" ]] && MEASUREMENT_PAYLOAD+="Energy=${ENERGY},"
+	[[ "${VOLTAGE}" != "null" ]] && MEASUREMENT_PAYLOAD+="Voltage=${VOLTAGE},"
+	[[ "${CURRENT}" != "null" ]] && MEASUREMENT_PAYLOAD+="Current=${CURRENT},"
+	[[ "${DEVICETEMP}" != "null" ]] && MEASUREMENT_PAYLOAD+="DeviceTemp=${DEVICETEMP},"
+	[[ "${ROOM_TEMP}" != "null" ]] && MEASUREMENT_PAYLOAD+="Temperature=${ROOM_TEMP},"
+	[[ "${ROOM_HUM}" != "null" ]] && MEASUREMENT_PAYLOAD+="Humidity=${ROOM_HUM},"
+	[[ "${BATTERY}" != "null" ]] && MEASUREMENT_PAYLOAD+="Battery=${BATTERY},"
 
 	# Write measurement into influx bucket "Measurements"
-	if [[ "${PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
-		PAYLOAD="${PAYLOAD%,}"
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement added ${DEVICEID}/${COMPONENT}" >> /proc/1/fd/1
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Line protocol payoad [${PAYLOAD}]" >> /proc/1/fd/1
+	if [[ "${MEASUREMENT_PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
+		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${MEASUREMENT_PAYLOAD}"
+
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement added for [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Line protocol payoad [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
 	else
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_WARN} Devwatcher: No payload from ${DEVICEID}/${COMPONENT}" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_WARN} Devwatcher: No payload for [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
 	fi
 done

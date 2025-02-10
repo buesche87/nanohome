@@ -1143,8 +1143,6 @@ fi
 # Nanohome: Services
 ############################################################
 
-crond -f &
-
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome shell started" >> /proc/1/fd/1
 
@@ -1159,4 +1157,5 @@ crond -f &
 
 # /bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
 
+crond -f &
 exec bash
