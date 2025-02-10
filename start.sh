@@ -1074,13 +1074,37 @@ fi
 
 
 # Set Grafana home dashboard
-home_id="$(curl -s "${grafanaapiheaders_token[@]}" -X GET http://$GRAFANA_SERVICE/api/dashboards/uid/$GRAFANA_DASHBOARD_UID_HOME | jq -r '.dashboard.id')"
+grafanadashboard_setHome() {
 
-curl -s "${grafanaapiheaders_token[@]}" \
-	-X PUT -d '{"homeDashboardId":'$home_id'}' http://$GRAFANA_SERVICE/api/org/preferences
+	local home_id=$1
 
+	local answer=$(
+		curl -s "${grafanaapiheaders_token[@]}" \
+		-X PUT -d '{"homeDashboardId":'$home_id'}' http://$GRAFANA_SERVICE/api/org/preferences
+	)
 
+	local result=$(
+		jq -e '.message == "Preferences updated"' <<< "${answer}"
+	)
 
+	if [[ "${result}" == "true" ]]; then
+		echo -e "${LOG_SUCC} Grafana: Home dashboard set" >> /proc/1/fd/1
+		jq <<< "${output}"
+		return 0
+	else
+		echo -e "${LOG_WARN} Grafana: Failed setting home dashboard" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
+	fi	
+}
+
+grafanadashboard_home_id=$(
+	curl -s "${grafanaapiheaders_token[@]}" \
+	-X GET http://$GRAFANA_SERVICE/api/dashboards/uid/$GRAFANA_DASHBOARD_UID_HOME \
+	| jq -r '.dashboard.id'
+)
+
+grafanadashboard_setHome "${grafanadashboard_home_id}"
 
 
 # Mosquitto: 
