@@ -100,7 +100,7 @@ DASHBOARD_CURRENT_JSON=$(
 
 # Extract dashboard content
 DASHBOARD_CURRENT=$(
-    jq '.dashboard' <<< "${DASHBOARD_CURRENT}"
+    jq '.dashboard' <<< "${DASHBOARD_CURRENT_JSON}"
 )
 
 if [[ -z "${DASHBOARD_CURRENT}" ]]; then

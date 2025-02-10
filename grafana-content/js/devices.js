@@ -32,12 +32,6 @@ var devmgr_summaryPrefix = "summary_";
   ---------------------------------------------------------------
 */
 
-// TODO: devicetopic?
-// subscribe to dashboard topic to get correct icon for example element
-function getDashboardInfo() {
-	mqttSubscribe(dashboardTopic, fastsubscribe);
-}
-
 // TODO: Test
 // subscribe to all devices connected and description topic
 function getDeviceInfo() {
@@ -64,7 +58,17 @@ function getDeviceStatus(device) {
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}
 	}
-	getDashboardInfo();
+}
+
+// TODO: Test
+// subscribe to dashboard topic to get icon for example element
+function getDashboardInfo(device) {
+	let componentDetails = getComponentDetails(device);
+
+	if (checkElement(componentDetails.description)) {
+		let nanohomeTopics = getNanohomeTopics(componentDetails.description);
+		mqttSubscribe(nanohomeTopics.dashboard, fastsubscribe);
+	}
 }
 
 /*
@@ -96,10 +100,8 @@ function connectComponent(device) {
 	getDeviceInfo();
 }
 
-// TODO: 
-// - Search and replace existing element
-
-// create json for new dashboard element and create it with nanohome_shell
+// TODO: Test
+// Create new dashboard element through nanohome_sand create it withhell
 function createDashboardElement(device) {
 	let componentDetails = getComponentDetails(device);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
@@ -210,15 +212,16 @@ function onMessageArrived(message) {
 
 		// Fill network status from shelly.getstatus response. Feature possibilities: current power, etc.
 		if ( topicSplit[1] == "devicestatus" ) {
+			console.log('Network config retrived: ' + payload);
 			let deviceid = topicSplit[2];
+
 			fillNetworkElement(deviceid, payload);
 		}
 
-		// TODO: Save dashboard json and set example icon
-		else if ( topicSplit[2] == "dashboard" ) {
+		// TODO: Set example icon
+		else if ( topicSplit[1] == "dashboard" ) {
 			console.log('Dashboard config retrived: ' + payload);
 
-			saveDeviceAttribute(payload);
 			setExampleElementIcon(payload);
 		}
 	} 
