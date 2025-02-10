@@ -135,6 +135,7 @@ function setElementStatus(device, component, payload) {
 	if (checkElement(panelElement)) {
 		switch(payload) {
 			case "0":
+			case "0.0":
 			case 100:
 			case "100":
 			case "off":
