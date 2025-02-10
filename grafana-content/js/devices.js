@@ -32,7 +32,7 @@ var devmgr_summaryPrefix = "summary_";
   ---------------------------------------------------------------
 */
 
-// TODO: TEST
+// TODO: devicetopic?
 function getDashboardInfo() {
 	mqttSubscribe(dashboardTopic, fastsubscribe);
 }
@@ -181,7 +181,11 @@ function onMessageArrived(message) {
 
 		if ( topicSplit[1] == "devices" ) {
 			console.log('onMessageArrived - nanohome/devices: ' + payload);
-		} else if ( topicSplit[1] == "home" ) {
+		}
+		if ( topicSplit[1] == "devicestatus" ) {
+			console.log('onMessageArrived - nanohome/devicestatus: ' + payload);
+		}
+		else if ( topicSplit[1] == "home" ) {
 
 			// nanohome/home/dashboard
 			if (topicSplit[2] == "dashboard") {
@@ -190,9 +194,11 @@ function onMessageArrived(message) {
 				console.log('Dashboard config: ' + payload);
 			}
 
-		} else if ( topicSplit[1] == "timer" ) {
+		}
+		else if ( topicSplit[1] == "timer" ) {
 			console.log('onMessageArrived - nanohome/timer: ' + payload);
-		} else if ( topicSplit[1] == "standby" ) {
+		}
+		else if ( topicSplit[1] == "standby" ) {
 			console.log('onMessageArrived - nanohome/standby: ' + payload);
 		} 
 

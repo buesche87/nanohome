@@ -36,7 +36,7 @@ function getDeviceTopics(device, deviceDetails) {
 			connected:   device + "/status/" + deviceDetails.component + "/connected",
 			description: device + "/status/" + deviceDetails.component + "/description",
 			rpc:         device + "/rpc",
-			rpcStatus:   "nanohome/devices/" + deviceDetails.description + "/status/rpc"
+			rpcStatus:   "nanohome/devicestatus/" + device + "/rpc"
 		}
 	}
 }
