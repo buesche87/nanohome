@@ -33,14 +33,14 @@ var legacyKeywords = ["relay"];
 // Global Topics
 var cmdInputTopic = "nanohome/shell/input";
 var cmdOutputTopic = "nanohome/shell/output";
-var dashboardTopic = "nanohome/home/dashboard";
 
 // Device topics
 var connectedTopicAll = "+/status/+/connected";
 var descriptionTopicAll = "+/status/+/description";
 var outputTopicAll = "+/status/+/output";
-var standbyTopicAll = "nanohome/+/standby";
 var deviceTopicAll = "nanohome/devices/+";
+var standbyTopicAll = "nanohome/standby/+";
+var timerTopicAll = "nanohome/timer/+";
 
 // Device topics legacy
 var outputTopicAllLegacy = "shellies/+/relay/0";

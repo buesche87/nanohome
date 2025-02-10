@@ -1,18 +1,9 @@
-// TODO:
-// - Allgemeine Funktionen umsetzen (getDeviceCommands und so)
-// - onMessageArrived optimieren
-// - Output-Topic von Legacy-Devices > auf deviceid/componentdev/componentidx/output ?
-
 /*
 ---------------------------------------------------------------
 	Attributes and html elements on dashboard
 ---------------------------------------------------------------
 */
 
-// TODO:
-// - command > home_command
-
-var home_outputElement = "statusOutput";
 var home_outputComponent = "";
 var command;
 
@@ -22,7 +13,6 @@ var command;
 ---------------------------------------------------------------
 */
 
-// TODO: Test
 // infinite subscribe to all devices output topic
 function subscribeToOutput() {
 	mqtt.subscribe(outputTopicAll, { qos: 2 });
@@ -35,7 +25,6 @@ function subscribeToOutput() {
 ---------------------------------------------------------------
 */
 
-// i.O.
 // send command Shelly Plus
 function sendCommand(device, component, description, command) {
 	let commandTopic = device + "/command/" + component;
@@ -50,7 +39,6 @@ function sendCommand(device, component, description, command) {
 	console.log('Command "' + command + '" sent for: ' + description);
 }
 
-// i.O.
 // send command Shelly Legacy
 function sendCommandLegacy(device, component, description, command) {
 	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";
@@ -130,7 +118,6 @@ function onMessageArrived(message) {
 ---------------------------------------------------------------
 */
 
-// i.O.
 // Set element status from output mnessage
 function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);

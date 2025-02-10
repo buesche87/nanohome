@@ -1,27 +1,16 @@
-// TODO: 
-// - Dashbaord: Übernahme ID Prefixes
-// - Dashbaord: getdetailsInfo > getDeviceStatus
-// - Dashbaord: getDeviceDetails > getComponentDetails
-// - Dashbaord: connectDevice > connectComponent
-
 /*
   ---------------------------------------------------------------
-	Attributes and html element prefixes on dashboard
+	HTML element prefixes on dashboard
   ---------------------------------------------------------------
 */
-
-var devmgr_deviceDataJsonStore = "deviceData"; // HTML element
-var devmgr_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
 
 var devmgr_componentPrefix = "component_";
 var devmgr_connectedPrefix = "connected_";
 var devmgr_descriptionPrefix = "description_";
-var devmgr_detailsPrefix = "details_";
 var devmgr_exBtnDescriptionPrefix = "exBtnDescription_";
 var devmgr_exBtnIconFormPrefix = "exButtonForm_";
 var devmgr_exBtnIconSelect = "exButtonImage-select";
 var devmgr_exSliderDescriptionPrefix = "exSliderDescription_";
-var devmgr_managePrefix = "manage_";
 var devmgr_saveBtnPrfix = "savebtn_";
 var devmgr_statusPrefix = "status_";
 var devmgr_summaryPrefix = "summary_";
@@ -32,7 +21,6 @@ var devmgr_summaryPrefix = "summary_";
   ---------------------------------------------------------------
 */
 
-// TODO: Test
 // subscribe to all devices connected and description topic
 function getDeviceInfo() {
 	mqttSubscribe(connectedTopicAll, fastsubscribe);
@@ -42,7 +30,6 @@ function getDeviceInfo() {
 	mqttSubscribe(deviceTopicAll, fastsubscribe);
 }
 
-// TODO: Test
 // get device infos (onLoad - per device)
 function getDeviceStatus(device) {
 	let componentDetails = getComponentDetails(device);
@@ -61,34 +48,12 @@ function getDeviceStatus(device) {
 	}
 }
 
-// TODO: Test
-// subscribe to dashboard topic to get icon for example element
-function getDashboardInfo(device) {
-	let componentDetails = getComponentDetails(device);
-	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
-
-	console.log("getdashboardinfo description:" + componentDetails.description );
-	console.log("getdashboardinfo topic:" + nanohomeTopics.dashboard );
-
-	mqttSubscribe(nanohomeTopics.dashboard, fastsubscribe);
-}
-
 /*
 ---------------------------------------------------------------
 	MQTT Publish
 ---------------------------------------------------------------
 */
 
-// TODO: Test
-// clear measurement
-function clearMeasurement(device) {
-	let componentDetails = getComponentDetails(device);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
-
-	shellCommand(deviceCommands.clearMeasurement);
-}
-
-// i.O.
 // Connect or disconnect component
 function connectComponent(device) {
 	let componentDetails = getComponentDetails(device);
@@ -102,14 +67,13 @@ function connectComponent(device) {
 	getDeviceInfo();
 }
 
-// i.O.
 // Create new dashboard element through nanohome_sand create it withhell
 function createDashboardElement(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceCommands = getDeviceCommands(device, componentDetails);
 
 	// confirm creation of element
-	let confirmDialog = confirm('Save device and create dshbaord element?');
+	let confirmDialog = confirm('Save device and create dashboard element?');
 
 	if (confirmDialog) {
 		saveDevice(device);
@@ -119,10 +83,7 @@ function createDashboardElement(device) {
 	}
 }
 
-// TODO:
-// - Replace description in json (html element attribute, mqtt topics)
-// - Delete old mqtt topics in nanohome
-// save device details
+// Save device details
 function saveDevice(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceTopics = getDeviceTopics(device, componentDetails);
@@ -141,6 +102,15 @@ function saveDevice(device) {
 
 	getDeviceStatus(device);
 	getDeviceInfo();
+}
+
+// TODO: Test
+// Clear measurement
+function clearMeasurement(device) {
+	let componentDetails = getComponentDetails(device);
+	let deviceCommands = getDeviceCommands(device, componentDetails);
+
+	shellCommand(deviceCommands.clearMeasurement);
 }
 
 // TODO: Test
@@ -255,31 +225,11 @@ function onMessageArrived(message) {
 
 /*
 ---------------------------------------------------------------
-	Parse status from "Shelly.GetStatus"
----------------------------------------------------------------
-*/
-
-// i.O.
-// Legacy - Set Status-Element to Legacy
-function setStatusLegacy(device) {
-	let htmlElements = getDevicesHtmlElements(device);
-	let statusText = "Legacy";
-
-	if (checkElement(htmlElements.status)) {
-		htmlElements.status.innerText = statusText;
-		htmlElements.status.classList.remove('statusfalse');
-		htmlElements.status.classList.add('statusgreen')
-	}
-}
-
-/*
----------------------------------------------------------------
 	Fill Elements
 ---------------------------------------------------------------
 */
 
-// i.O.
-// fill component element with content from mqtt message if it does not already exist
+// Fill component element with content from mqtt message if it does not already exist
 function fillComponentElement(device, component) {
 	let htmlElements = getDevicesHtmlElements(device);
 	let optionExists = false;
@@ -297,8 +247,7 @@ function fillComponentElement(device, component) {
 	}
 }
 
-// i.O.
-// fill example element with content from mqtt message
+// Fill example element with content from mqtt message
 function setExampleElementDescription(device, component, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
 	let exBtnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
@@ -323,12 +272,9 @@ function setExampleElementDescription(device, component, payload) {
 	}
 }
 
-// TODO: Test
 // Set icon on example element with data from dashboard json
 function setExampleElementIcon(payload) {
 	let dashboardData = JSON.parse(payload);
-
-	console.log("example json:" + dashboardData);
 
 	if (checkElement(dashboardData)) {
 		let device = dashboardData.deviceId;
@@ -348,7 +294,6 @@ function setExampleElementIcon(payload) {
 	}
 }
 
-// i.O.
 // Fill network with returned from JSON
 function fillNetworkElement(device, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -380,7 +325,6 @@ function fillNetworkElement(device, payload) {
 	}
 }
 
-// i.O.
 // Fill status elements with content from mqtt message
 function fillStatusElement(device, component, element, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -405,14 +349,25 @@ function fillStatusElement(device, component, element, payload) {
 	}
 }
 
+// Legacy - Set Status-Element to Legacy
+function setStatusLegacy(device) {
+	let htmlElements = getDevicesHtmlElements(device);
+	let statusText = "Legacy";
+
+	if (checkElement(htmlElements.status)) {
+		htmlElements.status.innerText = statusText;
+		htmlElements.status.classList.remove('statusfalse');
+		htmlElements.status.classList.add('statusgreen')
+	}
+}
+
 /*
 ---------------------------------------------------------------
 	Helper Functions
 ---------------------------------------------------------------
 */
 
-// i.O.
-// get current devices html elements
+// Get current devices html elements
 function getDevicesHtmlElements(device) {
 	return {
 		description: document.getElementById(devmgr_descriptionPrefix + device),
@@ -425,8 +380,7 @@ function getDevicesHtmlElements(device) {
 	}
 }
 
-// i.O.
-// get current components values
+// Get current components values
 function getComponentDetails(device) {
 	let htmlElements = getDevicesHtmlElements(device);
 
@@ -458,31 +412,6 @@ function getComponentDetails(device) {
 	}
 }
 
-// TODO: Test
-// Save json data retreived from mqtt to json store element
-function saveDeviceAttribute(payload) {
-	let jsonStore = document.getElementById(devmgr_deviceDataJsonStore);
-	jsonStore.setAttribute(devmgr_deviceDataAttribute, payload);
-}
-
-// i.O.
-// Description changed, popup manager element
-function descriptionChanged(device) {
-	let htmlElements = getDevicesHtmlElements(device);
-	let componentDetails = getComponentDetails(device);
-
-	if (checkElement(htmlElements.manage)) {
-		htmlElements.manage.open = true;
-
-		if (componentDetails.description != null && componentDetails.description != "") {
-			htmlElements.saveButton.disabled = false;
-		} else {
-			htmlElements.saveButton.disabled = true;
-		}
-	}
-}
-
-// i.O.
 // Show example element
 function showExampleElement(device, element) {
 	let divElement = document.getElementById(element + "_" + device);
@@ -492,35 +421,3 @@ function showExampleElement(device, element) {
 		divElement.classList.add('elementFlex');
 	}
 }
-
-// i.O.
-// Make the whole details div clickable
-function detailsClickable(device) {
-	let htmlElements = getDevicesHtmlElements(device);
-	let summaryElement = document.getElementById(devmgr_summaryPrefix + device);
-
-	if (checkElement(htmlElements.manage)) {
-		htmlElements.manage.addEventListener("click", function() {
-			htmlElements.manage.open = !htmlElements.manage.open;
-		});
-	}
-	if (checkElement(summaryElement)) {
-		summaryElement.addEventListener("click", function() {
-			htmlElements.manage.open = !htmlElements.manage.open;
-		});
-	}
-}
-
-/*
- ---------------------------------------------------------------
-	Execute
- ---------------------------------------------------------------
-
-
-setTimeout(() => {
-	if (checkMqttStatus()) {
-		getDashboardInfo();
-	}
-}, 300);
-
-*/

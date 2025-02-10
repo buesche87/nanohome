@@ -4,7 +4,6 @@
 ---------------------------------------------------------------
 */
 
-// i.O.
 // return device commands for current device
 function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
@@ -22,7 +21,6 @@ function getDeviceCommands(device, deviceDetails) {
 	}
 }
 
-// i.O.
 // return mqtt topics for current device
 function getDeviceTopics(device, componentDetails) {
 	if (componentDetails.legacy) {
@@ -42,7 +40,6 @@ function getDeviceTopics(device, componentDetails) {
 	}
 }
 
-// i.O.
 // return mqtt topics for current device
 function getNanohomeTopics(description) {
 	return {
@@ -54,7 +51,6 @@ function getNanohomeTopics(description) {
 	}
 }
 
-// i.O.
 // Generate component, gets published to "nanohome/devices"
 function createComponentJson(device, componentDetails) {
 	let newComponentJson = {
@@ -67,14 +63,12 @@ function createComponentJson(device, componentDetails) {
 	return newComponentJson;
 }
 
-
 /*
 ---------------------------------------------------------------
 	Helper Functions
 ---------------------------------------------------------------
 */
 
-// TODO: Test
 // Check latest index in json
 function checkJsonIndex(payload) {
 	let jsonIndex = 1;
@@ -90,13 +84,11 @@ function checkJsonIndex(payload) {
 	return jsonIndex;
 }
 
-// TODO: Test
 // Check if html element is defined eg. not hidden or missing
 function checkElement(element) {
 	return typeof element !== "undefined" && element !== null;
 }
 
-// TODO: Test
 // Execute command with nanohome shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);

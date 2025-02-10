@@ -28,7 +28,7 @@ PUBLISHED_PANEL_JSON=$(
 )
 
 if [[ -z "${PUBLISHED_PANEL_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DASHBOARD}/${DESCRIPTION}\"" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DEVICES}/${DESCRIPTION}\"" >> /proc/1/fd/1
     exit 1
 fi
 
