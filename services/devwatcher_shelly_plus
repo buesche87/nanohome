@@ -105,8 +105,11 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
 	# Publish current output value (used in home dashboard)
-	[[ "${OUTPUT}" != "null" ]] && OUTPUTVALUE="${OUTPUT}"
-	[[ "${CURRENTPOSITION}" != "null" ]] && OUTPUTVALUE="${CURRENTPOSITION}"
+	if [[ "${CURRENTPOSITION}" != "null" ]]; then
+		OUTPUTVALUE="${CURRENTPOSITION}"
+	else
+		OUTPUTVALUE="${OUTPUT}"
+	fi
 
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "${DEVICEID}/status/${COMPONENT}/output" \
