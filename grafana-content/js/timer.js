@@ -133,11 +133,12 @@ function populateDeviceAttribute(deviceJson) {
 	let description = deviceJson.description;
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
-	jsonDataStore.setAttribute(timer_deviceDataAttribute, JSON.stringify(deviceJson));
-
-	// debug
-	console.log("Device JSON Populated: ");
-	console.log(deviceJson);
+	if (checkElement(jsonDataStore)) {
+		jsonDataStore.setAttribute(timer_deviceDataAttribute, JSON.stringify(deviceJson));
+		// debug
+		console.log("Device JSON Populated: ");
+		console.log(deviceJson);
+	}
 }
 
 // TODO: Remove last timer...
@@ -145,11 +146,12 @@ function populateDeviceAttribute(deviceJson) {
 function populateTimerAttribute(timerJson, description) {
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
-	jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
-
-	// debug
-	console.log("Timer JSON Populated: ");
-	console.log(timerJson);
+	if (checkElement(jsonDataStore)) {
+		jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
+		// debug
+		console.log("Timer JSON Populated: ");
+		console.log(timerJson);
+	}
 }
 
 // TODO: Test
@@ -157,24 +159,26 @@ function populateTimerAttribute(timerJson, description) {
 function populateTimerList(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
-	// clear timer list
-	for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
+	if (checkElement(timerDetails)) {
+		// clear timer list
+		for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
 
-	// populate timer list
-	timerJson.forEach(function(entry) {
-		var option = document.createElement("option");
-		option.textContent = entry.timerPeriodText;
+		// populate timer list
+		timerJson.forEach(function(entry) {
+			var option = document.createElement("option");
+			option.textContent = entry.timerPeriodText;
 
-		option.textContent += entry.timerOn ? " - On: " + entry.timerOn : "";
-		option.textContent += entry.timerOff ? " - Off: " + entry.timerOff : "";
+			option.textContent += entry.timerOn ? " - On: " + entry.timerOn : "";
+			option.textContent += entry.timerOff ? " - Off: " + entry.timerOff : "";
 
-		option.value = JSON.stringify(entry);
-		timerDetails.timerList.appendChild(option);
+			option.value = JSON.stringify(entry);
+			timerDetails.timerList.appendChild(option);
 
-		// debug
-		console.log("Timer List Populated: ");
-		console.log(entry);
-	});
+			// debug
+			console.log("Timer List Populated: ");
+			console.log(entry);
+		});
+	}
 }
 
 // TODO: Test
