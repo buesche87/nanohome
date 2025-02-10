@@ -12,7 +12,7 @@ var timer_deviceDataJsonStore = "deviceData"; // HTML element
 var timer_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
 
 var timer_timerDataJsonStore = "timerData"; // HTML element
-var timer_timerDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
+var timer_timerDataAttribute = "timerDetails"; // Attribute name of jsonStore element
 
 var timer_timerListPrefix = "timerList_"
 var timer_timerEntryPrefix = "details_"
@@ -31,7 +31,9 @@ var timer_removeButtonPrefix = "timerRemoveBtn_"
 
 // Get Device Info - Subscribe to the MQTT topics
 function getTimerInfo() {
+	console.log("getTimerInfo");
 	mqttSubscribe(timerTopicAll, longsubscribe);
+	mqttSubscribe(deviceTopicAll, longsubscribe);
 }
 
 function getTimerInfo_old(description) {
@@ -39,8 +41,6 @@ function getTimerInfo_old(description) {
 
 	console.log("getTimerInfo: " + nanohomeTopics.device);
 	console.log("getTimerInfo: " + nanohomeTopics.timer);
-
-	timerTopicAll
 
 	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
 	mqttSubscribe(nanohomeTopics.timer, fastsubscribe);
