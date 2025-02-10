@@ -35,6 +35,7 @@ export MQTT_TOPIC_DASHBOARD="nanohome/home/dashboard"
 export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
+export MQTT_SUBSCRIPBE_TIMEOUT=20
 export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
@@ -1120,12 +1121,12 @@ fi
 
 crond -f &
 
-# i.O.
-# /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
+# Test
+/bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
 # /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
-# /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
+/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
 # /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
-/bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_plus &
+# /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_plus &
 #/bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
 
 exec bash

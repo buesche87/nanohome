@@ -45,7 +45,7 @@ while /bin/true; do
 	# Subscribe to "shellies/+/+/+/connected"
 	CONNECTED_COMPONENTS=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -F "%j" -W 2 \
+		--retained-only --nodelay --quiet -F "%j" -W $MQTT_SUBSCRIPBE_TIMEOUT \
 		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
 	)
 
@@ -71,7 +71,7 @@ while /bin/true; do
 		# Get connected state and description of component
 		CONNECTED=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
+			--retained-only --nodelay --quiet -C 1 -W $MQTT_SUBSCRIPBE_TIMEOUT \
 			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 		)
 
@@ -81,7 +81,7 @@ while /bin/true; do
 
 		DESCRIPTION=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
+			--retained-only --nodelay --quiet -C 1 -W $MQTT_SUBSCRIPBE_TIMEOUT \
 			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
 		)
 		

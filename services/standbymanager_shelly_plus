@@ -35,7 +35,7 @@ CONTROLTOPIC="${DEVICEID}/command/${COMPONENT}"
 get_last_state() {
 
 	local standbyconfig=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --quiet -C 1 -W 2 \
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --quiet -C 1 -W $MQTT_SUBSCRIPBE_TIMEOUT \
 		-t "${STANDBYTOPIC}"
 	)
 
