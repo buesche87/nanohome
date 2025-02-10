@@ -57,8 +57,8 @@ function saveTimer(description) {
 
 	// save modified json into timerData attribute
 	// populate timer list
-	populateTimerAttribute(existingJson);
-	populateTimerList(existingJson);
+	populateTimerAttribute(existingJson, description);
+	populateTimerList(existingJson, description);
 
 	// publish timer json to "nanohome/timer/description"
 	// run "create_timer" through nanohome shell
@@ -114,9 +114,9 @@ function onMessageArrived(message) {
 	}
 
 	if ( topicSplit[1] == "timer" ) {
-		populateTimerAttribute(jsonPayload);
-		populateTimerList(jsonPayload);
-		setTimerActive(jsonPayload);
+		populateTimerAttribute(jsonPayload, topicSplit[2]);
+		populateTimerList(jsonPayload, topicSplit[2]);
+		setTimerActive(jsonPayload, topicSplit[2]);
 	} 
 }
 
@@ -141,11 +141,6 @@ function populateDeviceAttribute(deviceJson) {
 // TODO: Remove last timer...
 // Populate json data from mqtt to element holding the data
 function populateTimerAttribute(timerJson, description) {
-
-	if (! checkElement(description)) {
-		description = timerJson[0].description;
-	}
-
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
 	jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
@@ -158,11 +153,6 @@ function populateTimerAttribute(timerJson, description) {
 // TODO: Test
 // Populate json data from mqtt to element holding the data
 function populateTimerList(timerJson, description) {
-
-	if (! checkElement(description)) {
-		description = timerJson[0].description;
-	}
-
 	let timerDetails = getTimerHtmlElements(description);
 
 	// clear timer list
@@ -187,8 +177,7 @@ function populateTimerList(timerJson, description) {
 
 // TODO: Test
 // Set active state if json data available
-function setTimerActive(timerJson) {
-	let description = timerJson[0].description;
+function setTimerActive(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
 	if (checkElement(timerJson) && JSON.stringify(timerJson) != "[]") {
