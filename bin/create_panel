@@ -145,7 +145,7 @@ else
 fi
 
 # Upload dashboard to grafana
-curl -s --insecure \
+curl --insecure \
     -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
     -H "Content-Type: application/json" \
     -d "${DASHBOARD_NEW}" \
