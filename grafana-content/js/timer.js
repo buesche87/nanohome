@@ -112,7 +112,7 @@ function removeTimer(description) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// Device what t odo with mqtt messages
 function onMessageArrived(message) {
 	let payload = message.payloadString;
 	let topic = message.destinationName;
@@ -137,7 +137,6 @@ function onMessageArrived(message) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
 // Populate json data from mqtt to element holding the data
 function populateDeviceAttribute(deviceJson) {
 	let description = deviceJson.description;
@@ -150,7 +149,7 @@ function populateDeviceAttribute(deviceJson) {
 	console.log(deviceJson);
 }
 
-// TODO: Test
+// TODO: Remove last timer...
 // Populate json data from mqtt to element holding the data
 function populateTimerAttribute(timerJson) {
 	let description = timerJson[0].description;
