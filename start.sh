@@ -35,7 +35,7 @@ export MQTT_TOPIC_TIMER="nanohome/timer/+"
 export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
-export MQTT_SUBSCRIBE_TIMEOUT_BIN=3
+export MQTT_SUBSCRIBE_TIMEOUT_BIN=1
 export MQTT_SUBSCRIBE_TIMEOUT_SERVICE=10
 export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
