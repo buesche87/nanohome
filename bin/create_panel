@@ -41,11 +41,16 @@ LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_PANEL_JSON}" )
 
 DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
 
-# Replace component with component index if legacy device
-[[ "${LEGACY}" == "true" ]] && COMPONENT="${COMPONENT#*:}"
+# Replace component with component dev if legacy device
+if [[ "${LEGACY}" == "true" ]]; then
+    COMPONENT_SEARCH="${COMPONENT%%:*}";
+    COMPONENT="${COMPONENT#*:}"
+else
+    COMPONENT_SEARCH="${COMPONENT}";
+fi
 
 # Define panel template
-case "${COMPONENT}" in
+case "${COMPONENT_SEARCH}" in
     "switch"*)
         TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML}"
         TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON}"
@@ -59,7 +64,7 @@ case "${COMPONENT}" in
         TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_COVER_JSON}"
         ;;
     *)
-        echo -e "${LOG_ERRO} Nanohome: No dashboard element for component \"${COMPONENT}\" available" >> /proc/1/fd/1
+        echo -e "${LOG_ERRO} Nanohome: No dashboard element for component \"${COMPONENT_SEARCH}\" available" >> /proc/1/fd/1
         exit 1
         ;;
 esac
