@@ -16,7 +16,7 @@ MQTT_CONNECTION_STRING=(
 
 # Get standby json from "nanohome/standby/+"
 PUBLISHED_STANDBYCONFIG_JSON=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --nodelay --quiet -W 3 \
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --nodelay --quiet -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
 	-t "${MQTT_TOPIC_STANDBY}" 
 )
 

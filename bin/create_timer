@@ -21,7 +21,7 @@ CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosqu
 # Get timer json from "nanohome/timer/+"
 PUBLISHED_TIMER_JSON=$(
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--retained-only --nodelay --quiet -W 3 \
+	--retained-only --nodelay --quiet -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
 	-t "${MQTT_TOPIC_TIMER}" 
 )
 

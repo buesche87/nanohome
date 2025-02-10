@@ -24,7 +24,7 @@ MQTT_CONNECTION_STRING=(
 # Get dashboard json from "nanohome/home/dashboard"
 PUBLISHED_DASHBOARD_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-        --retained-only --quiet -C 1 -W 3 \
+        --retained-only --quiet -C 1 -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
         -t "${MQTT_TOPIC_DASHBOARD}"
 )
 
