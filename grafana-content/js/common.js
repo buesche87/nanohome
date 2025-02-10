@@ -24,17 +24,17 @@ function getDeviceCommands(device, deviceDetails) {
 
 // TODO: Test
 // return mqtt topics for current device
-function getDeviceTopics(device, deviceDetails) {
-	if (deviceDetails.legacy) {
-		let componentSplit = deviceDetails.component.split(":");
+function getDeviceTopics(device, componentDetails) {
+	if (componentDetails.legacy) {
+		let componentSplit = componentDetails.component.split(":");
 		return {
 			connected:   "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
 			description: "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
 		}
 	} else {
 		return {
-			connected:   device + "/status/" + deviceDetails.component + "/connected",
-			description: device + "/status/" + deviceDetails.component + "/description",
+			connected:   device + "/status/" + componentDetails.component + "/connected",
+			description: device + "/status/" + componentDetails.component + "/description",
 			rpc:         device + "/rpc",
 			rpcSource:   "nanohome/devicestatus/" + device,
 			rpcDest:     "nanohome/devicestatus/" + device + "/rpc"

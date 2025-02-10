@@ -86,11 +86,11 @@ function clearMeasurement(device) {
 // Connect or disconnect component
 function connectComponent(device) {
 	let componentDetails = getComponentDetails(device);
-	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
+	let deviceTopics = getDeviceTopics(componentDetails);
 
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
-	mqttPublish(nanohomeTopics.connected, payload, true);
+	mqttPublish(deviceTopics.connected, payload, true);
 	getDeviceStatus(device);
 }
 
