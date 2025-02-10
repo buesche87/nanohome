@@ -59,6 +59,7 @@ function saveTimer(description) {
 	// populate timer list
 	populateTimerAttribute(existingJson, description);
 	populateTimerList(existingJson, description);
+	setTimerActive(existingJson, description);
 
 	// publish timer json to "nanohome/timer/description"
 	// run "create_timer" through nanohome shell
@@ -77,21 +78,22 @@ function removeTimer(description) {
 	var selectedData = timerDetails.timerList.options[selectedIndex].value;
 
 	// get active timer json from jsonStore and remove entry from json
-	let activeTimerJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_timerDataAttribute));
+	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_timerDataAttribute));
 
-	activeTimerJson = activeTimerJson.filter(function(obj) {
+	existingJson = existingJson.filter(function(obj) {
 		let objString = JSON.stringify(obj);
 		return objString !== selectedData;
 	});
 
 	// save modified json into timerData attribute
 	// populate timer list
-	populateTimerAttribute(activeTimerJson, description);
-	populateTimerList(activeTimerJson, description);
+	populateTimerAttribute(existingJson, description);
+	populateTimerList(existingJson, description);
+	setTimerActive(existingJson, description);
 
 	// publish timer json to "nanohome/timer/description"
 	// run "create_timer" through nanohome shell
-	mqttPublish(nanohomeTopics.timer, JSON.stringify(activeTimerJson), true);
+	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingJson), true);
 	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
