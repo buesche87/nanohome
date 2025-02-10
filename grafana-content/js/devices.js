@@ -66,15 +66,12 @@ function getDeviceStatus(device) {
 // subscribe to dashboard topic to get icon for example element
 function getDashboardInfo(device) {
 	let componentDetails = getComponentDetails(device);
+	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 	console.log("getdashboardinfo description:" + componentDetails.description );
-
-	if (checkElement(componentDetails.description)) {
-		let nanohomeTopics = getNanohomeTopics(componentDetails.description);
-		
-		console.log("getdashboardinfo topic:" + nanohomeTopics.dashboard );
-		mqttSubscribe(nanohomeTopics.dashboard, fastsubscribe);
-	}
+	console.log("getdashboardinfo topic:" + nanohomeTopics.dashboard );
+	
+	mqttSubscribe(nanohomeTopics.dashboard, fastsubscribe);
 }
 
 /*
