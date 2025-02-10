@@ -99,10 +99,29 @@ function connectComponent(device) {
 // TODO: 
 // - Search and replace existing element
 
-// create json for new dashboard element
-// merge new json into existing one from jsonStore
-// publish merged json to "nanohome/devices/description"
+// create json for new dashboard element and create it with nanohome_shell
 function createDashboardElement(device) {
+	let componentDetails = getComponentDetails(device);
+	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
+	let deviceCommands = getDeviceCommands(device, componentDetails);
+
+	// confirm creation of element
+	let confirmDialog = confirm('Create Dashbaord element "' + componentDetails.description + '" for device: "' + device + '/' + componentDetails.component + '"?');
+
+	if (confirmDialog) {
+		// create json for new panel
+		let panelJson = createDashboardJson(device, componentDetails);
+
+		// publish new json element to "nanohome/dashboard" 
+		mqttPublish(nanohomeTopics.dashboard, JSON.stringify(panelJson), true);
+
+		// run "create_panel" through nanohome shel
+		shellCommand(deviceCommands.createPanel);
+		console.log ('Shell command: ' + deviceCommands.createPanel)
+	}
+}
+
+function createDashboardElement_OLD(device) {
 	let componentDetails = getComponentDetails(device);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 	let deviceCommands = getDeviceCommands(device, componentDetails);

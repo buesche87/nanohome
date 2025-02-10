@@ -11,7 +11,8 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Parameter & Variables
-DESCRIPTION=$1
+JSON_INDEX=$1
+LEGACY=$2
 UNIQUE="$(date +%s)"
 
 MQTT_CONNECTION_STRING=(
@@ -20,24 +21,36 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# Get dashboard json from "nanohome/dashboard/DESCRIPTION"
-PUBLISHED_PANEL_JSON=$(
+# Get dashboard json from "nanohome/dashboard"
+PUBLISHED_DASHBOARD_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
         --retained-only --quiet -C 1 -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
-        -t "${MQTT_TOPIC_DASHBOARD}/${DESCRIPTION}"
+        -t "${MQTT_TOPIC_DASHBOARD}"
 )
 
-if [[ -z "${PUBLISHED_PANEL_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DASHBOARD}/${DESCRIPTION}\"" >> /proc/1/fd/1
+if [[ -z "${PUBLISHED_DASHBOARD_JSON}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DASHBOARD}\"" >> /proc/1/fd/1
+    exit 1
+fi
+
+# Get the json entry with index number passed to script
+NEW_PANEL_JSON=$(
+    jq --argjson idx "${JSON_INDEX}" \
+    '.[] | select(.index == $idx)' \
+    <<< "${PUBLISHED_DASHBOARD_JSON}"
+)
+
+if [[ -z "${NEW_PANEL_JSON}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Element with index \"${JSON_INDEX}\" not found" >> /proc/1/fd/1
     exit 1
 fi
 
 # Extract payload and device details from topic
-DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_PANEL_JSON}" )
-COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_PANEL_JSON}" )
-DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_PANEL_JSON}" )
-ICON=$( jq -r '.icon' <<< "${PUBLISHED_PANEL_JSON}" )
-LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_PANEL_JSON}" )
+DEVICEID=$( jq -r '.deviceId' <<< "${NEW_PANEL_JSON}" )
+COMPONENT=$( jq -r '.component' <<< "${NEW_PANEL_JSON}" )
+DESCRIPTION=$( jq -r '.description' <<< "${NEW_PANEL_JSON}" )
+ICON=$( jq -r '.icon' <<< "${NEW_PANEL_JSON}" )
+LEGACY=$( jq -r '.legacy' <<< "${NEW_PANEL_JSON}" )
 
 DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
 

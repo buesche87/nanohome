@@ -9,7 +9,7 @@
 function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
 		return {
-			createPanel:      'create_panel "' + deviceDetails.description + '" "legacy"',
+			createPanel:      'create_panel "' + deviceDetails.description + '"',
 			removeDevice:     'remove_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '" "legacy"',
 			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
 		}
@@ -70,7 +70,20 @@ function createComponentJson(device, componentDetails) {
 // TODO: Test
 // Create timer json entry for "create_panel"
 // Gets merged into json from "nanohome/devices/#"
-function createDashboardJson(device, componentDetails, index) {
+
+function createDashboardJson(device, componentDetails) {
+	let newPanelJson = {
+		"deviceId": device,
+		"component": componentDetails.component,
+		"description": componentDetails.description,
+		"icon": componentDetails.exButtonImage,
+		"legacy": componentDetails.legacy
+	};
+	return newPanelJson;
+}
+
+
+function createDashboardJson_OLD(device, componentDetails, index) {
 	let newPanelJson = {
 		"index": index,
 		"deviceId": device,
