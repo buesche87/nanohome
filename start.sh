@@ -1150,10 +1150,10 @@ fi
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher started" >> /proc/1/fd/1
 
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome legacy devwatcher started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher legacy started" >> /proc/1/fd/1
 
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome legacy measurements started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
 
 # /bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
 
