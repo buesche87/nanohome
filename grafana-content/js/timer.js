@@ -120,14 +120,17 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
+	console.log("onMessageArrived - payload: " + payload);
+
 	jsonPayload = JSON.parse(payload);
 
-	if (topicSplit[1] == "timer") {
+	if ( topicSplit[1] == "timer" ) {
 		populateTimerAttribute(jsonPayload);
 		populateTimerList(jsonPayload);
 		setTimerActive(jsonPayload);
 	} 
-	else if (topicSplit[1]== "device") {
+	
+	if ( topicSplit[1]== "devices" ) {
 		populateDeviceAttribute(jsonPayload);
 	}
 }
