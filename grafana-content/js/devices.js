@@ -86,7 +86,7 @@ function clearMeasurement(device) {
 // Connect or disconnect component
 function connectComponent(device) {
 	let componentDetails = getComponentDetails(device);
-	let deviceTopics = getDeviceTopics(componentDetails);
+	let deviceTopics = getDeviceTopics(device, componentDetails);
 
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
@@ -186,16 +186,13 @@ function onMessageArrived(message) {
 	// Nanohome specific topics
 	if ( topicSplit[0] == "nanohome" ) {
 
-		// Fill network status from shelly.getstatus response
-		// Feature possibilities: current power, etc.
+		// Fill network status from shelly.getstatus response. Feature possibilities: current power, etc.
 		if ( topicSplit[1] == "devicestatus" ) {
-			console.log('onMessageArrived - nanohome/devicestatus: ' + payload);
-			
 			let deviceid = topicSplit[2];
 			fillNetworkElement(deviceid, payload);
 		}
 
-		// Save dashboard json and set example icon
+		// TODO: Save dashboard json and set example icon
 		else if ( topicSplit[2] == "dashboard" ) {
 			console.log('Dashboard config retrived: ' + payload);
 
@@ -227,14 +224,14 @@ function onMessageArrived(message) {
 		// Show connected state (shelly-deviceid/status/component/connected)
 		if (topicSplit[3] == "connected") {
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
-			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
+			// console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
 		// Show description (shelly-deviceid/status/component/description)
 		if (topicSplit[3] == "description") {
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
 			setExampleElementDescription(deviceid, component, payload);
-			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
+			// console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	} 
 	
@@ -252,20 +249,20 @@ function onMessageArrived(message) {
 		// Show example button legacy
 		if (componentdev.includes("relay")) {
 			showExampleElement(deviceid, "btnContainer");
-			console.log('Example button: ' + deviceid);
+			// console.log('Example button: ' + deviceid);
 		}
 
 		// Show connected state (shellies/shelly-deviceid/componentdev/componentindex/connected)
 		if (topicSplit[4] == "connected") {
 			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
+			// console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
 		// Show description (shellies/shelly-deviceid/componentdev/componentindex/description)
 		if (topicSplit[4] == "description") {
 			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
 			setExampleElementDescription(deviceid, componentMerged, payload);
-			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
+			// console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	}
 }
@@ -314,7 +311,7 @@ function fillComponentElement(device, component) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // fill example element with content from mqtt message
 function setExampleElementDescription(device, component, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -397,7 +394,7 @@ function fillNetworkElement(device, payload) {
 	}
 }
 
-// TODO: Funktion aufteilen in fillConnectedElement und fillStatusElement ?
+// i.O.
 // Fill status elements with content from mqtt message
 function fillStatusElement(device, component, element, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -428,7 +425,7 @@ function fillStatusElement(device, component, element, payload) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// i.O.
 // get current devices html elements
 function getDevicesHtmlElements(device) {
 	return {
@@ -442,7 +439,7 @@ function getDevicesHtmlElements(device) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // get current components values
 function getComponentDetails(device) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -482,8 +479,8 @@ function saveDeviceAttribute(payload) {
 	jsonStore.setAttribute(devmgr_deviceDataAttribute, payload);
 }
 
-// TODO: Test
-// Description changed
+// i.O.
+// Description changed, popup manager element
 function descriptionChanged(device) {
 	let htmlElements = getDevicesHtmlElements(device);
 	let componentDetails = getComponentDetails(device);
@@ -499,7 +496,7 @@ function descriptionChanged(device) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // Show example element
 function showExampleElement(device, element) {
 	let divElement = document.getElementById(element + "_" + device);
@@ -510,7 +507,7 @@ function showExampleElement(device, element) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // Make the whole details div clickable
 function detailsClickable(device) {
 	let htmlElements = getDevicesHtmlElements(device);
@@ -532,7 +529,7 @@ function detailsClickable(device) {
  ---------------------------------------------------------------
 	Execute
  ---------------------------------------------------------------
-*/
+
 
 setTimeout(() => {
 	if (checkMqttStatus()) {
@@ -540,3 +537,4 @@ setTimeout(() => {
 	}
 }, 300);
 
+*/
