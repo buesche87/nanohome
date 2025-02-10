@@ -139,6 +139,7 @@ function setElementStatus(device, component, payload) {
 			case 100:
 			case "100":
 			case "off":
+			case "false":
 			case false:
 				panelElement.classList.remove('statusgreen');
 				break;
