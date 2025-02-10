@@ -244,7 +244,7 @@ function generateTimerJson(description, index) {
 		"index": index,
 		"deviceId": deviceJson.deviceId,
 		"component": deviceJson.component,
-		"description": timerDetails.description,
+		"description": deviceJson.description,
 		"timerPeriodText": selectedText,
 		"timerPeriodValue": timerDetails.timerPeriod.value,
 		"timerOn": timerDetails.timerOn.value,
