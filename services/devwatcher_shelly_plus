@@ -2,10 +2,12 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 # nanohome - measurements service
 #
-# Get measurements from shelly gen3 pm devices
+# Discover and get measurements from Shelly gen3 pm devices
 # - Subscribe to the status topic of all devices
-# - Filter messages from not connected or not monitored components
-# - Parse the json payload and write it to the influx bucket "Measurements"
+# - Filter not monitored components from messages
+# - Write device status in Influx "Devices" bucket
+# - For connected devices with valid deription
+#   parse measurement values and write them into Influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Configuration
@@ -77,6 +79,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 	# [[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}" >> /proc/1/fd/1
 
+	[[ $LOG_DEBUG ]] && echo "Description: ${DESCRIPTION}" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo "Connectedvalue: ${CONNECTEDVALUE}" >> /proc/1/fd/1
 
 	# MEASUREMENTS
 
@@ -85,7 +89,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		continue
 	fi
 
-	[[ $LOG_DEBUG ]] && echo "${DESCRIPTION}" >> /proc/1/fd/1
+	
 
 	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
