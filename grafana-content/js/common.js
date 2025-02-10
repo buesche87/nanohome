@@ -4,7 +4,7 @@
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// i.O.
 // return device commands for current device
 function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
@@ -22,7 +22,7 @@ function getDeviceCommands(device, deviceDetails) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // return mqtt topics for current device
 function getDeviceTopics(device, componentDetails) {
 	if (componentDetails.legacy) {
@@ -42,7 +42,7 @@ function getDeviceTopics(device, componentDetails) {
 	}
 }
 
-// TODO: Test
+// i.O.
 // return mqtt topics for current device
 function getNanohomeTopics(description) {
 	return {
@@ -54,9 +54,8 @@ function getNanohomeTopics(description) {
 	}
 }
 
-// TODO: Test
-// Generate component json for deviceData Attribute
-// Gets published to "nanohome/devices/#"
+// i.O.
+// Generate component, gets published to "nanohome/devices"
 function createComponentJson(device, componentDetails) {
 	let newComponentJson = {
 		"deviceId": device,
@@ -68,18 +67,6 @@ function createComponentJson(device, componentDetails) {
 	return newComponentJson;
 }
 
-// i.O.
-// Create timer json entry for "create_panel"
-function createDashboardJson(device, componentDetails) {
-	let newPanelJson = {
-		"deviceId": device,
-		"component": componentDetails.component,
-		"description": componentDetails.description,
-		"icon": componentDetails.exButtonImage,
-		"legacy": componentDetails.legacy
-	};
-	return newPanelJson;
-}
 
 /*
 ---------------------------------------------------------------

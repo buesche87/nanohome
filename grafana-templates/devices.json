@@ -90,18 +90,18 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 8,
+            "w": 7,
             "x": 9,
             "y": 3
           },
-          "id": 390,
+          "id": 345,
           "options": {
             "code": {
               "language": "plaintext",
               "showLineNumbers": false,
               "showMiniMap": false
             },
-            "content": "<details class=\"manage\" id=\"manage_${Device}\">\r\n\t<summary id=\"summary_${Device}\"></summary>\r\n\t<div class=\"statusDiv\">\r\n\t\t<div class=\"manageGroup\">\r\n\t\t\t<button\tclass=\"manageElement\"\r\n\t\t\t\t\t\t\tid=\"savebtn_${Device}\"\r\n\t\t\t\t\t\t\tonclick='saveDevice(\"${Device}\")'\r\n\t\t\t\t\t\t\tdisabled>\r\n\t\t\t\tSave\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"manageGroup\">\r\n\t\t<button\tclass=\"manageElement\"\r\n\t\t\t\t\t\tstyle=\"color: orange\"\r\n\t\t\t\t\t\tid=\"clearMeasurement_${Device}\"\r\n\t\t\t\t\t\tonclick='clearMeasurement(\"${Device}\")'>\r\n\t\t\tClear Measurements\r\n\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"manageGroup\">\t\t\r\n\t\t<button\tclass=\"manageElement\"\r\n\t\t\t\t\t\tstyle=\"color: red\"\r\n\t\t\t\t\t\tid=\"removeDevice_${Device}\"\r\n\t\t\t\t\t\tonclick='removeDevice(\"${Device}\")'>\r\n\t\t\tRemove Device\r\n\t\t</button>\r\n\t\t</div>\r\n\t</div>\r\n</details>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tdetailsClickable(\"${Device}\");\r\n\t}, 300);\r\n</script>",
+            "content": "<div class=\"btnContainer elementHidden\" id=\"btnContainer_${Device}\">\r\n\t<div class=\"btnDropdown\" id=\"exButtonDrop_${Device}\">\r\n\t\t<form id=\"exButtonForm_${Device}\">\r\n\t\t\t<input checked=\"checked\" type=\"radio\" id=\"exButtonImage1_${Device}\" name=\"exButtonImage-select\" value=\"onoff\" />\r\n\t\t\t<label for=\"exButtonImage1_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage2_${Device}\" name=\"exButtonImage-select\" value=\"tv\" />\r\n\t\t\t<label for=\"exButtonImage2_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage3_${Device}\" name=\"exButtonImage-select\" value=\"computer\" />\r\n\t\t\t<label for=\"exButtonImage3_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage4_${Device}\" name=\"exButtonImage-select\" value=\"lampe\" />\r\n\t\t\t<label for=\"exButtonImage4_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage5_${Device}\" name=\"exButtonImage-select\" value=\"led\" />\r\n\t\t\t<label for=\"exButtonImage5_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage6_${Device}\" name=\"exButtonImage-select\" value=\"tower\" />\r\n\t\t\t<label for=\"exButtonImage6_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage7_${Device}\" name=\"exButtonImage-select\" value=\"schlafzimmer\" />\r\n\t\t\t<label for=\"exButtonImage7_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage8_${Device}\" name=\"exButtonImage-select\" value=\"kinderzimmer\" />\r\n\t\t\t<label for=\"exButtonImage8_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage9_${Device}\" name=\"exButtonImage-select\" value=\"frame\" />\r\n\t\t\t<label for=\"exButtonImage9_${Device}\"></label>\r\n\t\t</form>\r\n\t</div>\r\n\t<div\tclass=\"btnDescription\"\r\n\t\t\t\tid=\"exBtnDescription_${Device}\"\r\n\t\t\t\tonclick='createDashboardElement(\"${Device}\")'>\r\n\t\tDevice\r\n\t</div>\r\n</div>\r\n\r\n<div class=\"slider elementHidden\" id=\"sliderContainer_${Device}\">\r\n<div class=\"sliderDescription\" id=\"exSliderDescription_${Device}\">Device</div>\r\n<input type=\"range\" onclick='createDashboardElement(\"${Device}\")' />\r\n</div>",
             "mode": "html"
           },
           "pluginVersion": "11.4.0",
@@ -116,18 +116,18 @@
           },
           "gridPos": {
             "h": 5,
-            "w": 7,
-            "x": 17,
+            "w": 8,
+            "x": 16,
             "y": 3
           },
-          "id": 345,
+          "id": 390,
           "options": {
             "code": {
               "language": "plaintext",
               "showLineNumbers": false,
               "showMiniMap": false
             },
-            "content": "<div class=\"btnContainer elementHidden\" id=\"btnContainer_${Device}\">\r\n\t<div class=\"btnDropdown\" id=\"exButtonDrop_${Device}\">\r\n\t\t<form id=\"exButtonForm_${Device}\">\r\n\t\t\t<input checked=\"checked\" type=\"radio\" id=\"exButtonImage1_${Device}\" name=\"exButtonImage-select\" value=\"onoff\" />\r\n\t\t\t<label for=\"exButtonImage1_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage2_${Device}\" name=\"exButtonImage-select\" value=\"tv\" />\r\n\t\t\t<label for=\"exButtonImage2_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage3_${Device}\" name=\"exButtonImage-select\" value=\"computer\" />\r\n\t\t\t<label for=\"exButtonImage3_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage4_${Device}\" name=\"exButtonImage-select\" value=\"lampe\" />\r\n\t\t\t<label for=\"exButtonImage4_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage5_${Device}\" name=\"exButtonImage-select\" value=\"led\" />\r\n\t\t\t<label for=\"exButtonImage5_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage6_${Device}\" name=\"exButtonImage-select\" value=\"tower\" />\r\n\t\t\t<label for=\"exButtonImage6_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage7_${Device}\" name=\"exButtonImage-select\" value=\"schlafzimmer\" />\r\n\t\t\t<label for=\"exButtonImage7_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage8_${Device}\" name=\"exButtonImage-select\" value=\"kinderzimmer\" />\r\n\t\t\t<label for=\"exButtonImage8_${Device}\"></label>\r\n\t\t\t<input type=\"radio\" id=\"exButtonImage9_${Device}\" name=\"exButtonImage-select\" value=\"frame\" />\r\n\t\t\t<label for=\"exButtonImage9_${Device}\"></label>\r\n\t\t</form>\r\n\t</div>\r\n\t<div\tclass=\"btnDescription\"\r\n\t\t\t\tid=\"exBtnDescription_${Device}\"\r\n\t\t\t\tonclick='createDashboardElement(\"${Device}\")'>\r\n\t\tDevice\r\n\t</div>\r\n</div>\r\n\r\n<div class=\"slider elementHidden\" id=\"sliderContainer_${Device}\">\r\n<div class=\"sliderDescription\" id=\"exSliderDescription_${Device}\">Device</div>\r\n<input type=\"range\" onclick='createDashboardElement(\"${Device}\")' />\r\n</div>",
+            "content": "\t<div class=\"statusDiv\">\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tid=\"savebtn_${Device}\"\r\n\t\t\t\t\t\t\tonclick='saveDevice(\"${Device}\")'>\r\n\t\t\t\tSave\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\r\n\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\tstyle=\"color: orange\"\r\n\t\t\t\t\t\tid=\"clearMeasurement_${Device}\"\r\n\t\t\t\t\t\tonclick='clearMeasurement(\"${Device}\")'>\r\n\t\t\tClear Measurements\r\n\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\t\t\r\n\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\tstyle=\"color: red\"\r\n\t\t\t\t\t\tid=\"removeDevice_${Device}\"\r\n\t\t\t\t\t\tonclick='removeDevice(\"${Device}\")'>\r\n\t\t\tRemove Device\r\n\t\t</button>\r\n\t\t</div>\r\n\t</div>",
             "mode": "html"
           },
           "pluginVersion": "11.4.0",
@@ -392,8 +392,8 @@
     ]
   },
   "time": {
-    "from": "2025-02-10T15:41:41.209Z",
-    "to": "2025-02-10T15:43:10.664Z"
+    "from": "now-1y",
+    "to": "now"
   },
   "timepicker": {
     "hidden": true
@@ -401,6 +401,6 @@
   "timezone": "",
   "title": "Devices",
   "uid": "fe47pva0wy8lcb",
-  "version": 14,
+  "version": 23,
   "weekStart": ""
 }

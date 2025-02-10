@@ -106,33 +106,17 @@ function connectComponent(device) {
 // Create new dashboard element through nanohome_sand create it withhell
 function createDashboardElement(device) {
 	let componentDetails = getComponentDetails(device);
-	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 	let deviceCommands = getDeviceCommands(device, componentDetails);
 
 	// confirm creation of element
-	let confirmDialog = confirm('Create Dashbaord element "' + componentDetails.description + '" for device: "' + device + '/' + componentDetails.component + '"?');
+	let confirmDialog = confirm('Save device and create dshbaord element?');
 
 	if (confirmDialog) {
-		// create json for new panel
-		let panelJson = createDashboardJson(device, componentDetails);
-
-		// publish new json element to "nanohome/dashboard" 
-		mqttPublish(nanohomeTopics.dashboard, JSON.stringify(panelJson), true);
-
-		// run "create_panel" through nanohome shel
+		saveDevice(device);
 		shellCommand(deviceCommands.createPanel);
-		console.log ('Shell command: ' + deviceCommands.createPanel)
+		getDeviceInfo();
+		console.log ('Shell command: ' + deviceCommands.createPanel);
 	}
-}
-
-// TODO: Test
-// clear measurements and remove device with nanohome shell command "remove_device"
-function removeDevice(device) {
-	let componentDetails = getComponentDetails(device);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
-
-	shellCommand(deviceCommands.clearMeasurement);
-	shellCommand(deviceCommands.removeDevice);
 }
 
 // TODO:
@@ -157,6 +141,16 @@ function saveDevice(device) {
 
 	getDeviceStatus(device);
 	getDeviceInfo();
+}
+
+// TODO: Test
+// clear measurements and remove device with nanohome shell command "remove_device"
+function removeDevice(device) {
+	let componentDetails = getComponentDetails(device);
+	let deviceCommands = getDeviceCommands(device, componentDetails);
+
+	shellCommand(deviceCommands.clearMeasurement);
+	shellCommand(deviceCommands.removeDevice);
 }
 
 /*
