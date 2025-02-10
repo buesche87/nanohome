@@ -47,6 +47,7 @@ function getDeviceTopics(device, componentDetails) {
 function getNanohomeTopics(description) {
 	return {
 		device:      "nanohome/devices/" + description,
+		dashboard:   "nanohome/dashboard/" + description,
 		home:        "nanohome/home/" + description, 
 		standby:     "nanohome/standby/" + description,
 		timer:       "nanohome/timer/" + description

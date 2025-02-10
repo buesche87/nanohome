@@ -79,5 +79,5 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	# Log
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived from [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Line protocol payoad [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Line protocol payload [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
 done

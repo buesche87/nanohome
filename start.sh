@@ -31,7 +31,7 @@ export MQTT_TOPIC_HOME="nanohome/home/+"
 export MQTT_TOPIC_STANDBY="nanohome/standby/+"
 export MQTT_TOPIC_TIMER="nanohome/timer/+"
 
-export MQTT_TOPIC_DASHBOARD="nanohome/home/dashboard"
+export MQTT_TOPIC_DASHBOARD="nanohome/dashboard"
 export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 

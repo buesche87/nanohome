@@ -121,8 +121,8 @@ function createDashboardElement(device) {
 		let newJsonElement = createDashboardJson(device, componentDetails, jsonIndex);
 		existingJson.push(newJsonElement);
 
-		// publish new json element to "nanohome/home/description" 
-		mqttPublish(nanohomeTopics.home, JSON.stringify(newJsonElement), true);
+		// publish new json element to "nanohome/dashboard/description" 
+		mqttPublish(nanohomeTopics.dashboard, JSON.stringify(newJsonElement), true);
 
 		// save modified json into deviceData attribute
 		// run "create_panel" through nanohome shell
