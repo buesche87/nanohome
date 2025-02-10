@@ -58,6 +58,8 @@ function getDeviceStatus(device) {
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}
 	}
+
+	getDashboardInfo(device);
 }
 
 // TODO: Test
@@ -189,7 +191,6 @@ function saveDevice(device) {
 
 	getDeviceStatus(device);
 	getDeviceInfo();
-	getDashboardInfo();
 }
 
 /*
