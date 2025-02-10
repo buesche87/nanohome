@@ -66,7 +66,7 @@ function saveTimer(description) {
 	let newJsonElement = generateTimerJson(description, jsonIndex);
 	existingJson.push(newJsonElement);
 
-	console.log("Timer JSON: " + existingJson);
+	console.log("Timer JSON: " + JSON.stringify(existingJson));
 
 	// save modified json into timerData attribute
 	// populate timer list
@@ -156,7 +156,7 @@ function populateDeviceAttribute(deviceJson) {
 // Populate json data from mqtt to element holding the data
 function populateTimerAttribute(timerJson) {
 	let description = timerJson.description;
-	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
+	let jsonDataStore = document.getElementById(timer_timerListPrefix + description);
 
 	jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
 
