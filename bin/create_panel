@@ -137,14 +137,15 @@ DASHBOARD_NEW=$(
 	<<< "${DASHBOARD_DATA}"
 )
 
+
+jq <<< "${DASHBOARD_NEW}" >> /proc/1/fd/1
+
 if [[ -z "${DASHBOARD_NEW}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
     exit 1
 else
     [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
 fi
-
-jq <<< $DASHBOARD_NEW
 
 # Upload dashboard to grafana
 curl --insecure \
