@@ -79,19 +79,12 @@ PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DESCRIPTION_/${DESCRIPTION}}
 PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_ICON_/${ICON}}
 
 # Replace attributes in json template
-PANEL_TEMPLATE_JSON=${PANEL_TEMPLATE_JSON//_UNIQUE_/${UNIQUE}}
-
-
-
-jq <<< "${PANEL_TEMPLATE_JSON}" >> /proc/1/fd/1
-
-
-
+PANEL_TEMPLATE_JSON=${PANEL_TEMPLATE_JSON//9490/${UNIQUE}}
 
 # Merge html into json
 PANEL_JSON=$(
     jq --arg html "$PANEL_TEMPLATE_HTML" \
-    '.content = $html' <<<"$PANEL_TEMPLATE_JSON"
+    '.content = $html' <<< "$PANEL_TEMPLATE_JSON"
 )
 
 if [[ -z "${PANEL_JSON}" ]]; then
