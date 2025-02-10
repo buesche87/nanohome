@@ -79,8 +79,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	# Log
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo "Description: ${DESCRIPTION}" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo "Connectedvalue: ${CONNECTEDVALUE}" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Measurements: Description - ${DESCRIPTION}" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Measurements: Connectedvalue - ${CONNECTEDVALUE}" >> /proc/1/fd/1
 
 	#===============================================================
 	# MEASUREMENTS
@@ -107,8 +107,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	[ "${CURRENTPOSITION}" != "null" ] && OUTPUTVALUE="${CURRENTPOSITION}"
 
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-	-t "${DEVICEID}/status/${COMPONENT}/output" \
-	-m "${OUTPUTVALUE}"
+		-t "${DEVICEID}/status/${COMPONENT}/output" \
+		-m "${OUTPUTVALUE}"
 
 	# Prepare string for influx cli (line protocol)
 	PAYLOAD="${DESCRIPTION_ESCAPED} "
@@ -127,10 +127,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		PAYLOAD="${PAYLOAD%,}"
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Measurements: Added - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-		[[ $LOG_DEBUG ]] && echo -e "${PAYLOAD}"
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Measurements: Payoad - ${PAYLOAD}" >> /proc/1/fd/1
 	else
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_WARN} Measurements: No payload - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 	fi
-	
-	# [[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}"
 done

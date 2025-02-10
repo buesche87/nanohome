@@ -1147,9 +1147,9 @@ crond -f &
 
 # Test
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
-# /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
+/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
-# /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
+/bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
 # /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_plus &
 #/bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
 
