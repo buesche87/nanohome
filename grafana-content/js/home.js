@@ -13,7 +13,7 @@
 // - command > home_command
 
 var home_outputElement = "statusOutput";
-//var home_outputComponent = "";
+var home_outputComponent = "";
 var command;
 
 /*
@@ -42,7 +42,7 @@ function sendCommand(device, component, description, command) {
 	let statusTopic = device + "/status/" + component;
 
 	// set global variable to identify mqtt message
-	//home_outputComponent = component;
+	home_outputComponent = component;
 
 	mqttSubscribe(statusTopic, 1000);
 	mqttPublish(commandTopic, command, false);
@@ -57,7 +57,7 @@ function sendCommandLegacy(device, component, description, command) {
 	let statusTopic = "shellies/" + device + "/relay/" + component;
 
 	// set global variable to identify mqtt message
-	//home_outputComponent = component;
+	home_outputComponent = component;
 
 	mqttSubscribe(statusTopic, 1000);
 	mqttPublish(commandTopic, command, false);
@@ -71,8 +71,7 @@ function sendCommandLegacy(device, component, description, command) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
-// TODO: 
+// TODO: status einfacher gestalten (trotzdem schneller wechsel)
 function onMessageArrived(message) {
 
 	let payload = message.payloadString;
@@ -90,7 +89,6 @@ function onMessageArrived(message) {
 			setElementStatus(deviceid, component, payload);
 		} 
 
-		/*
 		// Status topic (plus)
 		if (topicSplit[3] != "output" && home_outputComponent != "") {
 			statusData = JSON.parse(payload);
@@ -105,7 +103,7 @@ function onMessageArrived(message) {
 			if (checkElement(output)) {
 				setElementStatus(deviceid, component, output);
 			}
-		}*/
+		}
 	} 
 	
 	// Shelly legacy devices
@@ -119,11 +117,10 @@ function onMessageArrived(message) {
 			setElementStatus(deviceid, componentidx, payload);
 		} 	
 
-		/*
 		// Status topic (legacy)
 		if (topicSplit[4] != "output" && home_outputComponent != "") {
 			setElementStatus(deviceid, componentidx, payload);
-		}*/
+		}
 	}
 }
 
