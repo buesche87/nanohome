@@ -31,7 +31,7 @@ start_measurement() {
 			influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${description} ${measurement}=$value"
 		done &
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement started: ${topic}" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Legacy measurement started: ${topic}" >> /proc/1/fd/1
 }
 
 # Convert string-boolean to 1 or 0
@@ -113,7 +113,7 @@ while /bin/true; do
 		# Monitor component and write measurements into influx bucket "Measurements"
 		[[ -z "${MONITORED_ENERGY}" ]] && start_measurement "Energy" "${DESCRIPTION_ESCAPED}" "${ENERGYTOPIC}"
 		[[ -z "${MONITORED_POWER}" ]] && start_measurement "Power" "${DESCRIPTION_ESCAPED}" "${POWERTOPIC}"
-		[[ -z "${MONITORED_DEVICETEMP}" ]] && start_measurement "Devicetemp" "${DESCRIPTION_ESCAPED}" "${TEMPERATURETOPIC}"
+		[[ -z "${MONITORED_DEVICETEMP}" ]] && start_measurement "Devicetemp" "${DESCRIPTION_ESCAPED}" "${DEVICETEMPTOPIC}"
 	done
 	sleep $NANOHOME_DEVWATCHER_INTERVAL
 done
