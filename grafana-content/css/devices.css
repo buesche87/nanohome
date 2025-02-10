@@ -74,7 +74,8 @@ hr.thight {
 	background-color: var(--background-color);
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
-	padding: 15px;
+	padding-left: 15px;
+	padding-right: 15px;
 	width: 100%;
 	height: 46px;
 }

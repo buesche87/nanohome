@@ -16,5 +16,5 @@ if [ -n "${MEASUREMENT}" ]; then
 	  --stop "$(date --utc +"%Y-%m-%dT%H:%M:%SZ")" \
 	  --predicate "_measurement=\"${MEASUREMENT}\""
 
-	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} InfluxDB: Measurement \"${MEASUREMENT}\" cleared" >> /proc/1/fd/1
+	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Measurement \"${MEASUREMENT}\" cleared" >> /proc/1/fd/1
 fi

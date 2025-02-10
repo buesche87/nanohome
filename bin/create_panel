@@ -15,10 +15,6 @@ JSON_INDEX=$1
 LEGACY=$2
 UNIQUE="$(date +%s)"
 
-# DEV - TEST
-MQTT_HOST="nanohome.buesche.one"
-JSON_INDEX="7"
-
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -28,8 +24,8 @@ MQTT_CONNECTION_STRING=(
 # Get dashboard json from "nanohome/home/dashboard"
 PUBLISHED_DASHBOARD_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-    -C 1 -W 2 --retained-only --quiet \
-    -t "${MQTT_TOPIC_DASHBOARD}"
+        --retained-only --quiet -C 1 -W 3 \
+        -t "${MQTT_TOPIC_DASHBOARD}"
 )
 
 if [[ -z "${PUBLISHED_DASHBOARD_JSON}" ]]; then

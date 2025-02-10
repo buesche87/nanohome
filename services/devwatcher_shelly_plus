@@ -40,7 +40,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# Get connected state of component
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W $MQTT_SUBSCRIPBE_TIMEOUT \
+		--retained-only --nodelay --quiet -C 1 -W $MQTT_SUBSCRIBE_TIMEOUT \
 		-t "${DEVICEID}/status/${COMPONENT}/connected"
 	)
 
@@ -58,7 +58,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# Get description of component
 	DESCRIPTION=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W $MQTT_SUBSCRIPBE_TIMEOUT \
+		--retained-only --nodelay --quiet -C 1 -W $MQTT_SUBSCRIBE_TIMEOUT \
 		-t "${DEVICEID}/status/${COMPONENT}/description"
 	)
 
