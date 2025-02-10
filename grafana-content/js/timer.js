@@ -29,19 +29,8 @@ var timer_removeButtonPrefix = "timerRemoveBtn_"
 
 // Get Device Info - Subscribe to the MQTT topics
 function getTimerInfo() {
-	console.log("getTimerInfo");
-	mqttSubscribe(timerTopicAll, longsubscribe);
 	mqttSubscribe(deviceTopicAll, longsubscribe);
-}
-
-function getTimerInfo_old(description) {
-	let nanohomeTopics = getNanohomeTopics(description);
-
-	console.log("getTimerInfo: " + nanohomeTopics.device);
-	console.log("getTimerInfo: " + nanohomeTopics.timer);
-
-	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
-	mqttSubscribe(nanohomeTopics.timer, fastsubscribe);
+	mqttSubscribe(timerTopicAll, longsubscribe);
 }
 
 /*
@@ -120,15 +109,15 @@ function onMessageArrived(message) {
 
 	jsonPayload = JSON.parse(payload);
 
+	if ( topicSplit[1]== "devices" ) {
+		populateDeviceAttribute(jsonPayload);
+	}
+
 	if ( topicSplit[1] == "timer" ) {
 		populateTimerAttribute(jsonPayload);
 		populateTimerList(jsonPayload);
 		setTimerActive(jsonPayload);
 	} 
-	
-	if ( topicSplit[1]== "devices" ) {
-		populateDeviceAttribute(jsonPayload);
-	}
 }
 
 /*
