@@ -10,8 +10,6 @@
 
 var timer_jsonDataStore = "timerData"; // HTML element
 var timer_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
-
-var timer_timerDataJsonStore = "timerData"; // HTML element
 var timer_timerDataAttribute = "timerDetails"; // Attribute name of jsonStore element
 
 var timer_timerListPrefix = "timerList_"
@@ -143,9 +141,9 @@ function onMessageArrived(message) {
 // Populate json data from mqtt to element holding the data
 function populateDeviceAttribute(deviceJson) {
 	let description = deviceJson.description;
-	let jsonDataStore = document.getElementById(timer_deviceDataAttribute + description);
+	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
-	jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(deviceJson));
+	jsonDataStore.setAttribute(timer_deviceDataAttribute, JSON.stringify(deviceJson));
 
 	// debug
 	console.log("Device JSON Populated: ");
