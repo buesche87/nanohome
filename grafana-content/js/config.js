@@ -40,6 +40,7 @@ var connectedTopicAll = "+/status/+/connected";
 var descriptionTopicAll = "+/status/+/description";
 var outputTopicAll = "+/status/+/output";
 var standbyTopicAll = "nanohome/+/standby";
+var deviceTopicAll = "nanohome/devices/+";
 
 // Device topics legacy
 var outputTopicAllLegacy = "shellies/+/relay/0";

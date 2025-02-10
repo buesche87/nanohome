@@ -39,6 +39,7 @@ function getDeviceInfo() {
 	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
 	mqttSubscribe(descriptionTopicAll, fastsubscribe);
 	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
+	mqttSubscribe(deviceTopicAll, fastsubscribe);
 }
 
 // TODO: Test
@@ -58,8 +59,6 @@ function getDeviceStatus(device) {
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}
 	}
-
-	getDashboardInfo(device);
 }
 
 // TODO: Test
@@ -70,7 +69,7 @@ function getDashboardInfo(device) {
 
 	console.log("getdashboardinfo description:" + componentDetails.description );
 	console.log("getdashboardinfo topic:" + nanohomeTopics.dashboard );
-	
+
 	mqttSubscribe(nanohomeTopics.dashboard, fastsubscribe);
 }
 
@@ -186,8 +185,9 @@ function onMessageArrived(message) {
 		}
 
 		// TODO: Set example icon
-		if ( topicSplit[1] == "dashboard" ) {
-			console.log('Dashboard config retrived');
+		// TODO: Set example element description (statt unten)
+		if ( topicSplit[1] == "devices" ) {
+			console.log('Device config retrived');
 
 			setExampleElementIcon(payload);
 		}

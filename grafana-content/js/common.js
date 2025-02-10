@@ -62,6 +62,7 @@ function createComponentJson(device, componentDetails) {
 		"deviceId": device,
 		"component": componentDetails.component,
 		"description": componentDetails.description,
+		"icon": componentDetails.exButtonImage,
 		"legacy": componentDetails.legacy
 	};
 	return newComponentJson;
