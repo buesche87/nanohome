@@ -153,7 +153,7 @@ function populateDeviceAttribute(deviceJson) {
 // TODO: Test
 // Populate json data from mqtt to element holding the data
 function populateTimerAttribute(timerJson) {
-	let description = deviceJson.description;
+	let description = timerJson.description;
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
 	jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
