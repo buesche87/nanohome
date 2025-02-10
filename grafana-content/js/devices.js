@@ -58,9 +58,9 @@ function getDeviceStatus(device) {
 		if (componentDetails.legacy == "true") {
 			setStatusLegacy(device);
 		} else {
-			let payload = '{"id":999, "src":"' + nanohomeTopics.device + '", "method":"Shelly.GetStatus"}';
+			let payload = '{"id":999, "src":"' + deviceTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
 
-			mqttSubscribe(deviceTopics.rpcStatus, normalsubscribe);
+			mqttSubscribe(deviceTopics.rpcDest, normalsubscribe);
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}
 	}
