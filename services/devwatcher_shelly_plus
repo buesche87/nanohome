@@ -127,7 +127,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		PAYLOAD="${PAYLOAD%,}"
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Measurements: Added - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-		[[ $LOG_DEBUG ]] echo -e "${PAYLOAD}"
+		[[ $LOG_DEBUG ]] && echo -e "${PAYLOAD}"
 	else
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_WARN} Measurements: No payload - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 	fi
