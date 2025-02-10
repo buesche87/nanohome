@@ -175,6 +175,8 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
+	console.log('Message arrived: ' + payload);
+
 	if ( topicSplit[0] == "nanohome" ) {
 
 		if ( topicSplit[1] == "devices" ) {
