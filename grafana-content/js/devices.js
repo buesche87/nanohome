@@ -67,8 +67,12 @@ function getDeviceStatus(device) {
 function getDashboardInfo(device) {
 	let componentDetails = getComponentDetails(device);
 
+	console.log("getdashboardinfo description:" + componentDetails.description );
+
 	if (checkElement(componentDetails.description)) {
 		let nanohomeTopics = getNanohomeTopics(componentDetails.description);
+		
+		console.log("getdashboardinfo topic:" + nanohomeTopics.dashboard );
 		mqttSubscribe(nanohomeTopics.dashboard, fastsubscribe);
 	}
 }
@@ -185,7 +189,7 @@ function onMessageArrived(message) {
 		}
 
 		// TODO: Set example icon
-		else if ( topicSplit[1] == "dashboard" ) {
+		if ( topicSplit[1] == "dashboard" ) {
 			console.log('Dashboard config retrived');
 
 			setExampleElementIcon(payload);
