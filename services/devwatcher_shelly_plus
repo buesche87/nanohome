@@ -27,7 +27,7 @@ while /bin/true; do
 	# Subscribe to "+/online"
 	AVAILABLE_DEVICES=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -W 2 -F "%j" \
+		--nodelay --quiet -W 2 -F "%j" \
 		-t "${MQTT_TOPIC_ONLINE}"
 	)
 	

@@ -148,6 +148,7 @@ function removeDevice(device) {
 // save device details
 function saveDevice(device) {
 	let componentDetails = getComponentDetails(device);
+	let deviceTopics = getDeviceTopics(device, componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 	let jsonElement = createComponentJson(device, componentDetails);
@@ -155,7 +156,8 @@ function saveDevice(device) {
 
 	// Publish and refresh
 	mqttPublish(nanohomeTopics.device, payload, true);
-	mqttPublish(nanohomeTopics.description, componentDetails.description, true);
+	mqttPublish(deviceTopics.description, componentDetails.description, true);
+
 	getDeviceStatus(device);
 	getDashboardInfo();
 }
