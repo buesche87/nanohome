@@ -87,8 +87,6 @@ PANEL_JSON=$(
     '.content = $html' <<< "$PANEL_TEMPLATE_JSON"
 )
 
-jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
-
 if [[ -z "${PANEL_JSON}" ]]; then
     echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     [[ $LOG_DEBUG ]] && jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
@@ -123,6 +121,8 @@ DASHBOARD_PREPARED=$(
     jq --argjson PANEL "${PANEL_JSON}" \
     '.dashboard.panels += [$PANEL]' <<< "${DASHBOARD_CURRENT}"
 )
+
+jq <<< "${DASHBOARD_PREPARED}" >> /proc/1/fd/1
 
 # Prepare metadata for dashboard upload
 DASHBOARD_DATA='{
