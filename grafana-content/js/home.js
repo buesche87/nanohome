@@ -13,7 +13,7 @@
 // - command > home_command
 
 var home_outputElement = "statusOutput";
-var home_outputComponent = "";
+//var home_outputComponent = "";
 var command;
 
 /*
@@ -35,34 +35,34 @@ function subscribeToOutput() {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// i.O.
 // send command Shelly Plus
 function sendCommand(device, component, description, command) {
 	let commandTopic = device + "/command/" + component;
 	let statusTopic = device + "/status/" + component;
 
 	// set global variable to identify mqtt message
-	home_outputComponent = component;
+	//home_outputComponent = component;
 
 	mqttSubscribe(statusTopic, 1000);
 	mqttPublish(commandTopic, command, false);
 
-	console.log('Command sent for: ' + description);
+	console.log('Command "' + command + '" sent for: ' + description);
 }
 
-// TODO: Test
+// i.O.
 // send command Shelly Legacy
 function sendCommandLegacy(device, component, description, command) {
 	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";
 	let statusTopic = "shellies/" + device + "/relay/" + component;
 
 	// set global variable to identify mqtt message
-	home_outputComponent = component;
+	//home_outputComponent = component;
 
 	mqttSubscribe(statusTopic, 1000);
 	mqttPublish(commandTopic, command, false);
 
-	console.log('Command sent for: ' + description);
+	console.log('Command "' + command + '" sent for: ' + description);
 }
 
 /*
@@ -72,12 +72,14 @@ function sendCommandLegacy(device, component, description, command) {
 */
 
 // TODO: Test
+// TODO: 
 function onMessageArrived(message) {
 
 	let payload = message.payloadString;
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
+	// Shelly Plus devices
 	if ( topicSplit[0].startsWith("shelly") ) {
 
 		let deviceid = topicSplit[0]
@@ -88,6 +90,7 @@ function onMessageArrived(message) {
 			setElementStatus(deviceid, component, payload);
 		} 
 
+		/*
 		// Status topic (plus)
 		if (topicSplit[3] != "output" && home_outputComponent != "") {
 			statusData = JSON.parse(payload);
@@ -102,9 +105,11 @@ function onMessageArrived(message) {
 			if (checkElement(output)) {
 				setElementStatus(deviceid, component, output);
 			}
-		}
-
-	} else if ( topicSplit[0] == "shellies" ) {
+		}*/
+	} 
+	
+	// Shelly legacy devices
+	else if ( topicSplit[0] == "shellies" ) {
 
 		let deviceid = topicSplit[1]
 		let componentidx = topicSplit[3]
@@ -114,10 +119,11 @@ function onMessageArrived(message) {
 			setElementStatus(deviceid, componentidx, payload);
 		} 	
 
+		/*
 		// Status topic (legacy)
 		if (topicSplit[4] != "output" && home_outputComponent != "") {
 			setElementStatus(deviceid, componentidx, payload);
-		}
+		}*/
 	}
 }
 
@@ -127,7 +133,7 @@ function onMessageArrived(message) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// i.O.
 // Set element status from output mnessage
 function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
