@@ -54,10 +54,10 @@ function getTimerInfo_old(description) {
 // get current timers for component and append a new one
 // save json to the components status element
 function saveTimer(description) {
-	let timerDetails = getTimerHtmlElements(description);
 	let nanohomeTopics = getNanohomeTopics(description);
+	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
-	let existingJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_timerDataAttribute));
+	let existingJson = JSON.parse(jsonDataStore.getAttribute(timer_timerDataAttribute));
 
 	// define new index
 	let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
@@ -65,6 +65,8 @@ function saveTimer(description) {
 	// Add entry to json
 	let newJsonElement = generateTimerJson(description, jsonIndex);
 	existingJson.push(newJsonElement);
+
+	console.log("Timer JSON: " + existingJson);
 
 	// save modified json into timerData attribute
 	// populate timer list
