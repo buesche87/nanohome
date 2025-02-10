@@ -30,6 +30,11 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
 
+	# Exclude components defined in NANOHOME_NOT_MONITORED_COMPONENTS
+	if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " =~ " ${COMPONENT} " ]]; then
+		continue
+	fi
+
 	# Get connected state and description of component
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
