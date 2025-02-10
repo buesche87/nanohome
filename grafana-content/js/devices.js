@@ -60,7 +60,7 @@ function getDeviceStatus(device) {
 		} else {
 			let payload = '{"id":999, "src":"' + deviceTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
 
-			mqttSubscribe(deviceTopics.rpcDest, normalsubscribe);
+			mqttSubscribe(deviceTopics.rpcDest, longsubscribe);
 			mqttPublish(deviceTopics.rpc, payload, false);
 		}
 	}
@@ -225,13 +225,13 @@ function onMessageArrived(message) {
 		}
 
 		// Show connected state (shelly-deviceid/status/component/connected)
-		else if (topicSplit[3] == "connected") {
+		if (topicSplit[3] == "connected") {
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
 		// Show description (shelly-deviceid/status/component/description)
-		else if (topicSplit[3] == "description") {
+		if (topicSplit[3] == "description") {
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
 			setExampleElementDescription(deviceid, component, payload);
 			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
@@ -262,7 +262,7 @@ function onMessageArrived(message) {
 		}
 
 		// Show description (shellies/shelly-deviceid/componentdev/componentindex/description)
-		else if (topicSplit[4] == "description") {
+		if (topicSplit[4] == "description") {
 			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
 			setExampleElementDescription(deviceid, componentMerged, payload);
 			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
