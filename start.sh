@@ -1072,9 +1072,14 @@ then
 fi
 
 
-# Set home dashboard
+# Set Grafana home dashboard
+home_id="$(curl -s "${grafanaapiheaders_token[@]}" -X GET http://$GRAFANA_SERVICE/api/dashboards/uid/$GRAFANA_DASHBOARD_UID_HOME | jq -r '.dashboard.id')"
+
 curl -s "${grafanaapiheaders_token[@]}" \
-	-X PUT -d '{"homeDashboardId":'$GRAFANA_DASHBOARD_UID_HOME'}' "http://${GRAFANA_SERVICE}/api/org/preferences"
+	-X PUT -d '{"homeDashboardId":'$home_id'}' http://$GRAFANA_SERVICE/api/org/preferences
+
+
+
 
 
 # Mosquitto: 
