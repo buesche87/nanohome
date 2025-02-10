@@ -177,6 +177,7 @@ function onMessageArrived(message) {
 
 	console.log('Message arrived: ' + payload);
 
+	// Nanohome specific topics
 	if ( topicSplit[0] == "nanohome" ) {
 
 		// Fill network status from shelly.getstatus response
@@ -186,104 +187,79 @@ function onMessageArrived(message) {
 			
 			let deviceid = topicSplit[2];
 			fillNetworkElement(deviceid, payload);
-
 		}
 
 		// Save dashboard json and set example icon
-		else if ( topicSplit[1] == "home" ) {
+		else if ( topicSplit[2] == "dashboard" ) {
+			console.log('Dashboard config retrived: ' + payload);
 
-			// nanohome/home/dashboard
-			if (topicSplit[2] == "dashboard") {
-				saveDeviceAttribute(payload);
-				setExampleElementIcon(payload);
-				console.log('Dashboard config: ' + payload);
-			}
-
+			saveDeviceAttribute(payload);
+			setExampleElementIcon(payload);
 		}
-
-		// NOT IN USE
-		else if ( topicSplit[1] == "timer" ) {
-			console.log('onMessageArrived - nanohome/timer: ' + payload);
-		}
-
-		// NOT IN USE
-		else if ( topicSplit[1] == "standby" ) {
-			console.log('onMessageArrived - nanohome/standby: ' + payload);
-		} 
-
 	} 
 	
-	// Fill components, its description and connected state
+	// Shelly Plus devices
 	else if ( topicSplit[0].startsWith("shelly") ) {
 
 		let deviceid = topicSplit[0];
 		let component = topicSplit[2];
 
-		// Show device details
+		// Show components and example button
 		if (topicSplit[1] == "status") {
 			
 			fillComponentElement(deviceid, component);
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
 			
-			// console.log('Device status: "' + deviceid);
-
-			// Show example button
+			// Show example button or slider
 			if (component.includes("switch")) {
 				showExampleElement(deviceid, "btnContainer");
-				// console.log('Example button: ' + deviceid);
-			}
-
-			// Show example slider
-			else if (component.includes("cover")) {
+			} else if (component.includes("cover")) {
 				showExampleElement(deviceid, "sliderContainer");
-				// console.log('Example slider: ' + deviceid);
 			}
 		}
 
-		// shelly-deviceid/status/component/connected
+		// Show connected state (shelly-deviceid/status/component/connected)
 		else if (topicSplit[3] == "connected") {
-			//fillComponentElement(deviceid, component);
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
-			// setExampleElementDescription(deviceid, component, topicSplit[3], payload);
 			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
-		// shelly-deviceid/status/component/description
+		// Show description (shelly-deviceid/status/component/description)
 		else if (topicSplit[3] == "description") {
 			fillStatusElement(deviceid, component, topicSplit[3], payload);
 			setExampleElementDescription(deviceid, component, payload);
 			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
-
-	} else if ( topicSplit[0] == "shellies" ) {
+	} 
+	
+	// Shelly Legacy devices
+	else if ( topicSplit[0] == "shellies" ) {
 
 		let deviceid = topicSplit[1]
 		let componentdev = topicSplit[2]
 		let componentidx = topicSplit[3]
 		let componentMerged = componentdev + ":" + componentidx;
 
-		// shellies/shelly-deviceid/componentdev/componentindex/connected
-		if (topicSplit[4] == "connected") {
-			fillComponentElement(deviceid, componentMerged);
-			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			// setExampleElementDescription(deviceid, componentMerged, topicSplit[4], payload);
-			setStatusLegacy(deviceid);
-			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
-		}
-
-		// shellies/shelly-deviceid/componentdev/componentindex/description
-		else if (topicSplit[4] == "description") {
-			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			setExampleElementDescription(deviceid, componentMerged, payload);
-			setStatusLegacy(deviceid);
-			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
-		}
+		fillComponentElement(deviceid, componentMerged);
+		setStatusLegacy(deviceid);
 
 		// Show example button legacy
 		if (componentdev.includes("relay")) {
 			showExampleElement(deviceid, "btnContainer");
-			setStatusLegacy(deviceid);
 			console.log('Example button: ' + deviceid);
+		}
+
+		// Show connected state (shellies/shelly-deviceid/componentdev/componentindex/connected)
+		if (topicSplit[4] == "connected") {
+			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
+			console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
+		}
+
+		// Show description (shellies/shelly-deviceid/componentdev/componentindex/description)
+		else if (topicSplit[4] == "description") {
+			fillStatusElement(deviceid, componentMerged, topicSplit[4], payload);
+			setExampleElementDescription(deviceid, componentMerged, payload);
+			console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	}
 }
@@ -294,7 +270,7 @@ function onMessageArrived(message) {
 ---------------------------------------------------------------
 */
 
-// TODO: Test
+// i.O.
 // Legacy - Set Status-Element to Legacy
 function setStatusLegacy(device) {
 	let htmlElements = getDevicesHtmlElements(device);
