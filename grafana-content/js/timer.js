@@ -159,7 +159,7 @@ function populateTimerAttribute(timerJson, description) {
 function populateTimerList(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
-	if (checkElement(timerDetails)) {
+	if (checkElement(timerDetails.timerList)) {
 		// clear timer list
 		for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
 
