@@ -90,6 +90,8 @@ function connectComponent(device) {
 
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
+	console.log('Connect: ' + payload + ' to ' + deviceTopics.connected);
+
 	mqttPublish(deviceTopics.connected, payload, true);
 	getDeviceStatus(device);
 }
