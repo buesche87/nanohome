@@ -67,25 +67,10 @@ function createComponentJson(device, componentDetails) {
 	return newComponentJson;
 }
 
-// TODO: Test
+// i.O.
 // Create timer json entry for "create_panel"
-// Gets merged into json from "nanohome/devices/#"
-
 function createDashboardJson(device, componentDetails) {
 	let newPanelJson = {
-		"deviceId": device,
-		"component": componentDetails.component,
-		"description": componentDetails.description,
-		"icon": componentDetails.exButtonImage,
-		"legacy": componentDetails.legacy
-	};
-	return newPanelJson;
-}
-
-
-function createDashboardJson_OLD(device, componentDetails, index) {
-	let newPanelJson = {
-		"index": index,
 		"deviceId": device,
 		"component": componentDetails.component,
 		"description": componentDetails.description,

@@ -88,7 +88,7 @@ function clearMeasurement(device) {
 	shellCommand(deviceCommands.clearMeasurement);
 }
 
-// TODO: Test
+// i.O.
 // Connect or disconnect component
 function connectComponent(device) {
 	let componentDetails = getComponentDetails(device);
@@ -102,7 +102,7 @@ function connectComponent(device) {
 	getDeviceInfo();
 }
 
-// TODO: Test
+// i.O.
 // Create new dashboard element through nanohome_sand create it withhell
 function createDashboardElement(device) {
 	let componentDetails = getComponentDetails(device);
@@ -125,37 +125,6 @@ function createDashboardElement(device) {
 	}
 }
 
-function createDashboardElement_OLD(device) {
-	let componentDetails = getComponentDetails(device);
-	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
-
-	// confirm creation of element
-	let confirmDialog = confirm('Create Dashbaord element "' + componentDetails.description + '" for device: "' + device + '/' + componentDetails.component + '"?');
-
-	if (confirmDialog) {
-		let deviceDatajsonStore = document.getElementById(devmgr_deviceDataJsonStore);
-		let existingJson = JSON.parse(deviceDatajsonStore.getAttribute(devmgr_deviceDataAttribute));
-
-		// define new index
-		let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
-
-		// add entry to json
-		let newJsonElement = createDashboardJson(device, componentDetails, jsonIndex);
-		existingJson.push(newJsonElement);
-
-		// publish new json element to "nanohome/dashboard/description" 
-		mqttPublish(nanohomeTopics.dashboard, JSON.stringify(newJsonElement), true);
-
-		// save modified json into deviceData attribute
-		// run "create_panel" through nanohome shell
-		deviceDatajsonStore.setAttribute(devmgr_deviceDataAttribute, JSON.stringify(existingJson));
-		createPanel = deviceCommands.createPanel + ' "' + jsonIndex + '" "false"'
-		shellCommand(createPanel);
-		console.log ('Shell command: ' + createPanel)
-	}
-}
-
 // TODO: Test
 // clear measurements and remove device with nanohome shell command "remove_device"
 function removeDevice(device) {
@@ -169,7 +138,6 @@ function removeDevice(device) {
 // TODO:
 // - Replace description in json (html element attribute, mqtt topics)
 // - Delete old mqtt topics in nanohome
-
 // save device details
 function saveDevice(device) {
 	let componentDetails = getComponentDetails(device);
@@ -181,12 +149,10 @@ function saveDevice(device) {
 
 	// Publish device json to nanohome/devices
 	mqttPublish(nanohomeTopics.device, payload, true);
-
 	console.log('Publish: ' + nanohomeTopics.device + ' - ' + payload);
 
 	// Publish description to deviceid/status/component/description
 	mqttPublish(deviceTopics.description, componentDetails.description, true);
-
 	console.log('Publish: ' + deviceTopics.description + ' - ' + componentDetails.description);
 
 	getDeviceStatus(device);
@@ -206,14 +172,13 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	console.log('Message arrived: ' + payload);
-
 	// Nanohome specific topics
 	if ( topicSplit[0] == "nanohome" ) {
+		console.log('nanohome message arrived: ' + payload);
 
 		// Fill network status from shelly.getstatus response. Feature possibilities: current power, etc.
 		if ( topicSplit[1] == "devicestatus" ) {
-			console.log('Network config retrived: ' + payload);
+			console.log('Network config retrived');
 			let deviceid = topicSplit[2];
 
 			fillNetworkElement(deviceid, payload);
@@ -221,7 +186,7 @@ function onMessageArrived(message) {
 
 		// TODO: Set example icon
 		else if ( topicSplit[1] == "dashboard" ) {
-			console.log('Dashboard config retrived: ' + payload);
+			console.log('Dashboard config retrived');
 
 			setExampleElementIcon(payload);
 		}
@@ -368,20 +333,20 @@ function setExampleElementDescription(device, component, payload) {
 function setExampleElementIcon(payload) {
 	let dashboardData = JSON.parse(payload);
 
-	if (checkElement(dashboardData)) {
-		for (var j = 0; j < dashboardData.length; j++) {
-			let device = dashboardData[j].deviceId;
-			let icon = dashboardData[j].icon;
-			let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
+	console.log("example json:" + dashboardData);
 
-			if (checkElement(iconForm)) {
-				let radioButtons = iconForm.elements[devmgr_exBtnIconSelect];
-				
-				for (let i = 0; i < radioButtons.length; i++) {
-					if (radioButtons[i].value === icon) {
-						radioButtons[i].checked = true;
-						break;
-					}
+	if (checkElement(dashboardData)) {
+		let device = dashboardData.deviceId;
+		let icon = dashboardData.icon;
+		let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
+
+		if (checkElement(iconForm)) {
+			let radioButtons = iconForm.elements[devmgr_exBtnIconSelect];
+			
+			for (let i = 0; i < radioButtons.length; i++) {
+				if (radioButtons[i].value === icon) {
+					radioButtons[i].checked = true;
+					break;
 				}
 			}
 		}
