@@ -186,14 +186,16 @@ function populateTimerList(timerJson, description) {
 function setTimerActive(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
-	if (checkElement(timerJson) && JSON.stringify(timerJson) != "[]") {
-		timerDetails.timerStatus.innerText = "Active";
-		timerDetails.timerStatus.classList.remove('statusfalse');
-		timerDetails.timerStatus.classList.add('statusgreen');
-	} else {
-		timerDetails.timerStatus.innerText = "Inactive";
-		timerDetails.timerStatus.classList.remove('statusgreen');
-		timerDetails.timerStatus.classList.add('statusfalse');
+	if (checkElement(timerDetails.timerStatus)) {	
+		if (checkElement(timerJson) && JSON.stringify(timerJson) != "[]") {
+			timerDetails.timerStatus.innerText = "Active";
+			timerDetails.timerStatus.classList.remove('statusfalse');
+			timerDetails.timerStatus.classList.add('statusgreen');
+		} else {
+			timerDetails.timerStatus.innerText = "Inactive";
+			timerDetails.timerStatus.classList.remove('statusgreen');
+			timerDetails.timerStatus.classList.add('statusfalse');
+		}
 	}
 }
 
