@@ -262,7 +262,6 @@ function timerSelected(description) {
 	let timerDetails = getTimerHtmlElements(description);
 
 	timerDetails.removeButton.disabled = false;
-	timerDetails.timerEntry.open = true;
 
 	let selectedTimerJson = timerDetails.timerList.value;
 	let selectedTimer = JSON.parse(selectedTimerJson);

@@ -81,21 +81,26 @@ hr.thight {
 }
 
 .detailLabel {
-	flex: 1; /* Label takes up space proportionally */
+	flex: 1;
 	height: auto;
-	padding-right: 10px;
+	padding-right: 15px;
+	padding-left: 15px;
 }
 
 .detailValue {
-	flex: 2; /* Input field takes up more space */
-	height: var(--input-height);
-	width: auto; /* Allow input field to adjust */
+	flex: 2;
+	height: 44px;
+	padding-right: 15px;
+	padding-left: 15px;
+	width: auto;
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 }
 
 select.detailValue {
-	height: var(--input-height);
+	height: 44px;
+	padding-right: 15px;
+	padding-left: 15px;
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 }
