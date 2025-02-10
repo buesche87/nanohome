@@ -44,16 +44,16 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		-t "${DEVICEID}/status/${COMPONENT}/connected"
 	)
 
-	CONNECTEDVALUE=$(
-		convert_value "${CONNECTED}"
-	)
-
 	# Publish connected = false for newly discovered components
-	if [[ $CONNECTEDVALUE -eq 0 ]]; then
+	if [[ -z "${CONNECTED}" ]]; then
 		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "${DEVICEID}/status/${COMPONENT}/connected" \
 		-m "false"
 	fi
+
+	CONNECTEDVALUE=$(
+		convert_value "${CONNECTED}"
+	)
 
 	# Get description of component
 	DESCRIPTION=$(
@@ -64,7 +64,9 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
+	#===============================================================
 	# DEVICES
+	#===============================================================
 
 	# Write device into influx bucket "Devices"
 	if [[ -n "${DESCRIPTION}" ]]; then
@@ -77,19 +79,19 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	# Log
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-	# [[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}" >> /proc/1/fd/1
-
 	[[ $LOG_DEBUG ]] && echo "Description: ${DESCRIPTION}" >> /proc/1/fd/1
 	[[ $LOG_DEBUG ]] && echo "Connectedvalue: ${CONNECTEDVALUE}" >> /proc/1/fd/1
 
+	#===============================================================
 	# MEASUREMENTS
+	#===============================================================
 
 	# Only monitor connected components and those with a description
 	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
 		continue
 	fi
 
-	
+	[[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}" >> /proc/1/fd/1
 
 	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
