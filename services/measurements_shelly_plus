@@ -62,11 +62,11 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 
 	# Write device into influx bucket "Devices"
-	[[ "${DESCRIPTION}" == "null" ]] && influx write \
+	[[ "${DESCRIPTION}" == "" ]] && influx write \
 	-b "${INFLUX_BUCKET_DEVICES}" \
 	-p s "${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
 
-	[[ "${DESCRIPTION}" != "null" ]] && influx write \
+	[[ "${DESCRIPTION}" != "" ]] && influx write \
 	-b "${INFLUX_BUCKET_DEVICES}" \
 	-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
 
