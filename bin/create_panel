@@ -57,7 +57,7 @@ case "${COMPONENT_SEARCH}" in
         ;;
     "relay"*)
         TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML_LEGACY}"
-        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON_LEGACY}"
+        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON}"
         ;;
     "cover"*)
         TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_COVER_HTML}"
@@ -75,11 +75,18 @@ PANEL_TEMPLATE_JSON=$(<"${TEMPLATE_JSON_FILE}")
 # Replace device strings in html template
 PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DEVICEID_/${DEVICEID}}
 PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_COMPONENT_/${COMPONENT}}
-PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DESCRIPTION_/${DESCRIPTION_ESCAPED}}
+PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DESCRIPTION_/${DESCRIPTION}}
 PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_ICON_/${ICON}}
 
 # Replace attributes in json template
 PANEL_TEMPLATE_JSON=${PANEL_TEMPLATE_JSON//_UNIQUE_/${UNIQUE}}
+
+
+
+jq <<< "${PANEL_TEMPLATE_JSON}" >> /proc/1/fd/1
+
+
+
 
 # Merge html into json
 PANEL_JSON=$(
@@ -89,6 +96,7 @@ PANEL_JSON=$(
 
 if [[ -z "${PANEL_JSON}" ]]; then
     echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+    [[ $LOG_DEBUG ]] && jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
     exit 1
 else
     [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel template for \"${DESCRIPTION}\" loaded" >> /proc/1/fd/1
