@@ -108,7 +108,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	if [[ "${CURRENTPOSITION}" != "null" ]]; then
 		OUTPUTVALUE="${CURRENTPOSITION}"
 	else
-		OUTPUTVALUE="${OUTPUT}"
+		OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 	fi
 
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
