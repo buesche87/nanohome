@@ -316,7 +316,7 @@ function fillComponentElement(device, component) {
 
 // TODO: Test
 // fill example element with content from mqtt message
-function setExampleElementDescription(device, component, element, payload) {
+function setExampleElementDescription(device, component, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
 	let exBtnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
 	let exSliderDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
