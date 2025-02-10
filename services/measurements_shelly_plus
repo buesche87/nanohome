@@ -35,7 +35,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		continue
 	fi
 
-	# Get connected state and description of component
+	# Get connected state of component
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -46,13 +46,14 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 		convert_value "${CONNECTED}"
 	)
 
-	# Publish connected = false for newly discovered devices
+	# Publish connected = false for newly discovered components
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
 		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "${DEVICEID}/status/${COMPONENT}/connected" \
 		-m "false"
 	fi
 
+	# Get description of component
 	DESCRIPTION=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -C 1 -W 1 \
@@ -64,18 +65,18 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# DEVICES
 
 	# Write device into influx bucket "Devices"
-	[[ "${DESCRIPTION}" == "" ]] && influx write \
-	-b "${INFLUX_BUCKET_DEVICES}" \
-	-p s "${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
-
-	[[ "${DESCRIPTION}" != "" ]] && influx write \
-	-b "${INFLUX_BUCKET_DEVICES}" \
-	-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
-
+	if [[ "${DESCRIPTION}" != "" ]]; then
+		influx write -b "${INFLUX_BUCKET_DEVICES}" \
+			-p s "${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
+	else
+		influx write -b "${INFLUX_BUCKET_DEVICES}" \
+			-p s "${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
+	fi		
 
 	# Log
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
 	# [[ $LOG_DEBUG ]] && jq <<< "${STATUSMESSAGE}" >> /proc/1/fd/1
+
 
 	# MEASUREMENTS
 
@@ -83,6 +84,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
 		continue
 	fi
+
+	[[ $LOG_DEBUG ]] && echo "${DESCRIPTION}" >> /proc/1/fd/1
 
 	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )

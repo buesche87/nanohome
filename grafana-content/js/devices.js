@@ -93,7 +93,6 @@ function connectComponent(device) {
 	console.log('Connect: ' + payload + ' to ' + deviceTopics.connected);
 
 	mqttPublish(deviceTopics.connected, payload, true);
-	//getDeviceStatus(device);
 	getDeviceInfo();
 }
 
