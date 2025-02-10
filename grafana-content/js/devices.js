@@ -93,7 +93,8 @@ function connectComponent(device) {
 	console.log('Connect: ' + payload + ' to ' + deviceTopics.connected);
 
 	mqttPublish(deviceTopics.connected, payload, true);
-	getDeviceStatus(device);
+	//getDeviceStatus(device);
+	getDeviceInfo();
 }
 
 // TODO: 
@@ -167,6 +168,7 @@ function saveDevice(device) {
 	console.log('Publish: ' + deviceTopics.description + ' - ' + componentDetails.description);
 
 	getDeviceStatus(device);
+	getDeviceInfo();
 	getDashboardInfo();
 }
 
