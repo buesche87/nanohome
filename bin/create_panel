@@ -87,6 +87,8 @@ PANEL_JSON=$(
     '.content = $html' <<< "$PANEL_TEMPLATE_JSON"
 )
 
+jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
+
 if [[ -z "${PANEL_JSON}" ]]; then
     echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     [[ $LOG_DEBUG ]] && jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
@@ -138,7 +140,7 @@ DASHBOARD_NEW=$(
 )
 
 
-jq <<< "${DASHBOARD_NEW}" >> /proc/1/fd/1
+
 
 if [[ -z "${DASHBOARD_NEW}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
