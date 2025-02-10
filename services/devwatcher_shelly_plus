@@ -78,9 +78,8 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	fi		
 
 	# Log
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Seen - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Measurements: Description - ${DESCRIPTION}" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Measurements: Connectedvalue - ${CONNECTEDVALUE}" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devawtcher: Message recived from ${DEVICEID}/${COMPONENT}" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devawtcher: ${DEVICEID} - ${DESCRIPTION} - connected:c${CONNECTED}" >> /proc/1/fd/1
 
 	#===============================================================
 	# MEASUREMENTS
@@ -126,9 +125,9 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	if [[ "${PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
 		PAYLOAD="${PAYLOAD%,}"
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${PAYLOAD}"
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Measurements: Added - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Measurements: Payoad - ${PAYLOAD}" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement added ${DEVICEID}/${COMPONENT}" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Payoad - ${PAYLOAD}" >> /proc/1/fd/1
 	else
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_WARN} Measurements: No payload - ${DEVICEID} - ${COMPONENT}" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_WARN} Devwatcher: No payload from ${DEVICEID}/${COMPONENT}" >> /proc/1/fd/1
 	fi
 done
