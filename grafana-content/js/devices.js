@@ -374,8 +374,6 @@ function getDevicesHtmlElements(device) {
 		component:   document.getElementById(devmgr_componentPrefix + device),
 		connected:   document.getElementById(devmgr_connectedPrefix + device),
 		status:      document.getElementById(devmgr_statusPrefix + device),
-		manage:      document.getElementById(devmgr_managePrefix + device),
-		manageSum:   document.getElementById(devmgr_summaryPrefix + device),
 		saveButton:  document.getElementById(devmgr_saveBtnPrfix + device)
 	}
 }
