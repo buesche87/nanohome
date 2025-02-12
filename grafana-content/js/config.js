@@ -1,6 +1,3 @@
-// TODO:
-// - Dashbaords: Load config.js
-
 /*
  ---------------------------------------------------------------
     MQTT Configuration

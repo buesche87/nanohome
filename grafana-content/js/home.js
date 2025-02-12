@@ -138,3 +138,14 @@ function setElementStatus(device, component, payload) {
 		} 
 	}
 }
+
+// Show slider position for 5 seconds
+function updateHomeOutput(value) {
+	let statusOutput = document.getElementById("statusOutput");
+
+	statusOutput.textContent = value + '% offen';
+
+    setTimeout(() => {
+        statusOutput.textContent = ""; // Clears the content after 5 seconds
+    }, 5000);
+}

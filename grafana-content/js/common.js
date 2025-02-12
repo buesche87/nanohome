@@ -9,13 +9,13 @@ function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
 		return {
 			createPanel:      'create_panel "' + deviceDetails.description + '"',
-			removeComponent:     'remove_device "' + deviceDetails.description + '"',
+			removeComponent:  'remove_component "' + deviceDetails.description + '"',
 			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
 		}
 	} else {
 		return {
 			createPanel:      'create_panel "' + deviceDetails.description + '"',
-			removeComponent:     'remove_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '"',
+			removeComponent:  'remove_component "' + deviceDetails.description + '"',
 			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
 		}
 	}
@@ -44,8 +44,6 @@ function getDeviceTopics(device, componentDetails) {
 function getNanohomeTopics(description) {
 	return {
 		device:      "nanohome/devices/" + description,
-		dashboard:   "nanohome/dashboard/" + description,
-		home:        "nanohome/home/" + description, 
 		standby:     "nanohome/standby/" + description,
 		timer:       "nanohome/timer/" + description
 	}

@@ -50,7 +50,6 @@ if [ -n "${DESCRIPTION}" ]; then
 fi
 
 # Prepare mqtt topics to be cleared
-DASHBOARDTOPIC="${MQTT_TOPIC_DASHBOARD}/${DESCRIPTION}"
 DEVICETOPIC="${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
 STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}"
 TIMERTOPIC="${MQTT_TOPIC_TIMER}/${DESCRIPTION}"
@@ -69,7 +68,6 @@ else
 fi
 
 # Clean mqtt topics
-mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DASHBOARDTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DEVICETOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${STANDBYTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${TIMERTOPIC}" -m ""
@@ -82,6 +80,23 @@ if [ "${LEGACY}" == "true" ]; then
 	sed -i "|${DEVICE}/${COMPONENTNAME}/${COMPONENTINDEX}|d" "${NANOHOME_CRONTABS}"
 else
 	sed -i "|${DEVICE}/${COMPONENT}|d" "${NANOHOME_CRONTABS}"
+fi
+
+# Kill running services for legacy devices
+if [ "${LEGACY}" == "true" ]; then
+	ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/energy"
+	POWERTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/power"
+	DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/temperature"
+
+	# get pid of running measurements services and kill them
+	ENERGYPID=$(ps | grep "${ENERGYTOPIC}" | grep -v "grep" | awk '{print $1}')
+	[[ -n "$ENERGYPID" ]] && kill -9 "$ENERGYPID"
+
+	POWERPID=$(ps | grep "${POWERTOPIC}" | grep -v "grep" | awk '{print $1}')
+	[[ -n "$POWERPID" ]] && kill -9 "$POWERPID"
+
+	TEMPPID=$(ps | grep "${DEVICETEMPTOPIC}" | grep -v "grep" | awk '{print $1}')
+	[[ -n "$TEMPPID" ]] && kill -9 "$TEMPPID"
 fi
 
 # Log

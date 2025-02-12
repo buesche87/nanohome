@@ -15,6 +15,8 @@ var devmgr_saveBtnPrfix = "savebtn_";
 var devmgr_statusPrefix = "status_";
 var devmgr_summaryPrefix = "summary_";
 
+var devmgr_tempComponent = "";
+
 /*
   ---------------------------------------------------------------
 	MQTT Subscribe
@@ -83,7 +85,8 @@ function createDashboardElement(device) {
 	}
 }
 
-// Save device details
+
+// Save component details
 function saveComponent(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceTopics = getDeviceTopics(device, componentDetails);
@@ -114,7 +117,7 @@ function clearMeasurement(device) {
 }
 
 // TODO: Test
-// clear measurements and remove device with nanohome shell command "remove_device"
+// clear measurements and remove device with nanohome shell command "remove_component"
 function removeComponent(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceCommands = getDeviceCommands(device, componentDetails);
@@ -417,4 +420,9 @@ function showExampleElement(device, element) {
 		divElement.classList.remove('elementHidden');
 		divElement.classList.add('elementFlex');
 	}
+}
+
+// OnFocus description
+function descriptionFocus(device) {
+	devmgr_tempComponent = document.getElementById(devmgr_descriptionPrefix + device);
 }

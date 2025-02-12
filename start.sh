@@ -24,7 +24,6 @@ export MQTT_TOPIC_CONNECTED_LEGACY="shellies/+/+/+/connected"
 export MQTT_TOPIC_DESCRIPTION_LEGACY="shellies/+/+/+/description"
 export MQTT_TOPIC_OUTPUT_LEGACY="shellies/+/+/+/output"
 
-export MQTT_TOPIC_DASHBOARD="nanohome/devices"
 export MQTT_TOPIC_DEVICES="nanohome/devices"
 export MQTT_TOPIC_STANDBY="nanohome/standby"
 export MQTT_TOPIC_TIMER="nanohome/timer"

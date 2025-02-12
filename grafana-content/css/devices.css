@@ -145,26 +145,6 @@ button:disabled, button:disabled:hover {
 
 /*
 ---------------------------------------------------------------
-	Timer
----------------------------------------------------------------
-*/
-
-.timerDiv {
-	display: flex;
-	flex-direction: row;
-	justify-content: center;
-	align-items: center;
-	height: 100%;
-}
-
-.listBox {
-	text-align: left;
-	text-align-last: left;
-	font-family: Consolas,monaco,monospace; 
-}
-
-/*
----------------------------------------------------------------
 	Example button
 ---------------------------------------------------------------
 */
