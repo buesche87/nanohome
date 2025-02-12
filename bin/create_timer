@@ -22,11 +22,11 @@ CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosqu
 PUBLISHED_TIMER_JSON=$(
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--retained-only --nodelay --quiet -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
-	-t "${MQTT_TOPIC_TIMER}" 
+	-t "${MQTT_TOPIC_TIMER}/+" 
 )
 
 if [[ -z "${PUBLISHED_TIMER_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_TIMER}\"" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_TIMER}/+\"" >> /proc/1/fd/1
     exit 1
 fi
 

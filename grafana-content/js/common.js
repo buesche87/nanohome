@@ -9,13 +9,13 @@ function getDeviceCommands(device, deviceDetails) {
 	if (deviceDetails.legacy) {
 		return {
 			createPanel:      'create_panel "' + deviceDetails.description + '"',
-			removeDevice:     'remove_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '" "legacy"',
+			removeComponent:     'remove_device "' + deviceDetails.description + '"',
 			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
 		}
 	} else {
 		return {
 			createPanel:      'create_panel "' + deviceDetails.description + '"',
-			removeDevice:     'remove_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '"',
+			removeComponent:     'remove_device "' + device + '" "' + deviceDetails.component + '" "' + deviceDetails.description + '"',
 			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
 		}
 	}

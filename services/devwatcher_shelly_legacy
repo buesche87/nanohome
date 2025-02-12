@@ -56,13 +56,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 	OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 
-	# Publish connected = false for newly discovered devices
-	if [[ $CONNECTEDVALUE -eq 0 ]]; then
-		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected" \
-		-m "false"
-	fi
-
 	# Publish current output value (used in home dashboard)
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/output" \

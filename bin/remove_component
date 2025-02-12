@@ -1,0 +1,87 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# nanohome - remove_component
+#
+# Remove a component from nanohome
+# - Clear its measurements from influxdb
+# - Delete its retained mqtt messages
+# - Remove crontab entries
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# Parameter & Variables
+DESCRIPTION="$1"
+
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+# Load component config from "nanohome/devices"
+PUBLISHED_CONFIG_JSON=$(
+    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+        --retained-only --quiet -C 1 -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
+        -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+)
+
+# Exit if no config found
+if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DEVICES}/${DESCRIPTION}\"" >> /proc/1/fd/1
+    exit 1
+fi
+
+# Extract payload and device details from topic
+DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_CONFIG_JSON}" )
+COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG_JSON}" )
+DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG_JSON}" )
+ICON=$( jq -r '.icon' <<< "${PUBLISHED_CONFIG_JSON}" )
+LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
+DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
+
+# Clear Measurement
+if [ -n "${DESCRIPTION}" ]; then
+
+	influx delete --bucket "${INFLUX_BUCKET_MEASUREMENTS}" \
+	  --start '1970-01-01T00:00:00Z' \
+	  --stop "$(date --utc +"%Y-%m-%dT%H:%M:%SZ")" \
+	  --predicate "_measurement=\"${DESCRIPTION}\""
+
+	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Measurements for \"${DESCRIPTION}\" cleared" >> /proc/1/fd/1
+fi
+
+# Prepare mqtt topics to be cleared
+DASHBOARDTOPIC="${MQTT_TOPIC_DASHBOARD}/${DESCRIPTION}"
+DEVICETOPIC="${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}"
+TIMERTOPIC="${MQTT_TOPIC_TIMER}/${DESCRIPTION}"
+
+if [ "${LEGACY}" == "true" ]; then
+	COMPONENTNAME=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
+	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
+
+	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_CONNECTED_LEGACY}" )
+	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_DESCRIPTION_LEGACY}" )
+	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_OUTPUT_LEGACY}" )
+else
+	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_CONNECTED}" )
+	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_DESCRIPTION}" )
+	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_OUTPUT}" )
+fi
+
+# Clean mqtt topics
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DASHBOARDTOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DEVICETOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${STANDBYTOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${TIMERTOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DESCRIPTIONTOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${OUTPUTTOPIC}" -m ""
+
+# Remove component from crontab file
+if [ "${LEGACY}" == "true" ]; then
+	sed -i "|${DEVICE}/${COMPONENTNAME}/${COMPONENTINDEX}|d" "${NANOHOME_CRONTABS}"
+else
+	sed -i "|${DEVICE}/${COMPONENT}|d" "${NANOHOME_CRONTABS}"
+fi
+
+# Log

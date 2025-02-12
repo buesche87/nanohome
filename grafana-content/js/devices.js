@@ -76,7 +76,7 @@ function createDashboardElement(device) {
 	let confirmDialog = confirm('Save device and create dashboard element?');
 
 	if (confirmDialog) {
-		saveDevice(device);
+		saveComponent(device);
 		shellCommand(deviceCommands.createPanel);
 		getDeviceInfo();
 		console.log ('Shell command: ' + deviceCommands.createPanel);
@@ -84,7 +84,7 @@ function createDashboardElement(device) {
 }
 
 // Save device details
-function saveDevice(device) {
+function saveComponent(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceTopics = getDeviceTopics(device, componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
@@ -115,12 +115,11 @@ function clearMeasurement(device) {
 
 // TODO: Test
 // clear measurements and remove device with nanohome shell command "remove_device"
-function removeDevice(device) {
+function removeComponent(device) {
 	let componentDetails = getComponentDetails(device);
 	let deviceCommands = getDeviceCommands(device, componentDetails);
 
-	shellCommand(deviceCommands.clearMeasurement);
-	shellCommand(deviceCommands.removeDevice);
+	shellCommand(deviceCommands.removeComponent);
 }
 
 /*

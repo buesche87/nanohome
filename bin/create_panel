@@ -20,25 +20,25 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# Get dashboard json from "nanohome/dashboard/DESCRIPTION"
-PUBLISHED_PANEL_JSON=$(
+# Get dashboard json from "nanohome/devices"
+PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
         --retained-only --quiet -C 1 -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
         -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
 )
 
-if [[ -z "${PUBLISHED_PANEL_JSON}" ]]; then
+# Exit if no config found
+if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DEVICES}/${DESCRIPTION}\"" >> /proc/1/fd/1
     exit 1
 fi
 
 # Extract payload and device details from topic
-DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_PANEL_JSON}" )
-COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_PANEL_JSON}" )
-DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_PANEL_JSON}" )
-ICON=$( jq -r '.icon' <<< "${PUBLISHED_PANEL_JSON}" )
-LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_PANEL_JSON}" )
-
+DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_CONFIG_JSON}" )
+COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG_JSON}" )
+DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG_JSON}" )
+ICON=$( jq -r '.icon' <<< "${PUBLISHED_CONFIG_JSON}" )
+LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
 DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
 
 # Replace component with component dev if legacy device
