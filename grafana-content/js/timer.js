@@ -1,28 +1,10 @@
 /*
 ---------------------------------------------------------------
-	Attributes and html element prefixes on dashboard
+	MQTT Subscribe
 ---------------------------------------------------------------
 */
 
-var timer_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
-var timer_timerDataAttribute = "timerDetails"; // Attribute name of jsonStore element
-
-var timer_timerListPrefix = "timerList_"
-var timer_timerEntryPrefix = "details_"
-var timer_timerPeriodPrefix = "timerPeriod_"
-var timer_timerOnPrefix = "timerOn_"
-var timer_timerOffPrefix = "timerOff_"
-var timer_timerStatusPrefix = "timerStatus_"
-var timer_saveButtonPrefix = "timerSaveBtn_"
-var timer_removeButtonPrefix = "timerRemoveBtn_"
-
-/*
- ---------------------------------------------------------------
-	MQTT Subscribe
- ---------------------------------------------------------------
-*/
-
-// Get Device Info - Subscribe to the MQTT topics
+// Get Device Info - subscribe to all timer
 function getTimerInfo() {
 	mqttSubscribe(deviceTopicAll, longsubscribe);
 	mqttSubscribe(timerTopicAll, longsubscribe);
@@ -34,7 +16,7 @@ function getTimerInfo() {
 ---------------------------------------------------------------
 */
 
-// Save timer for component
+// Save timer
 function saveTimer(description) {
 	let nanohomeTopics = getNanohomeTopics(description);
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
@@ -102,11 +84,11 @@ function removeTimer(description) {
 
 /*
 ---------------------------------------------------------------
-	onMessageArrived MQTT
+	onMessageArrived
 ---------------------------------------------------------------
 */
 
-// Device what t odo with mqtt messages
+// Decide what to do with mqtt messages
 function onMessageArrived(message) {
 	let payload = message.payloadString;
 	let topic = message.destinationName;
@@ -127,11 +109,11 @@ function onMessageArrived(message) {
 
 /*
 ---------------------------------------------------------------
-	Fill Elements
+	Manage Dashboard Panels
 ---------------------------------------------------------------
 */
 
-// Populate json data from mqtt to element holding the data
+// Populate jsonstore "device"
 function populateDeviceAttribute(deviceJson) {
 	let description = deviceJson.description;
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
@@ -144,7 +126,7 @@ function populateDeviceAttribute(deviceJson) {
 	}
 }
 
-// Populate json data from mqtt to element holding the data
+// Populate jsonstore "timer"
 function populateTimerAttribute(timerJson, description) {
 	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
@@ -204,41 +186,6 @@ function setTimerActive(timerJson, description) {
 	Helper Functions
 ---------------------------------------------------------------
 */
-
-// get current devices html elements
-function getTimerHtmlElements(description) {
-	return {
-		timerList:    document.getElementById(timer_timerListPrefix + description),
-		timerEntry:   document.getElementById(timer_timerEntryPrefix + description),
-		timerPeriod:  document.getElementById(timer_timerPeriodPrefix + description),
-		timerOn:      document.getElementById(timer_timerOnPrefix + description),
-		timerOff:     document.getElementById(timer_timerOffPrefix + description),
-		timerStatus:  document.getElementById(timer_timerStatusPrefix + description),
-		saveButton:   document.getElementById(timer_saveButtonPrefix + description),
-		removeButton: document.getElementById(timer_removeButtonPrefix + description)
-	}
-}
-
-// Generate Json for TimerData
-function generateTimerJson(description, index) {
-	let timerDetails = getTimerHtmlElements(description);
-	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_deviceDataAttribute));
-
-	let selectedIndex = timerDetails.timerPeriod.selectedIndex;
-	let selectedText = timerDetails.timerPeriod.options[selectedIndex].textContent;
-
-	let newElement = {
-		"index": index,
-		"deviceId": deviceJson.deviceId,
-		"component": deviceJson.component,
-		"description": deviceJson.description,
-		"timerPeriodText": selectedText,
-		"timerPeriodValue": timerDetails.timerPeriod.value,
-		"timerOn": timerDetails.timerOn.value,
-		"timerOff": timerDetails.timerOff.value
-	};
-	return newElement;
-}
 
 // timer selected
 function timerSelected(description) {

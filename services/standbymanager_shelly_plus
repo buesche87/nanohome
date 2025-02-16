@@ -16,7 +16,7 @@ MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
-)
+	)
 
 # Extract payload and device details from topic
 DEVICEID=$( jq -r '.deviceId' <<< "${STANDBYCONFIG_JSON}" )

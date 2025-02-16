@@ -3,26 +3,29 @@
 # nanohome Environment         
 ############################################################
 
+# nanohome general
 export NANOHOME_ROOTPATH="/nanohome"
 export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
-export NANOHOME_DEVWATCHER_INTERVAL=30
+
+# nanohome services
+export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
 export NANOHOME_SHELL_ALLOWED_COMMANDS="clear_measurement,create_panel,create_standbymgr,create_timer,remove_component"
 
-export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
-export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
-export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
+# MQTT topics
+export MQTT_TOPIC_STATUS="+/status/+" # gen.3 only
 
-export MQTT_TOPIC_STATUS="+/status/+"
-export MQTT_TOPIC_ONLINE="+/online"
+export MQTT_TOPIC_ONLINE="+/online" 
 export MQTT_TOPIC_ONLINE_LEGACY="shellies/+/+/+"
 export MQTT_TOPIC_CONNECTED="+/status/+/connected"
-export MQTT_TOPIC_DESCRIPTION="+/status/+/description"
-export MQTT_TOPIC_OUTPUT="+/status/+/output"
 export MQTT_TOPIC_CONNECTED_LEGACY="shellies/+/+/+/connected"
-export MQTT_TOPIC_DESCRIPTION_LEGACY="shellies/+/+/+/description"
+export MQTT_TOPIC_OUTPUT="+/status/+/output"
 export MQTT_TOPIC_OUTPUT_LEGACY="shellies/+/+/+/output"
+export MQTT_TOPIC_DESCRIPTION="+/status/+/description"
+export MQTT_TOPIC_DESCRIPTION_LEGACY="shellies/+/+/+/description"
+
+
 
 export MQTT_TOPIC_DEVICES="nanohome/devices"
 export MQTT_TOPIC_STANDBY="nanohome/standby"
@@ -36,6 +39,15 @@ export MQTT_SUBSCRIBE_TIMEOUT_SERVICE=10
 export MQTT_FASTSUBSCRIBE="250"
 export MQTT_NORMALSUBSCRIBE="500"
 export MQTT_LONGSUBSCRIBE="1000"
+
+
+
+# influxdb general
+export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
+export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
+export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
+
+
 
 export GRAFANA_DATASOURCE_DEVICES="Devices"
 export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"

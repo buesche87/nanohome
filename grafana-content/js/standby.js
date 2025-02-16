@@ -1,21 +1,7 @@
+
+
 // TODO:
 // - Überarbeiten
-
-/*
----------------------------------------------------------------
-	Attributes and html element prefixes on dashboard
----------------------------------------------------------------
-*/
-
-var deviceAttribute = "deviceData"; // OLD
-
-var standby_deviceDataJsonStore = "deviceData"; // HTML element
-var standby_deviceDataAttribute = "deviceDetails"; // Attribute name of jsonStore element
-
-var standby_activePrefix = "standbyActive_";
-var standby_powerPrefix = "standbyPower_";
-var standby_waitPrefix = "standbyWait_";
-var standby_saveBtnPrefix = "standbySaveBtn_";
 
 /*
 ---------------------------------------------------------------
@@ -59,11 +45,13 @@ function removeStandby(description) {
 
 /*
 ---------------------------------------------------------------
-	onMessageArrived MQTT
+	onMessageArrived
 ---------------------------------------------------------------
 */
 
+// Decide what to do with new mqtt mesages
 function onMessageArrived(message) {
+
 	// Topic Extraction
 	let payload = message.payloadString;
 	let topic = message.destinationName;
@@ -75,23 +63,23 @@ function onMessageArrived(message) {
 			"deviceID": topicSplit[0],
 			"component": topicSplit[2]
 		};
-		populateStandbyJson(payload, deviceAttribute, deviceData);
+		populateStandbyElementsJson(payload, deviceAttribute, deviceData);
 	}
 
 	// Standby Topic
 	if (topicSplit[2] == "standby") {
-		populateStandby(topicSplit[1], payload);
+		populateStandbyElements(topicSplit[1], payload);
 	}
 }
 
 /*
 ---------------------------------------------------------------
-	Fill Elements
+	Manage Dashboard Panels
 ---------------------------------------------------------------
 */
 
-// Fill standby settings with content from mqtt message
-function populateStandby(description, payload) {
+// Populate standby settings with content from mqtt message
+function populateStandbyElements(description, payload) {
 	let standbyData = JSON.parse(payload);
 	let standbyPower = document.getElementById(standby_powerPrefix + description);
 	let standbyWait = document.getElementById(standby_waitPrefix + description);
@@ -105,26 +93,7 @@ function populateStandby(description, payload) {
 	getActiveStandby(description);
 }
 
-// Clear standby elements
-function clearStandby(description) {
-	var standbyPower = document.getElementById(standby_powerPrefix + description);
-	var standbyWait = document.getElementById(standby_waitPrefix + description);
-	
-	standbyPower.value = "";
-	standbyWait.value = "";
-	getActiveStandby(description);
-}
-
-// Populate json data from mqtt to element holding the data
-function populateStandbyJson(description, dataElement, payload) {
-	let jsonDataElement = document.getElementById(standby_activePrefix + description);
-	
-	if (checkElement(jsonDataElement)) {
-		jsonDataElement.setAttribute(dataElement, JSON.stringify(payload));
-	}
-}
-
-// Set active state on elements
+// Active state on
 function getActiveStandby(description) {
 	let standbyActive = document.getElementById(standby_activePrefix + description);
 	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
@@ -140,30 +109,29 @@ function getActiveStandby(description) {
 	}
 }
 
+// Clear standby button
+function clearStandby(description) {
+	var standbyPower = document.getElementById(standby_powerPrefix + description);
+	var standbyWait = document.getElementById(standby_waitPrefix + description);
+	
+	standbyPower.value = "";
+	standbyWait.value = "";
+	getActiveStandby(description);
+}
+
 /*
 ---------------------------------------------------------------
 	Helper Functions
 ---------------------------------------------------------------
 */
 
-// Generate Json for TimerData
-function generateStandbyJson(description) {
-	let jsonAttribute = document.getElementById(standby_activePrefix + description);
-	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
-	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
-	let deviceJson = JSON.parse(jsonAttribute.getAttribute(deviceAttribute));
-
-	if (! checkElement(standbyWait)) { standbyWait = 0; }
-
-	let newElement = {
-		"deviceId": deviceJson.deviceID,
-		"component": deviceJson.component,
-		"description": description,
-		"threshold": standbyPower,
-		"wait": standbyWait,
-		"state": "off"
-	};
-	return newElement;
+// Populate json data from mqtt to element holding the data
+function populateStandbyElementsJson(description, dataElement, payload) {
+	let jsonDataElement = document.getElementById(standby_activePrefix + description);
+	
+	if (checkElement(jsonDataElement)) {
+		jsonDataElement.setAttribute(dataElement, JSON.stringify(payload));
+	}
 }
 
 // Validate format of input

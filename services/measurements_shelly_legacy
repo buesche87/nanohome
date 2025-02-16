@@ -18,7 +18,7 @@ MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
-)
+	)
 
 # Start component monitoring in background
 start_measurement() {

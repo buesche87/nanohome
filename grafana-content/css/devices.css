@@ -41,9 +41,9 @@ hr.thight {
 }
 
 /*
- ---------------------------------------------------------------
-	Status Element
- ---------------------------------------------------------------
+---------------------------------------------------------------
+	Status Panel
+---------------------------------------------------------------
 */
 
 .statusDiv {
@@ -92,45 +92,8 @@ select.statusElement {
 }
 
 /*
- ---------------------------------------------------------------
-	Basics
- ---------------------------------------------------------------
-*/
-
-.boldText {
-	font-size: 1.2em;
-	font-weight: bold;
-}
-
-.statusfalse {
-	color: grey;
-}
-
-.statusgreen {
-	background-color: green;
-	border: 1px solid green;
-}
-
-.statusorange {
-	background-color: orange;
-	border: 1px solid orange;
-}
-
-.elementHidden {
-	display: none;
-}
-
-.elementFlex {
-	display: flex;
-}
-
-.elementFlex {
-	display: flex;
-}
-
-/*
 ---------------------------------------------------------------
-	Buttons
+	"Manage" Buttons
 ---------------------------------------------------------------
 */
 
@@ -145,7 +108,7 @@ button:disabled, button:disabled:hover {
 
 /*
 ---------------------------------------------------------------
-	Example button
+	Example Buttons
 ---------------------------------------------------------------
 */
 
@@ -179,9 +142,9 @@ button:disabled, button:disabled:hover {
 }
 
 /*
-  ---------------------------------------------------------------
-	Example button image dropdown
-  ---------------------------------------------------------------
+---------------------------------------------------------------
+	Example Buttons - image dropdown
+---------------------------------------------------------------
 */
 
 /* minimized style with animation from open to close */
@@ -259,7 +222,7 @@ button:disabled, button:disabled:hover {
 
 /*
 ---------------------------------------------------------------
-	Example slider
+	Example Slider
 ---------------------------------------------------------------
 */
 
@@ -338,4 +301,41 @@ input[type=range]::-moz-range-thumb {
 	background: #ffffff;
 	cursor: pointer;
 	margin-top: calc((15px - 25px) / 2); /* Vertically center the thumb */
+}
+
+/*
+---------------------------------------------------------------
+	Global Basic Style
+---------------------------------------------------------------
+*/
+
+.boldText {
+	font-size: 1.2em;
+	font-weight: bold;
+}
+
+.statusfalse {
+	color: grey;
+}
+
+.statusgreen {
+	background-color: green;
+	border: 1px solid green;
+}
+
+.statusorange {
+	background-color: orange;
+	border: 1px solid orange;
+}
+
+.elementHidden {
+	display: none;
+}
+
+.elementFlex {
+	display: flex;
+}
+
+.elementFlex {
+	display: flex;
 }

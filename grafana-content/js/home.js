@@ -1,19 +1,10 @@
 /*
 ---------------------------------------------------------------
-	Attributes and html elements on dashboard
----------------------------------------------------------------
-*/
-
-var home_outputComponent = "";
-var command;
-
-/*
----------------------------------------------------------------
 	MQTT Subscribe
 ---------------------------------------------------------------
 */
 
-// infinite subscribe to all devices output topic
+// Infinitely subscribe to all devices output topic
 function subscribeToOutput() {
 	mqtt.subscribe(outputTopicAll, { qos: 2 });
 	mqtt.subscribe(outputTopicAllLegacy, { qos: 2 });
@@ -25,7 +16,7 @@ function subscribeToOutput() {
 ---------------------------------------------------------------
 */
 
-// send command Shelly Plus
+// Send a command
 function sendCommand(device, component, description, command) {
 	let commandTopic = device + "/command/" + component;
 	let statusTopic = device + "/status/" + component;
@@ -39,7 +30,7 @@ function sendCommand(device, component, description, command) {
 	console.log('Command "' + command + '" sent for: ' + description);
 }
 
-// send command Shelly Legacy
+// Send a command Legacy
 function sendCommandLegacy(device, component, description, command) {
 	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";
 	let statusTopic = "shellies/" + device + "/relay/" + component;
@@ -55,11 +46,12 @@ function sendCommandLegacy(device, component, description, command) {
 
 /*
 ---------------------------------------------------------------
-	onMessageArrived MQTT
+	onMessageArrived
 ---------------------------------------------------------------
 */
 
 // TODO: status einfacher gestalten (trotzdem schneller wechsel)
+// Decide what to do with new mqtt mesages
 function onMessageArrived(message) {
 
 	let payload = message.payloadString;
@@ -114,11 +106,11 @@ function onMessageArrived(message) {
 
 /*
 ---------------------------------------------------------------
-	Parse status from "Shelly.GetStatus"
+	Manage Dashboard Panels
 ---------------------------------------------------------------
 */
 
-// Set element status from output mnessage
+// Parse response from "Shelly.GetStatus"
 function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
 
@@ -139,7 +131,7 @@ function setElementStatus(device, component, payload) {
 	}
 }
 
-// Show slider position for 5 seconds
+// Show slider position on output element for 5 seconds
 function updateHomeOutput(value) {
 	let statusOutput = document.getElementById("statusOutput");
 

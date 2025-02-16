@@ -1,9 +1,8 @@
 /*
- ---------------------------------------------------------------
-    MQTT Functions
- ---------------------------------------------------------------
+---------------------------------------------------------------
+	MQTT Functions
+---------------------------------------------------------------
 */
-
 // Check MQTT Status
 function checkMqttStatus() {
     if(mqttConnected) {
@@ -63,7 +62,7 @@ function mqttPublish(topic, payload, retained) {
     console.log('Publish: ' + topic + ' < ' + payload);
 }
 
-// Check mqtt connection, subscribe to topic and unsubscribe after 2 seconds
+// Subscribe to topic for [timout] seconds
 function mqttSubscribe(topic, timeout) {
     if (!mqttConnected) {
         window.setTimeout(mqttSubscribe, 50);
@@ -77,9 +76,9 @@ function mqttSubscribe(topic, timeout) {
 }
 
 /*
- ---------------------------------------------------------------
-    MQTT Connect
- ---------------------------------------------------------------
+---------------------------------------------------------------
+	MQTT Client - Define and Start
+---------------------------------------------------------------
 */
 
 // Connect MQTT
@@ -93,4 +92,3 @@ if (typeof Paho === "undefined") {
 } else {
     MQTTconnect();
 }
-
