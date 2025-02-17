@@ -610,7 +610,9 @@
     "preload": false,
     "refresh": "5m",
     "schemaVersion": 40,
-    "tags": [],
+    "tags": [
+      "nanohome"
+    ],
     "templating": {
       "list": [
         {

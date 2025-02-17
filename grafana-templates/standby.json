@@ -196,7 +196,9 @@
     ],
     "preload": true,
     "schemaVersion": 40,
-    "tags": [],
+    "tags": [
+      "nanohome"
+    ],
     "templating": {
       "list": [
         {
