@@ -13,12 +13,8 @@ services:
       - grafana
       - mosquitto
     volumes:
-      - ./appdata/nanohome/config:/nanohome/config
       - ./appdata/nanohome/data:/nanohome/data
-      - ./appdata/nanohome/log:/nanohome/log
-    working_dir: /nanohome
     env_file: .env
-    command: ["bash"]
 
   influxdb:
     image: influxdb:2
