@@ -243,7 +243,7 @@ function populateStatusElement(device, component, element, payload) {
 // Populate component (if nonexistent) - [string payload]
 function populateComponentElement(device, component) {
 	// let htmlElements = getDevicesHtmlElements(device);
-	let componentSelect = document.getElementById(devmgrComponentPrefix + device);
+	let componentSelect = document.getElementById(devmgr_componentPrefix + device);
 	let optionExists = false;
 
 	if (checkElement(componentSelect)) {
