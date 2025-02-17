@@ -149,8 +149,8 @@ function onMessageArrived(message) {
 		// Show components and example button
 		if (topicSplit[1] == "status") {
 
-			console.log('Shelly Status Payload');
-			console.log(payload);
+			// console.log('Shelly Status Payload');
+			// console.log(payload);
 
 			populateComponentElement(deviceid, component);
 			populateStatusElement(deviceid, component, topicSplit[3], payload);
@@ -242,7 +242,6 @@ function populateStatusElement(device, component, element, payload) {
 
 // Populate component (if nonexistent) - [string payload]
 function populateComponentElement(device, component) {
-	// let htmlElements = getDevicesHtmlElements(device);
 	let componentSelect = document.getElementById(devmgr_componentPrefix + device);
 	let optionExists = false;
 
