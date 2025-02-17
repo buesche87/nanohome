@@ -1,257 +1,241 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_DEVICES",
-      "label": "Devices",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "influxdb",
-      "pluginName": "InfluxDB"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.4.0"
-    },
-    {
-      "type": "datasource",
-      "id": "influxdb",
-      "name": "InfluxDB",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "text",
-      "name": "Text",
-      "version": ""
-    }
-  ],
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": null,
-  "links": [],
-  "panels": [
-    {
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
-      "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "<head>\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"../public/nanohome/css/standby.css\" />\n</head>\n<div id=\"deviceData\" style=\"font-size: large;\">\n\tStandby\n\t<hr class=\"thight\"></hr>\n</div>\n<script>\n\tfunction loadScript(url) {\n\t\treturn new Promise((resolve, reject) => {\n\n\t\t\tvar script = document.createElement(\"script\");\n\t\t\tscript.type = \"text/javascript\";\n\t\t\tscript.src = url;\n\n\t\t\tscript.onload = () => {\n\t\t\t\tconsole.log(`Script ${url} loaded successfully.`);\n\t\t\t\tresolve();\n\t\t\t};\n\t\t\tscript.onerror = () => reject(new Error(`Failed to load script: ${url}`));\n\n\t\t\tdocument.head.appendChild(script);\n\t\t});\n\t}\n\n\tasync function loadScriptsInOrder(scripts) {\n\t\ttry {\n\t\t\tfor (const url of scripts) {\n\t\t\t\tawait loadScript(url);\n\t\t\t}\n\t\t\tconsole.log(\"All scripts loaded in sequence.\");\n\t\t} catch (error) {\n\t\t\tconsole.error(\"An error occurred:\", error);\n\t\t}\n\t}\n\n\tloadScriptsInOrder([\n\t\t\"../public/nanohome/js/common.js\",\n\t\t\"../public/nanohome/js/config.js\",\n\t\t\"../public/nanohome/js/standby.js\",\n\t\t\"../public/nanohome/js/mqtt.js\"\n\t]);\n</script>",
-        "mode": "html"
-      },
-      "pluginVersion": "11.4.0",
-      "transparent": true,
-      "type": "text"
-    },
-    {
-      "collapsed": true,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 2
-      },
-      "id": 4,
-      "panels": [
+  "dashboard": {
+    "annotations": {
+      "list": [
         {
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
           },
-          "gridPos": {
-            "h": 2,
-            "w": 3,
-            "x": 0,
-            "y": 3
-          },
-          "id": 7,
-          "options": {
-            "code": {
-              "language": "plaintext",
-              "showLineNumbers": false,
-              "showMiniMap": false
-            },
-            "content": "<div class=\"devmgr statusfalse\" id=\"standbyActive_${Description}\">\r\n\tInactive\r\n</div>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tgetStandbyInfo();\r\n\t\t}\r\n\t}, 500);\r\n</script>",
-            "mode": "html"
-          },
-          "pluginVersion": "11.4.0",
-          "title": "",
-          "transparent": true,
-          "type": "text"
-        },
-        {
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 2,
-            "w": 4,
-            "x": 3,
-            "y": 3
-          },
-          "id": 76,
-          "options": {
-            "code": {
-              "language": "plaintext",
-              "showLineNumbers": false,
-              "showMiniMap": false
-            },
-            "content": "<input  class=\"devmgr boldText\" \n        id=\"standbyPower_${Description}\"\n        placeholder=\"Max Standby (W)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocusout='validateStandbyInput(\"${Description}\", this)' \n        onfocus='this.value = \"\"' \n        autocomplete=\"off\" />",
-            "mode": "html"
-          },
-          "pluginVersion": "11.4.0",
-          "title": "",
-          "transparent": true,
-          "type": "text"
-        },
-        {
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 2,
-            "w": 4,
-            "x": 7,
-            "y": 3
-          },
-          "id": 64,
-          "options": {
-            "code": {
-              "language": "plaintext",
-              "showLineNumbers": false,
-              "showMiniMap": false
-            },
-            "content": "<input  class=\"devmgr\" \n        id=\"standbyWait_${Description}\"\n        placeholder=\"Startup wait (s)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocus='this.value = \"\"'\n        autocomplete=\"off\" />",
-            "mode": "html"
-          },
-          "pluginVersion": "11.4.0",
-          "title": "",
-          "transparent": true,
-          "type": "text"
-        },
-        {
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 2,
-            "w": 3,
-            "x": 11,
-            "y": 3
-          },
-          "id": 70,
-          "options": {
-            "code": {
-              "language": "plaintext",
-              "showLineNumbers": false,
-              "showMiniMap": false
-            },
-            "content": "<button class=\"devmgr\"\r\n        id=\"standbyRemoveBtn_${Description}\"\r\n        onclick='removeStandby(\"${Description}\")'>\r\n  Remove\r\n</button>",
-            "mode": "html"
-          },
-          "pluginVersion": "11.4.0",
-          "title": "",
-          "transparent": true,
-          "type": "text"
-        },
-        {
-          "fieldConfig": {
-            "defaults": {},
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 2,
-            "w": 3,
-            "x": 14,
-            "y": 3
-          },
-          "id": 65,
-          "options": {
-            "code": {
-              "language": "plaintext",
-              "showLineNumbers": false,
-              "showMiniMap": false
-            },
-            "content": "<button class=\"devmgr\" \r\n        id=\"standbySaveBtn_${Description}\"\r\n        onclick='saveStandby(\"${Description}\")'\r\n        disabled>\r\n  Save\r\n</button>",
-            "mode": "html"
-          },
-          "pluginVersion": "11.4.0",
-          "title": "",
-          "transparent": true,
-          "type": "text"
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
         }
-      ],
-      "repeat": "Description",
-      "title": "$Description",
-      "type": "row"
-    }
-  ],
-  "schemaVersion": 40,
-  "tags": [],
-  "templating": {
-    "list": [
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "panels": [
       {
-        "current": {},
-        "datasource": {
-          "type": "influxdb",
-          "uid": "${DS_DEVICES}"
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
         },
-        "definition": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
-        "includeAll": true,
-        "label": "Device",
-        "multi": true,
-        "name": "Description",
-        "options": [],
-        "query": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
+        "gridPos": {
+          "h": 2,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<head>\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"../public/nanohome/css/standby.css\" />\n</head>\n<div id=\"deviceData\" style=\"font-size: large;\">\n\tStandby\n\t<hr class=\"thight\"></hr>\n</div>\n<script>\n\tfunction loadScript(url) {\n\t\treturn new Promise((resolve, reject) => {\n\n\t\t\tvar script = document.createElement(\"script\");\n\t\t\tscript.type = \"text/javascript\";\n\t\t\tscript.src = url;\n\n\t\t\tscript.onload = () => {\n\t\t\t\tconsole.log(`Script ${url} loaded successfully.`);\n\t\t\t\tresolve();\n\t\t\t};\n\t\t\tscript.onerror = () => reject(new Error(`Failed to load script: ${url}`));\n\n\t\t\tdocument.head.appendChild(script);\n\t\t});\n\t}\n\n\tasync function loadScriptsInOrder(scripts) {\n\t\ttry {\n\t\t\tfor (const url of scripts) {\n\t\t\t\tawait loadScript(url);\n\t\t\t}\n\t\t\tconsole.log(\"All scripts loaded in sequence.\");\n\t\t} catch (error) {\n\t\t\tconsole.error(\"An error occurred:\", error);\n\t\t}\n\t}\n\n\tloadScriptsInOrder([\n\t\t\"../public/nanohome/js/common.js\",\n\t\t\"../public/nanohome/js/config.js\",\n\t\t\"../public/nanohome/js/standby.js\",\n\t\t\"../public/nanohome/js/mqtt.js\"\n\t]);\n</script>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.4.0",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "collapsed": true,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 2
+        },
+        "id": 4,
+        "panels": [
+          {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 2,
+              "w": 3,
+              "x": 0,
+              "y": 3
+            },
+            "id": 7,
+            "options": {
+              "code": {
+                "language": "plaintext",
+                "showLineNumbers": false,
+                "showMiniMap": false
+              },
+              "content": "<div class=\"devmgr statusfalse\" id=\"standbyActive_${Description}\">\r\n\tInactive\r\n</div>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tgetStandbyInfo();\r\n\t\t}\r\n\t}, 500);\r\n</script>",
+              "mode": "html"
+            },
+            "pluginVersion": "11.4.0",
+            "title": "",
+            "transparent": true,
+            "type": "text"
+          },
+          {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 2,
+              "w": 4,
+              "x": 3,
+              "y": 3
+            },
+            "id": 76,
+            "options": {
+              "code": {
+                "language": "plaintext",
+                "showLineNumbers": false,
+                "showMiniMap": false
+              },
+              "content": "<input  class=\"devmgr boldText\" \n        id=\"standbyPower_${Description}\"\n        placeholder=\"Max Standby (W)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocusout='validateStandbyInput(\"${Description}\", this)' \n        onfocus='this.value = \"\"' \n        autocomplete=\"off\" />",
+              "mode": "html"
+            },
+            "pluginVersion": "11.4.0",
+            "title": "",
+            "transparent": true,
+            "type": "text"
+          },
+          {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 2,
+              "w": 4,
+              "x": 7,
+              "y": 3
+            },
+            "id": 64,
+            "options": {
+              "code": {
+                "language": "plaintext",
+                "showLineNumbers": false,
+                "showMiniMap": false
+              },
+              "content": "<input  class=\"devmgr\" \n        id=\"standbyWait_${Description}\"\n        placeholder=\"Startup wait (s)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocus='this.value = \"\"'\n        autocomplete=\"off\" />",
+              "mode": "html"
+            },
+            "pluginVersion": "11.4.0",
+            "title": "",
+            "transparent": true,
+            "type": "text"
+          },
+          {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 2,
+              "w": 3,
+              "x": 11,
+              "y": 3
+            },
+            "id": 70,
+            "options": {
+              "code": {
+                "language": "plaintext",
+                "showLineNumbers": false,
+                "showMiniMap": false
+              },
+              "content": "<button class=\"devmgr\"\r\n        id=\"standbyRemoveBtn_${Description}\"\r\n        onclick='removeStandby(\"${Description}\")'>\r\n  Remove\r\n</button>",
+              "mode": "html"
+            },
+            "pluginVersion": "11.4.0",
+            "title": "",
+            "transparent": true,
+            "type": "text"
+          },
+          {
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 2,
+              "w": 3,
+              "x": 14,
+              "y": 3
+            },
+            "id": 65,
+            "options": {
+              "code": {
+                "language": "plaintext",
+                "showLineNumbers": false,
+                "showMiniMap": false
+              },
+              "content": "<button class=\"devmgr\" \r\n        id=\"standbySaveBtn_${Description}\"\r\n        onclick='saveStandby(\"${Description}\")'\r\n        disabled>\r\n  Save\r\n</button>",
+              "mode": "html"
+            },
+            "pluginVersion": "11.4.0",
+            "title": "",
+            "transparent": true,
+            "type": "text"
+          }
+        ],
+        "repeat": "Description",
+        "title": "$Description",
+        "type": "row"
       }
-    ]
-  },
-  "time": {
-    "from": "now-1y",
-    "to": "now"
-  },
-  "timepicker": {
-    "hidden": true
-  },
-  "timezone": "browser",
-  "title": "Standby",
-  "uid": "adjak60hekvswd",
-  "version": 1,
-  "weekStart": ""
+    ],
+    "preload": true,
+    "schemaVersion": 40,
+    "tags": [],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "datasource": {
+            "type": "influxdb",
+            "uid": "decmndsesy7swd"
+          },
+          "definition": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
+          "includeAll": true,
+          "label": "Device",
+          "multi": true,
+          "name": "Description",
+          "options": [],
+          "query": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
+          "refresh": 1,
+          "regex": "",
+          "type": "query"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1y",
+      "to": "now"
+    },
+    "timepicker": {
+      "hidden": true
+    },
+    "timezone": "browser",
+    "title": "Standby",
+    "uid": "adjak60hekvswd",
+    "version": 1,
+    "weekStart": ""
+  }
 }

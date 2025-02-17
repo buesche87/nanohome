@@ -718,6 +718,8 @@ grafanadatasource_devices=$(
 	grafanadatasource_create "${grafanadatasource_devices_json}"
 )
 
+grafanadatasource_devices_uid=$( jq -r .uid <<< "${grafanadatasource_devices}" )
+
 [[ $LOG_START ]] && jq <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
 
 # Datasource: Measurements
@@ -729,6 +731,8 @@ grafanadatasource_measurements=$(
 	grafanadatasource_search "${GRAFANA_DATASOURCE_MEASUREMENTS}" || \
 	grafanadatasource_create "${grafanadatasource_measurements_json}"
 )
+
+grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measurements_json}" )
 
 [[ $LOG_START ]] && jq <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
@@ -901,14 +905,24 @@ grafanadashboard_find() {
 grafanadashboard_prepare() {
 
 	local file=$1
+	local dsuid=$2
+
+	# Load file into variable
 	local filecontent=$(
 		jq '.' "${file}"
 	)
 
-	# TODO: replace datasource ID
+	# TODO: replace datasource id
+
+	local datasourcemodified=$(
+		jq --arg uid "$dsuid" '
+			walk(if type == "object" and .datasource? and .datasource.type == "influxdb" 
+				then .datasource.uid = $uid 
+				else . end)' <<< "${filecontent}"
+	)
 
 	local output=$(
-		jq --argjson dashboard "${filecontent}" \
+		jq --argjson dashboard "${datasourcemodified}" \
 		'.dashboard = $dashboard' \
 		<<< "${grafanadashboard_metadata}"
 	)
@@ -959,7 +973,7 @@ grafanadashboard_home_exists=$(
 if [[ -z "${grafanadashboard_home_exists}" ]]; then
 
 	grafanadashboard_home_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}" "${grafanadatasource_measurements_uid}"
 	)
 
 	grafanadashboard_home=$(
@@ -977,7 +991,7 @@ grafanadashboard_devices_exists=$(
 if [[ -z "${grafanadashboard_devices_exists}" ]]; then
 
 	grafanadashboard_devices_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_DEVICES}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_DEVICES}" "${grafanadatasource_devices_uid}"
 	)
 
 	grafanadashboard_devices=$(
@@ -995,7 +1009,7 @@ grafanadashboard_timer_exists=$(
 if [[ -z "${grafanadashboard_timer_exists}" ]]; then
 
 	grafanadashboard_timer_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_TIMER}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_TIMER}" "${grafanadatasource_devices_uid}"
 	)
 
 	grafanadashboard_timer=$(	
@@ -1007,13 +1021,13 @@ fi
 
 # Dashboard: Standby
 grafanadashboard_standby_exists=$(
-	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}"
+	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}" 
 )
 
 if [[ -z "${grafanadashboard_standby_exists}" ]]; then
 
 	grafanadashboard_standby_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_STANDBY}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_STANDBY}" "${grafanadatasource_devices_uid}"
 	)
 
 	grafanadashboard_standby=$(	
@@ -1031,7 +1045,7 @@ grafanadashboard_measurements_exists=$(
 if [[ -z "${grafanadashboard_measurements_exists}" ]]; then
 
 	grafanadashboard_measurements_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}" "${grafanadatasource_measurements_uid}"
 	)
 
 	grafanadashboard_measurements=$(	
