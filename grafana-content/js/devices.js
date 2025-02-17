@@ -245,7 +245,7 @@ function populateComponentElement(device, component) {
 	let htmlElements = getDevicesHtmlElements(device);
 	let optionExists = false;
 
-	if (checkElement(htmlElements)) {
+	if (checkElement(htmlElements.component.options)) {
 		for (var i = 0; i < htmlElements.component.options.length; i++) {
 			if (htmlElements.component.options[i].value === component) {
 				optionExists = true;
