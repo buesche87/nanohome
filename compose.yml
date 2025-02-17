@@ -27,11 +27,12 @@ services:
       - ./appdata/influxdb/data:/var/lib/influxdb2
       - ./appdata/influxdb/config:/etc/influxdb2
     environment:
-      - DOCKER_INFLUXDB_INIT_MODE=grafana-clock-panel
-      - DOCKER_INFLUXDB_INIT_USERNAME=grafana-clock-panel 
-      - DOCKER_INFLUXDB_INIT_PASSWORD=grafana-clock-panel 
-      - DOCKER_INFLUXDB_INIT_ORG=grafana-clock-panel 
-      - DOCKER_INFLUXDB_INIT_BUCKET=grafana-clock-panel 
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
   
   grafana:
     image: grafana/grafana:latest
@@ -62,7 +63,7 @@ services:
      - 1883:1883
      - 1884:1884
     volumes:
-      - ./configs/mosquitto.conf:/mosquitto/config/mosqutitto.conf
+      - ./configs/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./appdata/mosquitto/data:/mosquitto/data
       - ./appdata/mosquitto/log:/mosquitto/log
 
