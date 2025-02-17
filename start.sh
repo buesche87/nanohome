@@ -732,7 +732,7 @@ grafanadatasource_measurements=$(
 	grafanadatasource_create "${grafanadatasource_measurements_json}"
 )
 
-grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measurements_json}" )
+grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measurements}" )
 
 [[ $LOG_START ]] && jq <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
