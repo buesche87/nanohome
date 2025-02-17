@@ -1,16 +1,35 @@
 # Features
 
-- Detect shelly devices configured on mosquitto mqtt broker
+- Provides a customizable grafana dashboard for touch displays
+- Control your shellies with a touch
+- Move covers to a desired position with a slide
+- Add your own visualizations and panels
+
+![nanohome_home_dashboard](https://github.com/user-attachments/assets/b205292a-8536-4eeb-9875-8112ba491c36)
+
+- Automatically detect shelly devices configured on mosquitto mqtt broker
 - Connect devices components to nanohome and give them a name
-- Write measurements from connected components into influxdb
-- Create a home dashboard panel with one click (button or slider for now)
-- Create multiple timer/schedules for each component
+- Create a dashboard panel with a simple click (button or slider for now)
+
+![nanohome_device_manager](https://github.com/user-attachments/assets/e3c967d8-e1db-43de-b042-aeebb967a9fb)
+
 - Monitor components (power, energy, temperatures and more)
+- Write measurements from connected components into influxdb
+- Visualize those measurements (a simple dashboard containing measurements for all connected devices is provided)
+
+![nanohome_measurements](https://github.com/user-attachments/assets/b3998a9f-63a2-4d8e-837b-bb98bbf80d09)
+
+- Create multiple timers/schedules for each component
+- Turn shelly components on or off
+- Open or close covers at a specific time
+
+![nanohome_timer_manager](https://github.com/user-attachments/assets/a3a46be3-5413-4323-b933-81bb83c180da)
+
 - TBD: Manage component standby (kill output if lower than defined power)
 
 # Docker start
 
-Every start the nanohome Docker prepares and validates the environment with the start.sh script
+Every start the nanohome Docker prepares and validates the environment with the `start.sh` script
 
 - Export additional variables (customize only if you know what you're doing)
 - Validate or create an influx cli config
@@ -59,7 +78,7 @@ Modify the default grafana docker with the following settings
     disable_sanitize_html = true
     ```
 
-- Map an additional path to the grafana docker, for example:
+- Map an additional path to the grafana docker. The host path contains the web content of nanohome. The same host path must be mapped to the nanohome docker.
     
     | Location | Path |
     | ----------- | ----------- |
@@ -161,5 +180,6 @@ docker run \
 - Finish and test standby manager
 - Manage orphaned components
 - Restart legacy measurement services on description change
+- Implement shelly dimmer
+- More icons for dashboard panels
 - Docker health checks
-- 
