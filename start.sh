@@ -1,23 +1,24 @@
 #!/bin/bash
-
-# nanohome Environment         
+############################################################
+# Nanohome Environment         
 ############################################################
 
-# nanohome general
+# Nanohome general
 export NANOHOME_ROOTPATH="/nanohome"
 export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
 
-# nanohome services
+# Nanohome services
 export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
 export NANOHOME_SHELL_ALLOWED_COMMANDS="clear_measurement,create_panel,create_standbymgr,create_timer,remove_component"
 
-# MQTT topics
-export MQTT_TOPIC_STATUS="+/status/+" # gen.3 only
-
-export MQTT_TOPIC_ONLINE="+/online" 
+# MQTT topics shelly specific
+export MQTT_TOPIC_STATUS="+/status/+"
+export MQTT_TOPIC_ONLINE="+/online"
 export MQTT_TOPIC_ONLINE_LEGACY="shellies/+/+/+"
+
+# MQTT topics for device identification in nanohome
 export MQTT_TOPIC_CONNECTED="+/status/+/connected"
 export MQTT_TOPIC_CONNECTED_LEGACY="shellies/+/+/+/connected"
 export MQTT_TOPIC_OUTPUT="+/status/+/output"
@@ -25,33 +26,28 @@ export MQTT_TOPIC_OUTPUT_LEGACY="shellies/+/+/+/output"
 export MQTT_TOPIC_DESCRIPTION="+/status/+/description"
 export MQTT_TOPIC_DESCRIPTION_LEGACY="shellies/+/+/+/description"
 
-
-
+# MQTT topics for nanohome
 export MQTT_TOPIC_DEVICES="nanohome/devices"
 export MQTT_TOPIC_STANDBY="nanohome/standby"
 export MQTT_TOPIC_TIMER="nanohome/timer"
-
 export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
-export MQTT_SUBSCRIBE_TIMEOUT_BIN=1
-export MQTT_SUBSCRIBE_TIMEOUT_SERVICE=10
-export MQTT_FASTSUBSCRIBE="250"
-export MQTT_NORMALSUBSCRIBE="500"
-export MQTT_LONGSUBSCRIBE="1000"
+# MQTT Pub/Sub settings
+export MQTT_SUBSCRIBE_TIMEOUT_BIN=1 # Timeout in seconds if no messages published
+export MQTT_SUBSCRIBE_TIMEOUT_SERVICE=10 # Timeout in seconds if no messages published
 
-
-
-# influxdb general
+# InfluxDB settings
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
 export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
 
-
-
+# Grafana general settings
 export GRAFANA_DATASOURCE_DEVICES="Devices"
 export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 export GRAFANA_DASHFOLDER_NAME="nanohome"
+
+# Grafana dashboard template settings
 export GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
 export GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
 export GRAFANA_DASHBOARD_UID_DEVICES="fe47pva0wy8lcb"
@@ -63,6 +59,7 @@ export GRAFANA_DASHBOARD_FILE_STANDBY="${NANOHOME_ROOTPATH}/grafana-templates/st
 export GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
 export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 
+# Grafana panel template settings
 export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
 export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_SWITCH_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.json"
@@ -70,7 +67,7 @@ export GRAFANA_PANEL_TEMPLATE_COVER_HTML="${NANOHOME_ROOTPATH}/grafana-templates
 export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
-
+############################################################
 # Script logging      
 ############################################################
 
@@ -85,11 +82,11 @@ export LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
 export LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
 export LOG_ERRO="[${LOG_RED}-Error-${LOG_NOC}]"
 
+############################################################
 # InfluxDB: Config
 ############################################################
-# if no influx cli configuration exists create one
+# - If no influx cli configuration exists, create one
 
-# i.O.
 influxconfig_search() {
 
 	local answer=$(
@@ -112,7 +109,6 @@ influxconfig_search() {
 	fi
 }
 
-# i.O.
 influxconfig_create() {
 
 	local answer=$(
@@ -140,7 +136,7 @@ influxconfig_create() {
 	fi
 }
 
-influxconfig=$(
+influxconfig=$(	
 	influxconfig_search || influxconfig_create
 )
 
@@ -153,15 +149,13 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
-
-# i.O.
 [[ $LOG_START ]] && jq <<< "${influxconfig}" >> /proc/1/fd/1
 
+############################################################
 # InfluxDB: Buckets
 ############################################################
-# if bucket does not exist create it
+# - If buckets do not exist, create them
 
-# i.O.
 influxbucket_search() {
 
 	local bucket=$1
@@ -193,7 +187,6 @@ influxbucket_search() {
 	fi
 }
 
-# i.O.
 influxbucket_create() {
 
 	local bucket=$1
@@ -229,7 +222,7 @@ influxbucket_create() {
 	fi
 }
 
-# Devices
+# Devices bucket
 influxbucket_devices=$(
 	influxbucket_search "${INFLUX_BUCKET_DEVICES}" || \
 	influxbucket_create "${INFLUX_BUCKET_DEVICES}"
@@ -241,7 +234,7 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 
 [[ $LOG_START ]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
-# Measurements
+# Measurements bucket
 influxbucket_measurements=$(
 	influxbucket_search "${INFLUX_BUCKET_MEASUREMENTS}" || \
 	influxbucket_create "${INFLUX_BUCKET_MEASUREMENTS}"
@@ -253,13 +246,13 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 
 [[ $LOG_START ]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
+############################################################
 # InfluxDB: Auth token (for Grafana datasource)
 ############################################################
-# if no active auth token with permissions to nanohome buckts found
-# or if multiple auth tokens with description "${INFLUX_TOKEN_DESCRIPTION}" found
-# delete them and recreate one before 
+# - If no token with correct permissions exists, create one
+# - If one token found, validate permissions, exit if failed (manual deletion)
+# - If multiple tokens found, exit script (manual deletion)
 
-# TODO: TEST
 influxauthtoken_search() {
 
 	local answer=$(
@@ -276,7 +269,6 @@ influxauthtoken_search() {
 	jq <<< "${result}"
 }
 
-# TODO: TEST
 influxauthtoken_create() {
 
 	local answer=$(
@@ -304,7 +296,6 @@ influxauthtoken_create() {
 	fi	
 }
 
-# TODO: TEST
 influxauthtoken_validate() {
 
 	local influxauthtoken_found=$1
@@ -336,14 +327,12 @@ influxauthtoken_objects=$(
 )
 
 # No token found
-if [[ "$influxauthtoken_objects" -eq 0 ]]
-then
-	influxauthtoken=$(influxauthtoken_create)
+if [[ "$influxauthtoken_objects" -eq 0 ]]; then
+	influxauthtoken=$( influxauthtoken_create )
 fi
 
-# One token found - check permissions
-if [[ "$influxauthtoken_objects" -eq 1 ]]
-then
+# One token found
+if [[ "$influxauthtoken_objects" -eq 1 ]]; then
 	influxauthtoken_validate "${influxauthtoken_found}"
 
 	influxauthtoken=$(
@@ -352,8 +341,7 @@ then
 fi
 
 # Multiple tokens found
-if [[ "$influxauthtoken_objects" -gt 1 ]]
-then
+if [[ "$influxauthtoken_objects" -gt 1 ]]; then
 	echo -e "${LOG_ERRO} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found. Delete them first" >> /proc/1/fd/1
 	exit 1
 fi
@@ -364,11 +352,16 @@ export INLUX_TOKEN=$(
 
 [[ $LOG_START ]] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
 
-# Grafana: Basic Auth connection
 ############################################################
-# test connection to "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
+# Grafana: Service account 
+############################################################
+# - If no access token specified in env file
+#   - Validate basic auth connection
+#   - Check if service account and token exist
+#   - Create a service account if needed
+#   - Recreate auth token on every docker start
 
-grafanaapiheaders=(
+grafanaapiheaders_basicauth=(
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 )
@@ -379,11 +372,10 @@ grafanaserviceaccount_json='{
 	"isDisabled": false
 }'
 
-# i.O.
 grafanaapibasicauth_test() {
 
 	local answer=$(
-		curl "${grafanaapiheaders[@]}" \
+		curl "${grafanaapiheaders_basicauth[@]}" \
 		--progress-bar \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
 	)
@@ -401,20 +393,10 @@ grafanaapibasicauth_test() {
 	fi
 }
 
-grafanaapibasicauth_test
-
-# Grafana: Service account 
-############################################################
-# if no access token specified in env file
-# - check if service account and token exist
-# - create a service account if needed
-# - recreate auth token
-
-# i.O.
 grafanaserviceaccount_find() {
 
 	local answer=$(
-		curl -s "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders_basicauth[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}"
 	)
 
@@ -440,11 +422,10 @@ grafanaserviceaccount_find() {
 	fi
 }
 
-# TODO: TEST
 grafanaserviceaccount_create() {
 
 	local answer=$(
-		curl -s "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders_basicauth[@]}" \
 		-d "${grafanaserviceaccount_json}" \
 		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts"
 	)
@@ -471,13 +452,12 @@ grafanaserviceaccount_create() {
 	fi
 }
 
-# i.O.
 grafanaserviceaccounttoken_find() {
 
 	local said=$1
 
 	local answer=$(
-		curl -s "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders_basicauth[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
 	)
 
@@ -497,14 +477,13 @@ grafanaserviceaccounttoken_find() {
 	fi
 }
 
-# i.O.
 grafanaserviceaccounttoken_delete() {
 
 	local grafanaserviceaccount_id=$1
 	local grafanaserviceaccount_token_id=$2
 
 	local answer=$(
-		curl -s "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders_basicauth[@]}" \
 		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens/${grafanaserviceaccount_token_id}"
 	)
 
@@ -521,13 +500,12 @@ grafanaserviceaccounttoken_delete() {
 	fi
 }
 
-# i.O.
 grafanaserviceaccounttoken_create() {
 
 	local grafanaserviceaccount_id=$1
 
 	local answer=$(
-		curl -s "${grafanaapiheaders[@]}" \
+		curl -s "${grafanaapiheaders_basicauth[@]}" \
 		-d "${grafanaserviceaccount_json}" \
 		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${grafanaserviceaccount_id}/tokens"
 	)
@@ -546,11 +524,14 @@ grafanaserviceaccounttoken_create() {
 	fi
 }
 
-if [[ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]
-then
-	echo -e "${LOG_INFO} Grafana: No service account token provided in env-file, creating one" >> /proc/1/fd/1
+if [[ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
 
-	# Service account
+	[[ $LOG_START ]] && echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
+
+	# Validate basic auth connection
+	grafanaapibasicauth_test
+
+	# Find or create service account
 	grafanaserviceaccount=$(
 		grafanaserviceaccount_find "${GRAFANA_SERVICEACCOUNT}" || \
 		grafanaserviceaccount_create
@@ -562,7 +543,7 @@ then
 
 	[[ $LOG_START ]] && jq <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
 
-	# Token
+	# Find token
 	grafanaserviceaccount_token=$(
 		grafanaserviceaccounttoken_find "${grafanaserviceaccount_id}"
 	)
@@ -571,9 +552,8 @@ then
 		jq length <<< ${grafanaserviceaccount_token}
 	)
 
-	# Delete existing tokens
-	for (( i = 0; i < grafanaserviceaccount_token_objects; i++ ))
-	do
+	# Delete existing token(s)
+	for (( i = 0; i < grafanaserviceaccount_token_objects; i++ )); do
 		grafanaserviceaccount_token_current=$(
 			jq .[$i] <<< "${grafanaserviceaccount_token}"
 		)
@@ -600,13 +580,14 @@ then
 
 	[[ $LOG_START ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 else
-	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
+	[[ $LOG_START ]] && echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 fi
 
-# Grafana: API connection
 ############################################################
-# test connection to "http://${GRAFANA_SERVICE}/api/org"
-# with "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
+# Grafana: Test API connection
+############################################################
+# - Test connection to "http://${GRAFANA_SERVICE}/api/org"
+# - With provided or created token
 
 grafanaapiheaders_token=(
 	-H "Accept: application/json"
@@ -614,7 +595,6 @@ grafanaapiheaders_token=(
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
 
-# i.O.
 grafanaapiauthtoken_test() {
 
 	local answer=$(
@@ -639,11 +619,11 @@ grafanaapiauthtoken_test() {
 
 grafanaapiauthtoken_test
 
+############################################################
 # Grafana: Datasources
 ############################################################
-# if datasource does not exist create it
+# - If datasources do not exist create them
 
-# i.O.
 grafanadatasource_search() {
 
 	local dsname=$1
@@ -675,7 +655,6 @@ grafanadatasource_search() {
 	fi
 }
 
-# i.O.
 grafanadatasource_prepare() {
 
 	local bucket=$1
@@ -694,7 +673,6 @@ grafanadatasource_prepare() {
 	jq <<< "${result}"
 }
 
-# TODO: TEST
 grafanadatasource_create() {
 
 	local dsjson=$1
@@ -730,7 +708,7 @@ grafanadatasource_create() {
 	fi
 }
 
-# Devices
+# Datasource: Devices
 grafanadatasource_devices_json=$(
 	grafanadatasource_prepare "${GRAFANA_DATASOURCE_DEVICES}"
 )
@@ -742,7 +720,7 @@ grafanadatasource_devices=$(
 
 [[ $LOG_START ]] && jq <<< "${grafanadatasource_devices}" >> /proc/1/fd/1
 
-# Measurements
+# Datasource: Measurements
 grafanadatasource_measurements_json=$(
 	grafanadatasource_prepare "${GRAFANA_DATASOURCE_MEASUREMENTS}"
 )
@@ -754,24 +732,16 @@ grafanadatasource_measurements=$(
 
 [[ $LOG_START ]] && jq <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
-# Grafana: Content
 ############################################################
-# if source folder grafana-content exists
-# modify mqtt credentials in config.js
-# move content to "${NANOHOME_ROOTPATH}/data/grafana"
-#
-# ! grafana docker:
-#    - "/usr/share/grafana/public/nanohome"
-#       must be mounted to "${NANOHOME_ROOTPATH}/data/grafana"
-#    - "disable_sanitize_html = true" must be set in grafana.ini
-#    - plugins needed
-#      - grafana-clock-panel
-#      - volkovlabs-variable-panel
+# Grafana: Modify and copy public content
+############################################################
+# - If source folder grafana-content exists
+# - Modify mqtt credentials in config.js
+# - Move content to "${NANOHOME_ROOTPATH}/data/grafana"
 
 grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
-# i.O.
 grafanacontent_modify() {
 	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/config.js"
 	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/config.js"
@@ -785,7 +755,6 @@ grafanacontent_modify() {
 	fi	
 }
 
-# i.O.
 grafanacontent_move() {
 	rm -rf "${grafanacontent_destination}"/*
 	mv -f "${grafanacontent_source}"/* "${grafanacontent_destination}"
@@ -799,8 +768,7 @@ grafanacontent_move() {
 	fi
 }
 
-if [[ -d "${grafanacontent_source}" ]]
-then
+if [[ -d "${grafanacontent_source}" ]]; then
 	echo -e "${LOG_INFO} Grafana: Creating content \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 
 	grafanacontent_modify
@@ -809,13 +777,11 @@ else
 	echo -e "${LOG_INFO} Grafana: Content \"${grafanacontent_destination}\" already created" >> /proc/1/fd/1
 fi
 
+############################################################
 # Grafana: Dashboard folder
 ############################################################
-# if dashboard folder "nanohome" does not exist create it
+# - If dashboard folder "nanohome" does not exist create it
 
-###### HIER GUT ############
-
-# i.O.
 grafanadashfolder_search() {
 	local foldername=$1
 
@@ -846,7 +812,6 @@ grafanadashfolder_search() {
 	fi
 }
 
-# i.O.
 grafanadashfolder_create() {
 	local foldername=$1
 
@@ -889,12 +854,12 @@ export GRAFANA_FOLDER_UID=$(
 
 [[ $LOG_START ]] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
+############################################################
 # Grafana: Dashboards
 ############################################################
-# if dashbaord does not exist
-# load dshboard-json, prepare and upload it
+# - If dashbaord does not exist
+# - Load dashboard templates, prepare and upload them
 
-# i.O.
 grafanadashboard_find() {
 
 	local uid=$1
@@ -926,7 +891,6 @@ grafanadashboard_find() {
 	fi	
 }
 
-# i.O.
 grafanadashboard_prepare() {
 
 	local file=$1
@@ -957,7 +921,6 @@ grafanadashboard_prepare() {
 	fi	
 }
 
-# i.O.
 grafanadashboard_create() {
 
 	local jsondata=$1
@@ -986,14 +949,12 @@ grafanadashboard_create() {
 	fi	
 }
 
-# Home
+# Dashboard: Home
 grafanadashboard_home_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"
 )
 
-# i.O.
-if [[ -z "${grafanadashboard_home_exists}" ]]
-then
+if [[ -z "${grafanadashboard_home_exists}" ]]; then
 	grafanadashboard_home_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}"
 	)
@@ -1005,14 +966,12 @@ then
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_home}" >> /proc/1/fd/1
 fi
 
-# Devices
+# Dashboard: Devices
 grafanadashboard_devices_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"
 )
 
-# i.O.
-if [[ -z "${grafanadashboard_devices_exists}" ]]
-then
+if [[ -z "${grafanadashboard_devices_exists}" ]]; then
 	grafanadashboard_devices_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_DEVICES}"
 	)
@@ -1024,14 +983,12 @@ then
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_devices}" >> /proc/1/fd/1	
 fi
 
-# Timer
+# Dashboard: Timer
 grafanadashboard_timer_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"
 )
 
-# i.O.
-if [[ -z "${grafanadashboard_timer_exists}" ]]
-then
+if [[ -z "${grafanadashboard_timer_exists}" ]]; then
 	grafanadashboard_timer_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_TIMER}"
 	)
@@ -1043,14 +1000,12 @@ then
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_timer}" >> /proc/1/fd/1
 fi
 
-# Standby
+# Dashboard: Standby
 grafanadashboard_standby_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}"
 )
 
-# i.O.
-if [[ -z "${grafanadashboard_standby_exists}" ]]
-then
+if [[ -z "${grafanadashboard_standby_exists}" ]]; then
 	grafanadashboard_standby_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_STANDBY}"
 	)
@@ -1062,14 +1017,12 @@ then
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_standby}" >> /proc/1/fd/1
 fi
 
-# Measurements
+# Dashboard: Measurements
 grafanadashboard_measurements_exists=$(
 	grafanadashboard_find "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"
 )
 
-# i.O.
-if [[ -z "${grafanadashboard_measurements_exists}" ]]
-then
+if [[ -z "${grafanadashboard_measurements_exists}" ]]; then
 	grafanadashboard_measurements_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
 	)
@@ -1081,8 +1034,11 @@ then
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
 fi
 
+############################################################
+# Grafana: Home dashboard
+############################################################
+# - Set the dashboard in grafana settings
 
-# Set Grafana home dashboard
 grafanadashboard_setHome() {
 
 	local home_id=$1
@@ -1115,15 +1071,9 @@ grafanadashboard_home_id=$(
 
 grafanadashboard_setHome "${grafanadashboard_home_id}"
 
-
 # Mosquitto: 
 ############################################################
-# TODO: if connection to mosquitto fails > WARNING
-# ! mosquitto docker:
-#   - settings in mosquitto.conf must be adjusted
-#   - passwd file "/etc/mosquitto/passwd" must exist and be modified with
-#     - mosquitto_passwd -U /etc/mosquitto/passwd
-#     - mosquitto_passwd -b /etc/mosquitto/passwd "${MQTT_USER}" "${MQTT_PASSWORD}"
+# - If connection to mosquitto fails output a warning
 
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
@@ -1131,7 +1081,6 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# i.O.
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -C 1 -W 1 \
 	-t "nanohome/startup" 
@@ -1142,29 +1091,27 @@ else
 	echo -e "${LOG_WARN} MQTT: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
 fi
 
-# Nanohome: Config
-############################################################
-# configure nanohome environment
-
-
-
-
-# Nanohome: Services
+# Nanohome: Start services
 ############################################################
 
+# Nanohome Shell
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome shell started" >> /proc/1/fd/1
 
+# Nanohome devwatcher
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher started" >> /proc/1/fd/1
 
+# Nanohome devwatcher legacy
 /bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher legacy started" >> /proc/1/fd/1
 
+# Nanohome measurements legacy
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
 
-# /bin/bash ${NANOHOME_ROOTPATH}/bin/create_standbymgr
-
+# Start crond
 crond -f &
+
+# Finish and start bash
 exec bash

@@ -1,24 +1,27 @@
+# Use this script to prepare some directories for your docker containers
+
+appdatapath="./appdata"
 
 # Nanohome
-mkdir -p "/mnt/data/appdata/nanohome/config"
-mkdir -p "/mnt/data/appdata/nanohome/data/grafana"
-mkdir -p "/mnt/data/appdata/nanohome/log"
+mkdir -p "$appdatapath/nanohome/config"
+mkdir -p "$appdatapath/nanohome/data/grafana"
+mkdir -p "$appdatapath/nanohome/log"
 
 # Grafana
-mkdir -p "/mnt/data/appdata/grafana/config"
-chmod 755 "/mnt/data/appdata/grafana/config"
-cp -f "./configs/grafana.ini" "/mnt/data/appdata/grafana/config"
-mkdir -p "/mnt/data/appdata/grafana/data"
-chmod 777 "/mnt/data/appdata/grafana/data"
-mkdir -p "/mnt/data/appdata/grafana/ssl"
-chmod 755 "/mnt/data/appdata/grafana/data"
+mkdir -p "$appdatapath/grafana/config"
+chmod 755 "$appdatapath/grafana/config"
+cp -f "./configs/grafana.ini" "$appdatapath/grafana/config"
+mkdir -p "$appdatapath/grafana/data"
+chmod 755 "$appdatapath/grafana/data"
 
 # InfluxDB
-mkdir -p "/mnt/data/appdata/influxdb/config"
-mkdir -p "/mnt/data/appdata/influxdb/data"
+mkdir -p "$appdatapath/influxdb/config"
+chmod 755 "$appdatapath/influxdb/config"
+mkdir -p "$appdatapath/influxdb/data"
+chmod 755 "$appdatapath/influxdb/data"
 
 # Mosquitto
-mkdir -r "/mnt/data/appdata/mosquitto/config"
-cp -f "./configs/mosquitto.conf" "/mnt/data/appdata/mosquitto/config"
-mkdir -r "/mnt/data/appdata/mosquitto/data"
-mkdir -r "/mnt/data/appdata/mosquitto/log"
+mkdir -r "$appdatapath/mosquitto/config"
+cp -f "./configs/mosquitto.conf" "$appdatapath/mosquitto/config"
+mkdir -r "$appdatapath/mosquitto/data"
+mkdir -r "$appdatapath/mosquitto/log"
