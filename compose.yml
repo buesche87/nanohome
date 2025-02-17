@@ -43,7 +43,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./config/grafana.ini:/etc/grafana/grafana.ini
+      - ./configs/grafana.ini:/etc/grafana/grafana.ini
       - ./appdata/nanohome/data/grafana:/usr/share/grafana/public/nanohome
       - ./appdata/grafana/data:/var/lib/grafana
       - ./appdata/grafana/log:/var/log/grafana
