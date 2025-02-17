@@ -1,108 +1,110 @@
 # Features
 
-- Provides a customizable grafana dashboard for touch displays
-- Control your shellies with a touch
-- Move covers to a desired position with a slide
+## Customizable touch dashboard
+- Provides a customizable grafana dashboard, designed for touch displays
+- Control your shellies with a touch or a slide
 - Add your own visualizations and panels
 
 ![nanohome_home_dashboard](https://github.com/user-attachments/assets/b205292a-8536-4eeb-9875-8112ba491c36)
 
-- Automatically detect shelly devices configured on mosquitto mqtt broker
-- Connect devices components to nanohome and give them a name
-- Create a dashboard panel with a simple click (button or slider for now)
+## Device management
+- Automatically detects Shelly devices on your mqtt broker
+- Connect their components to nanohome and give them a name
+- Create a dashboard panel in one touch (button or slider)
 
 ![nanohome_device_manager](https://github.com/user-attachments/assets/e3c967d8-e1db-43de-b042-aeebb967a9fb)
 
-- Monitor components (power, energy, temperatures and more)
-- Write measurements from connected components into influxdb
-- Visualize those measurements (a simple dashboard containing measurements for all connected devices is provided)
+## Measurements
+- Monitor your shellies (power, voltage, temperatures and more)
+- Archive measurements from connected components in influxdb
+- Visualize those measurements on a simple dashboard
+- Or create a dashboard to your liking
 
 ![nanohome_measurements](https://github.com/user-attachments/assets/b3998a9f-63a2-4d8e-837b-bb98bbf80d09)
 
-- Create multiple timers/schedules for each component
-- Turn shelly components on or off
+## Timer / Scheduler
+- Create multiple timer for each connected component
+- Turn your components on or off on a schedule
 - Open or close covers at a specific time
 
 ![nanohome_timer_manager](https://github.com/user-attachments/assets/a3a46be3-5413-4323-b933-81bb83c180da)
 
-- TBD: Manage component standby (kill output if lower than defined power)
+## Standby Manager
+> Work in progress
 
-# Docker start
-
-Every start the nanohome Docker prepares and validates the environment with the `start.sh` script
-
-- Export additional variables (customize only if you know what you're doing)
-- Validate or create an influx cli config
-- Find or create neccessary influx buckets
-- Validate or create a read-only influxdb api token that will be used in grafana for datasource connections
-- If no grafana service account token provided in env-file, a service account will be created
-- Additionally a new token will be generated every start, the old one gets deleted
-- Validate grafana api connection with provided or created sa token
-- Find or create grafana datasources for influx buckets
-- Modify credentials in the public nanohome content for grafana
-- Copy public content to the mapped directory (nanohome and grafana docker)
-- Find or create nanohome dashboard folder in grafana
-- Find or create nanohome dashboards in grafana
-- Set home dashoard in grafana settings
-- Validate connection to mosquitto mqtt broker
-- Start nanohome services and cron deamon
+Manage your devices standby power
+- Turn off a components output if the plugged in device draws less power than defined
+- Use a timeout for safety mechanisms like a delay for device startups
 
 # Prerequisites
 
-You will need the following services up and running:
-
-- Grafana
-- InfluxDB
-- Mosquitto
-
-Preferably use docker and customize the containers as written below
-
-Also your shelly devices need specific mqtt options set
-
 ## Shelly devices
 
-Enable the following MQTT settings on your shelly devices:
+Your Shelly devices need specific mqtt options set. Make sure the following are enabled:
 
 - Enable 'MQTT Control'
 - Enable RPC over MQTT
 - RPC status notifications over MQTT
 - Generic status update over MQTT
 
-## Grafana docker
+## Services
 
-Modify the default grafana docker with the following settings
+You will need the following services up and running
 
-- Map `grafana.ini` to a custom path and modify its `[panels]` section
+- Grafana
+- InfluxDB
+- Mosquitto (or any other mqtt broker)
+
+> If you choose docker you can customize the containers as written below
+
+### Grafana
+
+There is content to be mapped into the container:
+
+- Map a custom `grafana.ini` to the container
+
+    | location | path |
+    | ----------- | ----------- |
+    | host | ./appdata/grafana/config/grafana.ini |
+    | container | /etc/grafana/grafana.ini |
+
+- Modify the `[panels]` section in `grafana.ini`
 
     ```
     disable_sanitize_html = true
     ```
 
-- Map an additional path to the grafana docker. The host path contains the web content of nanohome. The same host path must be mapped to the nanohome docker.
-    
-    | Location | Path |
+- Map an additional path to the grafana container. 
+
+    | location | path |
     | ----------- | ----------- |
-    | Host | ./appdata/nanohome/data/grafana |
-    | Container | /usr/share/grafana/public/nanohome |
+    | host | ./appdata/nanohome/data/grafana |
+    | container | /usr/share/grafana/public/nanohome |
 
-- Install grafana plugins by defining corresponding env variable
+> This host path contains nanohomes web content. The same path has to be mapped to the nanohome container
 
-    | Variable | Value |
+- Install grafana plugins by defining corresponding env-variable
+
+    | variable | value |
     | ----------- | ----------- |
     | GF_INSTALL_PLUGINS | grafana-clock-panel |
 
-## Mosquitto
+- Provide a service account token or admin credentials in nanohomes `.env` file
 
-Modify the default mosquitto docker with the following settings
+> You can manually create a service account and an api token. For now, the service account needs admin rights. Add the token secret to the `.env` file
 
-- Map `mosquitto.conf` to a custom path, for example:
+> Or you can provide your admin credentials and a name for a new service account in the `.env` file. Then, at docker start, a service account and an api token will be created
 
-    | Location | Path |
-    | ----------- | ----------- |
-    | Host | ./appdata/mosquitto/config/mosquitto.conf |
-    | Container | /mosquitto/config/mosquitto.conf |
+### InfluxDB
 
-- Copy the provided config file from `configs/mosquitto.conf` to the host path
+- Manually generate an `all access token` in InfluxDB
+- Provide its secret in nanohomes `.env` file
+- Provide your organisation name in nanohomes `.env` file
+
+### Mosquitto
+
+- Replace `./appdata/mosquitto/config/mosquitto.conf` with the provided `configs/mosquitto.conf` 
+
 - Create a password file from within the mosquitto docker
 
     ```
@@ -110,9 +112,55 @@ Modify the default mosquitto docker with the following settings
     mosquitto_passwd -b /mosquitto/data/passwd <USERNAME> <PASSWORD>
     ```
 
-- Enter these credentials in the nanohome .env file
+- Provide the same credentials in nanohomes `.env` file
 
-# Nanohome environment
+# Run nanohome
+
+## Clone
+- Clone repository to any directory
+
+```
+git clone https://github.com/buesche87/nanohome.git
+
+cd nanohome
+```
+
+## Configure
+
+- Copy example.env to .env and modify content
+
+```
+cp example.env .env
+```
+
+## Prepare directories
+
+- You can use the commands in `prepare.sh` to get an idea
+
+## Build
+
+```
+docker build -t nanohome .
+```
+
+## Start
+
+Start the nanohome container and optionally assign it to a custom network named nanohome
+
+```
+docker run \
+    --name nanohome \
+    --env-file .env \
+    --network nanohome \
+    --mount type=bind,src=./appdata/nanohome/config,dst=/opt/nanohome/config \
+    --mount type=bind,src=./appdata/nanohome/data,dst=/opt/nanohome/data \
+    --mount type=bind,src=./appdata/nanohome/log,dst=/opt/nanohome/log \
+    nanohome
+```
+
+# Additional Information
+
+## Nanohome environment
 
 | Variable | Description | Example |
 | ----------- | ----------- | ----------- |
@@ -136,47 +184,30 @@ Modify the default mosquitto docker with the following settings
 
 If `GRAFANA_ADMIN`, `GRAFANA_PASS` and `GRAFANA_SERVICEACCOUNT` are set, a service account will be created automatically. On every start of the nanohome docker, a new api token will be created
 
-# Clone and run
+## Docker start procedure
 
-Clone repository to any directory
+Every start the nanohome Docker prepares and validates the environment with the `start.sh` script
 
-```
-git clone https://github.com/buesche87/nanohome.git
-```
+- Export additional variables (customize only if you know what you're doing)
+- Validate or create an influx cli config
+- Find or create neccessary influx buckets
+- Validate or create a read-only influxdb api token that will be used in grafana for datasource connections
+- If no grafana service account token provided in env-file, a service account will be created
+- Additionally a new token will be generated every start, the old one gets deleted
+- Validate grafana api connection with provided or created sa token
+- Find or create grafana datasources for influx buckets
+- Modify credentials in nanohomes web content for grafana
+- Copy web content to  mapped directory
+- Find or create nanohome dashboard folder in grafana
+- Find or create nanohome dashboards in grafana
+- Set home dashoard in grafana settings
+- Validate connection to mqtt broker
+- Start nanohome services and cron deamon
 
-## Build
-
-```
-cd nanohome
-docker build -t nanohome .
-```
-
-## Configure
-
-Copy example.env to .env and modify content
-
-```
-cp example.env .env
-```
-
-## Start
-
-Example for starting the nanohome container and assign it to the custom network nanohome
-
-```
-docker run \
-    --name nanohome \
-    --env-file .env \
-    --network nanohome \
-    --mount type=bind,src=./appdata/nanohome/config,dst=/opt/nanohome/config \
-    --mount type=bind,src=./appdata/nanohome/data,dst=/opt/nanohome/data \
-    --mount type=bind,src=./appdata/nanohome/log,dst=/opt/nanohome/log \
-    nanohome
-```
-
-# TODO
+## TODO
 
 - [done] Fix missing datasource in dashboard templates
+- start.sh: only set home dashboard if not already set
 - Finish and test standby manager
 - Manage orphaned devices and components
 - Restart legacy measurement services on description change
