@@ -860,6 +860,13 @@ export GRAFANA_FOLDER_UID=$(
 # - If dashbaord does not exist
 # - Load dashboard templates, prepare and upload them
 
+grafanadashboard_metadata='{
+	"dashboard": {},
+	"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
+	"message": "Initial upload",
+	"overwrite": true
+}'
+
 grafanadashboard_find() {
 
 	local uid=$1
@@ -898,17 +905,12 @@ grafanadashboard_prepare() {
 		jq '.' "${file}"
 	)
 
-	local jsondata='{
-		"dashboard": {},
-		"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
-		"message": "Initial upload",
-		"overwrite": true
-	}'
+	# TODO: replace datasource ID
 
 	local output=$(
 		jq --argjson dashboard "${filecontent}" \
 		'.dashboard = $dashboard' \
-		<<< "${jsondata}"
+		<<< "${grafanadashboard_metadata}"
 	)
 
 	if [[ -n "${output}" ]]; then
@@ -916,7 +918,7 @@ grafanadashboard_prepare() {
 		jq <<< "${output}"
 	else
 		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\" for upload" >> /proc/1/fd/1
-		jq <<< "${jsondata}" >> /proc/1/fd/1
+		jq <<< "${grafanadashboard_metadata}" >> /proc/1/fd/1
 		exit 1
 	fi	
 }
@@ -955,6 +957,7 @@ grafanadashboard_home_exists=$(
 )
 
 if [[ -z "${grafanadashboard_home_exists}" ]]; then
+
 	grafanadashboard_home_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}"
 	)
@@ -972,6 +975,7 @@ grafanadashboard_devices_exists=$(
 )
 
 if [[ -z "${grafanadashboard_devices_exists}" ]]; then
+
 	grafanadashboard_devices_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_DEVICES}"
 	)
@@ -989,6 +993,7 @@ grafanadashboard_timer_exists=$(
 )
 
 if [[ -z "${grafanadashboard_timer_exists}" ]]; then
+
 	grafanadashboard_timer_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_TIMER}"
 	)
@@ -1006,6 +1011,7 @@ grafanadashboard_standby_exists=$(
 )
 
 if [[ -z "${grafanadashboard_standby_exists}" ]]; then
+
 	grafanadashboard_standby_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_STANDBY}"
 	)
@@ -1023,6 +1029,7 @@ grafanadashboard_measurements_exists=$(
 )
 
 if [[ -z "${grafanadashboard_measurements_exists}" ]]; then
+
 	grafanadashboard_measurements_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}"
 	)
