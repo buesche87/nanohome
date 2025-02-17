@@ -21,7 +21,7 @@ mkdir -p "$appdatapath/influxdb/data"
 chmod 755 "$appdatapath/influxdb/data"
 
 # Mosquitto
-mkdir -r "$appdatapath/mosquitto/config"
+mkdir -p "$appdatapath/mosquitto/config"
 cp -f "./configs/mosquitto.conf" "$appdatapath/mosquitto/config"
-mkdir -r "$appdatapath/mosquitto/data"
-mkdir -r "$appdatapath/mosquitto/log"
+mkdir -p "$appdatapath/mosquitto/data"
+mkdir -p "$appdatapath/mosquitto/log"

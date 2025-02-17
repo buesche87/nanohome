@@ -197,7 +197,7 @@ Every start the nanohome Docker prepares and validates the environment with the 
 - Validate grafana api connection with provided or created sa token
 - Find or create grafana datasources for influx buckets
 - Modify credentials in nanohomes web content for grafana
-- Copy web content to  mapped directory
+- Replace web content in mapped directory
 - Find or create nanohome dashboard folder in grafana
 - Find or create nanohome dashboards in grafana
 - Set home dashoard in grafana settings

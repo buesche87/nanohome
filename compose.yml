@@ -15,13 +15,12 @@ services:
       - grafana
       - mosquitto
     volumes:
-      - /mnt/data/appdata/nanohome/config:/opt/nanohome/config
-      - /mnt/data/appdata/nanohome/data:/opt/nanohome/data
-      - /mnt/data/appdata/nanohome/log:/opt/nanohome/log
-    working_dir: /opt/nanohome
+      - ./appdata/nanohome/config:/nanohome/config
+      - ./appdata/nanohome/data:/nanohome/data
+      - ./appdata/nanohome/log:/nanohome/log
+    working_dir: /nanohome
     env_file: .env
     command: ["bash"]
-
 
   influxdb:
     image: influxdb:2
@@ -33,8 +32,8 @@ services:
     ports:
       - 8086:8086
     volumes:
-      - /mnt/data/appdata/influxdb/data:/var/lib/influxdb2
-      - /mnt/data/appdata/influxdb/config:/etc/influxdb2
+      - ./appdata/influxdb/data:/var/lib/influxdb2
+      - ./appdata/influxdb/config:/etc/influxdb2
     env_file:
       - /docker_data/grafana_conf/config.monitoring
   
@@ -48,12 +47,13 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - /mnt/data/appdata/grafana/data:/var/lib/grafana
-      - /mnt/data/appdata/grafana/log:/var/log/grafana
-      - /mnt/data/appdata/grafana/ssl:/certs
-      - /mnt/data/appdata/nanohome/data/grafana:/usr/share/grafana/public/nanohome
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+      - ./appdata/nanohome/data/grafana:/usr/share/grafana/public/nanohome
+      - ./appdata/grafana/data:/var/lib/grafana
+      - ./appdata/grafana/log:/var/log/grafana
+      - ./appdata/grafana/ssl:/certs
     environment:
-      - GF_INSTALL_PLUGINS=grafana-clock-panel, volkovlabs-variable-panel
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
 
   mosquitto:
     image: eclipse-mosquitto:latest
@@ -66,12 +66,9 @@ services:
      - 1883:1883
      - 1884:1884
     volumes:
-      - /mnt/data/appdata/mosquitto/config:/mosquitto/config
-      - /mnt/data/appdata/mosquitto/data:/mosquitto/data
-      - /mnt/data/appdata/mosquitto/log:/mosquitto/log
-
-# volumes: # define any named volumes used by the services
-#  db_data: # name of the volume for persisting database data
+      - ./configs/mosquitto.conf:/mosquitto/config/mosqutitto.conf
+      - ./appdata/mosquitto/data:/mosquitto/data
+      - ./appdata/mosquitto/log:/mosquitto/log
 
 networks:
   nanohome:
