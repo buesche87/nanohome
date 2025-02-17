@@ -183,3 +183,4 @@ docker run \
 - Implement shelly dimmer
 - More icons for dashboard panels
 - Docker health checks
+- Create/finish a docker compose for all services
