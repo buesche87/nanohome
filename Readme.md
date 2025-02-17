@@ -152,9 +152,7 @@ docker run \
     --name nanohome \
     --env-file .env \
     --network nanohome \
-    --mount type=bind,src=./appdata/nanohome/config,dst=/opt/nanohome/config \
     --mount type=bind,src=./appdata/nanohome/data,dst=/opt/nanohome/data \
-    --mount type=bind,src=./appdata/nanohome/log,dst=/opt/nanohome/log \
     nanohome
 ```
 

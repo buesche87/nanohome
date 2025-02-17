@@ -1,8 +1,6 @@
 services:
   nanohome:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     hostname: nanohome
     container_name: nanohome
     restart: unless-stopped
