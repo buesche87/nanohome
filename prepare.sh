@@ -3,9 +3,8 @@
 appdatapath="./appdata"
 
 # Nanohome
-mkdir -p "$appdatapath/nanohome/config"
 mkdir -p "$appdatapath/nanohome/data/grafana"
-mkdir -p "$appdatapath/nanohome/log"
+chmod 775 "$appdatapath/grafana/config"
 
 # Grafana
 mkdir -p "$appdatapath/grafana/config"
@@ -22,6 +21,9 @@ chmod 775 "$appdatapath/influxdb/data"
 
 # Mosquitto
 mkdir -p "$appdatapath/mosquitto/config"
+chmod 775 "$appdatapath/mosquitto/config"
 cp -f "./configs/mosquitto.conf" "$appdatapath/mosquitto/config"
 mkdir -p "$appdatapath/mosquitto/data"
+chmod 775 "$appdatapath/mosquitto/data"
 mkdir -p "$appdatapath/mosquitto/log"
+chmod 775 "$appdatapath/mosquitto/log"
