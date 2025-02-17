@@ -909,11 +909,10 @@ grafanadashboard_prepare() {
 
 	# Load file into variable
 	local filecontent=$(
-		jq '.' "${file}"
+		jq '.dashboard' "${file}"
 	)
 
-	# TODO: replace datasource id
-
+	# Replace datasource uid
 	local datasourcemodified=$(
 		jq --arg uid "$dsuid" '
 			walk(if type == "object" and .datasource? and .datasource.type == "influxdb" 
