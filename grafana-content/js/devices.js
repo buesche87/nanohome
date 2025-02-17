@@ -146,6 +146,9 @@ function onMessageArrived(message) {
 		let deviceid = topicSplit[0];
 		let component = topicSplit[2];
 
+		console.log('Shelly Payload');
+		console.log(payload);
+
 		// Show components and example button
 		if (topicSplit[1] == "status") {
 			
