@@ -176,9 +176,9 @@ docker run \
 
 # TODO
 
-- Fix missing datasource in dashboard templates
+- [done] Fix missing datasource in dashboard templates
 - Finish and test standby manager
-- Manage orphaned components
+- Manage orphaned devices and components
 - Restart legacy measurement services on description change
 - Implement shelly dimmer
 - More icons for dashboard panels
