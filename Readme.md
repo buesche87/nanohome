@@ -161,7 +161,7 @@ cp example.env .env
 
 ## Start
 
-Example for starting the docker
+Example for starting the nanohome container and assign it to the custom network nanohome
 
 ```
 docker run \
