@@ -242,18 +242,19 @@ function populateStatusElement(device, component, element, payload) {
 
 // Populate component (if nonexistent) - [string payload]
 function populateComponentElement(device, component) {
-	let htmlElements = getDevicesHtmlElements(device);
+	// let htmlElements = getDevicesHtmlElements(device);
+	let componentSelect = document.getElementById(devmgrComponentPrefix + device);
 	let optionExists = false;
 
-	if (checkElement(htmlElements.component.options)) {
-		for (var i = 0; i < htmlElements.component.options.length; i++) {
-			if (htmlElements.component.options[i].value === component) {
+	if (checkElement(componentSelect)) {
+		for (var i = 0; i < componentSelect.options.length; i++) {
+			if (componentSelect.options[i].value === component) {
 				optionExists = true;
 				return;
 			}
 		}
 		if (optionExists == false) {
-			htmlElements.component.options[htmlElements.component.options.length] = new Option(component, component);
+			componentSelect.options[componentSelect.options.length] = new Option(component, component);
 		}
 	}
 }
