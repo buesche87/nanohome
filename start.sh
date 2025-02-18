@@ -40,7 +40,7 @@ export MQTT_SUBSCRIBE_TIMEOUT_SERVICE=10 # Timeout in seconds if no messages pub
 # InfluxDB settings
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
-export INFLUX_TOKEN_DESCRIPTION="nanohome grafana ro-token"
+export INFLUX_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
 
 # Grafana general settings
 export GRAFANA_DATASOURCE_DEVICES="Devices"
@@ -261,7 +261,7 @@ influxauthtoken_search() {
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
+		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" \
 		'[.[] | select(.description == $description)]' \
 		<<< "${answer}"
 	)
@@ -273,7 +273,7 @@ influxauthtoken_create() {
 
 	local answer=$(
 		influx auth create \
-		--description "${INFLUX_TOKEN_DESCRIPTION}" \
+		--description "${INFLUX_ROTOKEN_DESCRIPTION}" \
 		--org "${INFLUX_ORG}" \
 		--read-bucket "${INFLUX_BUCKET_DEVICES_ID}" \
 		--read-bucket "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
@@ -281,16 +281,16 @@ influxauthtoken_create() {
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUX_TOKEN_DESCRIPTION}" \
+		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" \
 		'.description == $description' \
 		<<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "${answer}"
 	else
-		echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" failed to create" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		exit 1
 	fi	
@@ -310,10 +310,10 @@ influxauthtoken_validate() {
 
 	if ( $result )
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" has correct permissions" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" has correct permissions" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" has missing permissions. Delete it first" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" has missing permissions. Delete it first" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -334,7 +334,7 @@ fi
 
 # One token found
 if [[ "$influxauthtoken_objects" -eq 1 ]]; then
-	echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 	influxauthtoken_validate "${influxauthtoken_found}"
 
 	influxauthtoken=$(
@@ -344,11 +344,11 @@ fi
 
 # Multiple tokens found
 if [[ "$influxauthtoken_objects" -gt 1 ]]; then
-	echo -e "${LOG_ERRO} InfluxDB: Multiple auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found. Delete them first" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} InfluxDB: Multiple auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" found. Delete them first" >> /proc/1/fd/1
 	exit 1
 fi
 
-export INLUX_TOKEN=$(
+influfdb_rotoken=$(
 	jq -r '.token' <<< "${influxauthtoken}"
 )
 
@@ -664,7 +664,7 @@ grafanadatasource_prepare() {
 		"access":"proxy",
 		"url":"'"${INFLUX_HOST}"'",
 		"jsonData":{"dbName":"'"${bucket}"'","httpMode":"GET","httpHeaderName1":"Authorization"},
-		"secureJsonData":{"httpHeaderValue1":"Token '"${INFLUX_TOKEN}"'"},
+		"secureJsonData":{"httpHeaderValue1":"Token '"${influfdb_rotoken}"'"},
 		"isDefault":true,
 		"readOnly":false
 	}'
