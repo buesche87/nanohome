@@ -14,8 +14,7 @@ RUN chmod +x /nanohome/services/*
 COPY grafana-content /nanohome/grafana-content
 COPY grafana-templates /nanohome/grafana-templates
 RUN wget -qO- https://dl.influxdata.com/influxdb/releases/influxdb2-client-latest-linux-amd64.tar.gz | tar -xzf - -C "/usr/local/bin/" "./influx"
-# RUN wget -qO- https://dl.influxdata.com/influxdb/releases/influxdb2-client-2.7.5-linux-amd64.tar.gz | tar -xzf - -C "/usr/local/bin/" "./influx"
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 VOLUME /nanohome
-CMD ["/start.sh"]
+CMD ["/bin/sh", "-c", "exec /start.sh"]

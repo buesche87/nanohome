@@ -11,9 +11,9 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "sh", "-c", "pgrep -x nanohome_shell && pgrep -x devwatcher_shelly_plus && pgrep -x devwatcher_shelly_legacy && pgrep -x measurements_shelly_legacy"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 10s
     networks:
       - nanohome
@@ -28,9 +28,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 5s
     networks:
       - nanohome
@@ -55,9 +55,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 60s
+      timeout: 3s
+      retries: 3
       start_period: 10s
     networks:
       - nanohome
@@ -79,9 +79,9 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "1883"]
-      interval: 10s
+      interval: 60s
       timeout: 5s
-      retries: 5
+      retries: 3
       start_period: 5s
     networks:
       - nanohome
