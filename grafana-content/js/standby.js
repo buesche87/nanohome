@@ -135,7 +135,7 @@ function populateDeviceAttribute(payload) {
 
 // Generate Json for StandbyData
 function generateStandbyJson(description) {
-	let jsonDataStore = document.getElementById(standby_statusPrefix + jsonData.description);
+	let jsonDataStore = document.getElementById(standby_statusPrefix + description);
 	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
 	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
 
