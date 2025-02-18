@@ -84,7 +84,7 @@ function populatePanels(payload) {
 	let jsonData = JSON.parse(payload);
 	let standbyStatus = document.getElementById(standby_statusPrefix + jsonData.description);
 	let standbyThreshold = document.getElementById(standby_thresholdPrefix + jsonData.description);
-	let standbyWait = document.getElementById(standby_waitPrefix + jsonData.description);
+	let standbyWait = document.getElementById(standby_delayPrefix + jsonData.description);
 
 	if (checkElement(standbyStatus)) {
 		if ( /^\d+$/.test(jsonData.threshold) ) {
@@ -130,7 +130,7 @@ function generateStandbyJson(description) {
 	let jsonData = JSON.parse(jsonStore.getAttribute(standby_deviceDataAttribute));
 
 	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
-	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
+	let standbyWait = document.getElementById(standby_delayPrefix + description).value;
 
 	if (! checkElement(standbyWait)) { standbyWait = 0; }
 	let newElement = {
@@ -154,7 +154,7 @@ function generateStandbyJson(description) {
 // Clear standby button
 function clearPanels(description) {
 	var standbyPower = document.getElementById(standby_thresholdPrefix + description);
-	var standbyWait = document.getElementById(standby_waitPrefix + description);
+	var standbyWait = document.getElementById(standby_delayPrefix + description);
 	
 	standbyPower.value = "";
 	standbyWait.value = "";
