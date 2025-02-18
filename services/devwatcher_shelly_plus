@@ -35,6 +35,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	STATUSTOPIC=$( jq -r '.topic' <<< "${COMPONENTSTATUS}" )
 	DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
+	ONLINEVALUE=1 # Assume getting a message equals device is online
 
 	#===============================================================
 	# Filter components not monitored
@@ -57,7 +58,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 
 	if [[ $CONNECTEDVALUE -eq 0 ]] ; then
-		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Connected=${CONNECTEDVALUE}"
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Message recived from not conected component [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
@@ -71,18 +72,20 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	DESCRIPTION=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W 1 \
-		-t "${DEVICEID}/status/${COMPONENT}/description"
-		)
+			--retained-only --nodelay --quiet -C 1 -W 1 \
+			-t "${DEVICEID}/status/${COMPONENT}/description"
+	)
 
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
 	if [[ -z "${DESCRIPTION}" ]]; then
-		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Connected=${CONNECTEDVALUE}"
+
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Message recived from component without description [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
 		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Line protocol payload [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+
 		continue
 	fi
 
@@ -122,7 +125,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	#===============================================================
 
 	# Write device details into Devices bucket
-	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=1,Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Message received from [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
@@ -142,6 +145,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	# Write measurement into influx bucket "Measurements"
 	if [[ "${MEASUREMENT_PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
+
 		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${MEASUREMENT_PAYLOAD}"
 
