@@ -9,22 +9,52 @@
 # - Turn off output if so
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Start service
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" | \
-	while read -r COMPONENTSTATUS; do
+JSONCONFIG=$1
 
+# Extract payload and device details from json formatted message
+DEVICEID=$( jq -r '.deviceId' <<< "${JSONCONFIG}" )
+COMPONENT=$( jq -r '.component' <<< "${JSONCONFIG}" )
+DESCRIPTION=$( jq -r '.description' <<< "${JSONCONFIG}" )
+THRESHOLD=$( jq -r .threshold <<< "${JSONCONFIG}" )
+STANDBYWAIT=$( jq -r .wait <<< "${JSONCONFIG}" )
+
+[[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
+
+STATUSTOPIC="${DEVICEID}/status/${COMPONENT}"
+STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
+CONTROLTOPIC="${DEVICEID}/command/${COMPONENT}"
+
+# Get last published standby state
+get_last_state() {
+
+	local JSONCONFIG=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${STANDBYTOPIC}"
+	)
+
+	local state=$( jq -r .state <<< "${JSONCONFIG}" )
+	return "${state}"
+}
+
+#===============================================================
+# Infinitely subscribe to devices status topic
+#===============================================================
+
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
+while read -r COMPONENTSTATUS; do
 	# Extract current power from json formatted message
 	CURRENTPOWER=$( jq -r .apower <<< "${COMPONENTSTATUS}" )
 
-	# Get last state
+	# Get last standby state
 	LAST_STATE=$( get_last_state )
 
 	# Manage standby - don't kill the device if it just started
 	if awk 'BEGIN { exit !('$CURRENTPOWER' == 0) }'; then
 
-		LOGMESSAGE="Off - nothing to do"
 		NEW_STATE="off"
-				
+		LOGMESSAGE="Off, nothing to do"
+	
 	elif awk 'BEGIN { exit !('$CURRENTPOWER' < '$THRESHOLD') }'; then
 		case "${LAST_STATE}" in
 			"off")
@@ -60,17 +90,17 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" | \
 		esac
 	fi
 
-	# Update and publish the json with new state
+	# Update the json with a new state and publish it
 	if [[ "${NEW_STATE}" != "${LAST_STATE}" ]]
 				
-		STANDBYCONFIG_JSON_UPDATED=$(
-			jq --arg state "${NEW_STATE}" '.state = "$state"' <<< "${STANDBYCONFIG_JSON}"
+		JSONCONFIG_UPDATED=$(
+			jq --arg state "${NEW_STATE}" '.state = "$state"' <<< "${JSONCONFIG}"
 		)
 
 		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-		-t "${STANDBYTOPIC}" -m "${STANDBYCONFIG_JSON_UPDATED}"
+		-t "${STANDBYTOPIC}" -m "${JSONCONFIG_UPDATED}"
 	fi
 
 	# Log
-	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbymanager: ${DESCRIPTION}: ${LOGMESSAGE}"
+	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbywatcher: ${DESCRIPTION} - ${LOGMESSAGE}"
 done

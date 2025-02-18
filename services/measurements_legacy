@@ -69,8 +69,8 @@ while /bin/true; do
 	# For each connected component get device status
 	#===============================================================
 
-	jq -c '.[]' <<< "${CONNECTED_COMPONENTS_ARRAY}" | \
-		while read -r CONNECTED_DEVICE; do
+	jq -c '.[]' <<< "${CONNECTED_COMPONENTS_ARRAY}" |
+	while read -r CONNECTED_DEVICE; do
 
 		# Extract topic from json formatted message
 		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )

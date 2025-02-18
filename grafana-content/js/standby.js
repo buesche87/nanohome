@@ -11,7 +11,7 @@
 
 // Get Device Info - Subscribe to the MQTT topics
 function getStandbyInfo() {
-	mqttSubscribe(descriptionTopicAll, longsubscribe);
+	mqttSubscribe(deviceTopicAll, longsubscribe);
 	mqttSubscribe(standbyTopicAll, longsubscribe);
 }
 
@@ -24,12 +24,12 @@ function getStandbyInfo() {
 // Save standby values
 function saveStandby(description) {
 	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
-	let publishTopic = nanohomeRootTopic + "/" + description + "/standby";
+	let standbyTopic = "nanohome/standby/" + description;
 
 	if (/^\d+$/.test(standbyPower)) {
 		let newJsonElement = generateStandbyJson(description);
-		mqttSubscribe(standbyTopicAll, 1000);
-		mqttPublish(publishTopic, JSON.stringify(newJsonElement), true);
+		mqttSubscribe(standbyTopic, longsubscribe);
+		mqttPublish(standbyTopic, JSON.stringify(newJsonElement), true);
 	} else {
 		alert("Ungültiger Wert");
 	}
@@ -37,9 +37,9 @@ function saveStandby(description) {
 
 // Clear standby values
 function removeStandby(description) {
-	let publishTopic = nanohomeRootTopic + "/" + description + "/standby";
+	let standbytopic = "nanohome/standby/" + description;
 
-	mqttPublish(publishTopic, "", true);
+	mqttPublish(standbytopic, "", true);
 	clearStandby(description);
 }
 
@@ -57,66 +57,92 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	// Status topic
-	if (topicSplit[1] == "status") {
-		let deviceData = {
-			"deviceID": topicSplit[0],
-			"component": topicSplit[2]
-		};
-		populateStandbyElementsJson(payload, deviceAttribute, deviceData);
+	if ( topicSplit[1]== "devices" ) {
+		populateDeviceAttribute(jsonPayload);
 	}
 
-	// Standby Topic
-	if (topicSplit[2] == "standby") {
-		populateStandbyElements(topicSplit[1], payload);
+	if ( topicSplit[1] == "standby" ) {
+		populateStandbyPanels(payload);
 	}
 }
 
 /*
 ===============================================================
-	Manage Dashboard Panels
+	Populate Data
 ===============================================================
 */
 
 // Populate standby settings with content from mqtt message
-function populateStandbyElements(description, payload) {
+function populateStandbyPanels(payload) {
 	let standbyData = JSON.parse(payload);
-	let standbyPower = document.getElementById(standby_powerPrefix + description);
-	let standbyWait = document.getElementById(standby_waitPrefix + description);
+	let standbyPower = document.getElementById(standby_powerPrefix + standbyData.description);
+	let standbyWait = document.getElementById(standby_waitPrefix + standbyData.description);
 
-	if (/^\d+$/.test(standbyData.standby)) {
-		standbyPower.value = standbyData.standby;
+	if (checkElement(standbyPower)) {
+		if (/^\d+$/.test(standbyData.standby)) {
+			standbyPower.value = standbyData.standby;
+		}
+		if (/^\d+$/.test(standbyData.wait)) {
+			standbyWait.value = standbyData.wait;
+		}
+		setStandbyStatus(description);
 	}
-	if (/^\d+$/.test(standbyData.wait)) {
-		standbyWait.value = standbyData.wait;
-	}
-	getActiveStandby(description);
 }
 
 // Active state on
-function getActiveStandby(description) {
-	let standbyActive = document.getElementById(standby_activePrefix + description);
+function setStandbyStatus(description) {
+	let standbyStatus = document.getElementById(standby_statusPrefix + description);
 	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
 	
 	if (checkElement(standbyPower) && standbyPower != "" ) {
-		standbyActive.innerText = "Active";
-		standbyActive.classList.remove('statusfalse');
-		standbyActive.classList.add('statusgreen');
+		standbyStatus.innerText = "Active";
+		standbyStatus.classList.remove('statusfalse');
+		standbyStatus.classList.add('statusgreen');
 	} else {
-		standbyActive.innerText = "Inactive";
-		standbyActive.classList.remove('statusgreen');
-		standbyActive.classList.add('statusfalse');
+		standbyStatus.innerText = "Inactive";
+		standbyStatus.classList.remove('statusgreen');
+		standbyStatus.classList.add('statusfalse');
 	}
 }
 
-// Clear standby button
-function clearStandby(description) {
-	var standbyPower = document.getElementById(standby_powerPrefix + description);
-	var standbyWait = document.getElementById(standby_waitPrefix + description);
-	
-	standbyPower.value = "";
-	standbyWait.value = "";
-	getActiveStandby(description);
+// Populate jsonstore "device"
+function populateDeviceAttribute(deviceJson) {
+	let description = deviceJson.description;
+	let jsonDataStore = document.getElementById(standby_statusPrefix + description);
+
+	if (checkElement(jsonDataStore)) {
+		jsonDataStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(deviceJson));
+
+		console.log("Device JSON Populated: ");
+		console.log(deviceJson);
+	}
+}
+
+/*
+===============================================================
+	Generate Data
+===============================================================
+*/
+
+// Generate Json for StandbyData
+function generateStandbyJson(description) {
+	let jsonAttribute = document.getElementById(standby_activePrefix + description);
+	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
+	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
+	let deviceJson = JSON.parse(jsonAttribute.getAttribute(deviceAttribute));
+
+	if (! checkElement(standbyWait)) { standbyWait = 0; }
+
+	let newElement = {
+		"deviceId": deviceJson.deviceID,
+		"component": deviceJson.component,
+		"description": description,
+		"threshold": standbyPower,
+		"wait": standbyWait,
+		"state": "off",
+		"legacy": deviceJson.legacy
+	};
+	return newElement;
 }
 
 /*
@@ -125,13 +151,14 @@ function clearStandby(description) {
 ===============================================================
 */
 
-// Populate json data from mqtt to element holding the data
-function populateStandbyElementsJson(description, dataElement, payload) {
-	let jsonDataElement = document.getElementById(standby_activePrefix + description);
+// Clear standby button
+function clearStandby(description) {
+	var standbyPower = document.getElementById(standby_powerPrefix + description);
+	var standbyWait = document.getElementById(standby_waitPrefix + description);
 	
-	if (checkElement(jsonDataElement)) {
-		jsonDataElement.setAttribute(dataElement, JSON.stringify(payload));
-	}
+	standbyPower.value = "";
+	standbyWait.value = "";
+	setStandbyStatus(description);
 }
 
 // Validate format of input
@@ -143,4 +170,3 @@ function validateStandbyInput(description, inputField) {
 	if ( inputField.value !== "") { saveButton.disabled = false; } 
 	else { saveButton.disabled = true; }
 }
-

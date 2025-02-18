@@ -109,7 +109,7 @@ function onMessageArrived(message) {
 
 /*
 ===============================================================
-	Manage Dashboard Panels
+	Populate Data
 ===============================================================
 */
 
@@ -183,11 +183,52 @@ function setTimerActive(timerJson, description) {
 
 /*
 ===============================================================
+	Generate Data
+===============================================================
+*/
+
+// Generate a new timer json
+function generateTimerJson(description, index) {
+	let timerDetails = getTimerHtmlElements(description);
+	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_deviceDataAttribute));
+
+	let selectedIndex = timerDetails.timerPeriod.selectedIndex;
+	let selectedText = timerDetails.timerPeriod.options[selectedIndex].textContent;
+
+	let newElement = {
+		"index": index,
+		"deviceId": deviceJson.deviceId,
+		"component": deviceJson.component,
+		"description": deviceJson.description,
+		"timerPeriodText": selectedText,
+		"timerPeriodValue": timerDetails.timerPeriod.value,
+		"timerOn": timerDetails.timerOn.value,
+		"timerOff": timerDetails.timerOff.value
+	};
+	return newElement;
+}
+
+/*
+===============================================================
 	Helper Functions
 ===============================================================
 */
 
-// timer selected
+// Get current timers html elements
+function getTimerHtmlElements(description) {
+	return {
+		timerList:    document.getElementById(timer_timerListPrefix + description),
+		timerEntry:   document.getElementById(timer_timerEntryPrefix + description),
+		timerPeriod:  document.getElementById(timer_timerPeriodPrefix + description),
+		timerOn:      document.getElementById(timer_timerOnPrefix + description),
+		timerOff:     document.getElementById(timer_timerOffPrefix + description),
+		timerStatus:  document.getElementById(timer_timerStatusPrefix + description),
+		saveButton:   document.getElementById(timer_saveButtonPrefix + description),
+		removeButton: document.getElementById(timer_removeButtonPrefix + description)
+	}
+}
+
+// Get selected timer entry in listbox
 function timerSelected(description) {
 	let timerDetails = getTimerHtmlElements(description);
 
@@ -204,7 +245,7 @@ function timerSelected(description) {
 	timerDetails.timerOff.value = selectedTimer.timerOff
 }
 
-// timer input
+// Manage timer input
 function timerInput(description) {
 	let timerDetails = getTimerHtmlElements(description);
 

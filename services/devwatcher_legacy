@@ -33,8 +33,8 @@ MQTT_RETAINED_OPTIONS=(
 # Infinitely subscribe to "shellies/+/+/+"
 #===============================================================
 
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
-	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | while read -r DEVICESTATUS; do
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "${MQTT_TOPIC_ONLINE_LEGACY}" | 
+while read -r DEVICESTATUS; do
 
 	[[ $LOG_DEBUG ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
 

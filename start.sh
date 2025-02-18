@@ -1140,16 +1140,20 @@ fi
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome shell started" >> /proc/1/fd/1
 
 # Nanohome devwatcher
-/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_plus &
+/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher started" >> /proc/1/fd/1
 
 # Nanohome devwatcher legacy
-/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_shelly_legacy &
+/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher legacy started" >> /proc/1/fd/1
 
 # Nanohome measurements legacy
-/bin/bash ${NANOHOME_ROOTPATH}/services/measurements_shelly_legacy &
+/bin/bash ${NANOHOME_ROOTPATH}/services/measurements_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
+
+# Nanohome standby manager
+/bin/bash ${NANOHOME_ROOTPATH}/services/standbymanager &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbymanager started" >> /proc/1/fd/1
 
 # Start crond
 crond -f &

@@ -213,7 +213,7 @@ function onMessageArrived(message) {
 
 /*
 ===============================================================
-	Manage Dashboard Panels
+	Populate Data
 ===============================================================
 */
 
@@ -352,9 +352,70 @@ function setExampleElementDescription(device, component, payload) {
 
 /*
 ===============================================================
+	Generate Data
+===============================================================
+*/
+
+// Generate component json, gets published to "nanohome/devices"
+function generateComponentJson(device, componentDetails) {
+	let newComponentJson = {
+		"deviceId": device,
+		"component": componentDetails.component,
+		"description": componentDetails.description,
+		"icon": componentDetails.exButtonImage,
+		"legacy": componentDetails.legacy
+	};
+	return newComponentJson;
+}
+
+/*
+===============================================================
 	Helper Functions
 ===============================================================
 */
+
+// Get current devices html elements
+function getDevicesHtmlElements(device) {
+	return {
+		description: document.getElementById(devmgr_descriptionPrefix + device),
+		component:   document.getElementById(devmgr_componentPrefix + device),
+		connected:   document.getElementById(devmgr_connectedPrefix + device),
+		status:      document.getElementById(devmgr_statusPrefix + device),
+		saveButton:  document.getElementById(devmgr_saveBtnPrfix + device)
+	}
+}
+
+// Get current components values
+function getComponentDetails(device) {
+	let htmlElements = getDevicesHtmlElements(device);
+
+	if (checkElement(htmlElements.component)) {
+		let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
+		let icon = "";
+		let legacy = false;
+
+		if (checkElement(iconForm)) {
+			icon = iconForm.elements[devmgr_exBtnIconSelect].value;
+		}
+
+		if (legacyKeywords.some(legacyKeywords => htmlElements.component.value.includes(legacyKeywords))) {
+			legacy = true;
+		}
+
+		return {
+			description:         document.getElementById(devmgr_descriptionPrefix + device).value,
+			component:           document.getElementById(devmgr_componentPrefix + device).value,
+			connected:           document.getElementById(devmgr_connectedPrefix + device).textContent,
+			status:              document.getElementById(devmgr_statusPrefix + device).textContent,
+			exBtnDescription:    document.getElementById(devmgr_exBtnDescriptionPrefix + device).textContent,
+			exSliderDescription: document.getElementById(devmgr_exSliderDescriptionPrefix + device).textContent,
+			exButtonImage:       icon,
+			legacy:              legacy
+		}
+	} else {
+		return false;
+	}
+}
 
 // Show example element
 function showExampleElement(device, element) {

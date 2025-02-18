@@ -1,0 +1,93 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# nanohome - standbymanager service
+#
+# Turn off output if power goes below threshold
+# - Subscribe to the components status topic
+# - Extract current output power from every message
+# - Check if power is below threshold 
+# - Turn off output if so
+#/////////////////////////////////////////////////////////////////////////////////////
+
+# MQTT connection string with credentials
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)
+
+# Temporary storage for active services
+STATE_FILE="/tmp/standbymanager.state"
+touch "$STATE_FILE"
+
+#===============================================================
+# Functions
+#===============================================================
+
+# TODO: code style
+# TODO: Legacy support (start a different script)
+# Start a background service
+start_standbyservice() {
+    local msg="$1"
+    local id=$( echo -n "$msg" | md5sum | cut -d ' ' -f1 )
+	local description=$( jq -r '.description' <<< "${msg}" )
+    local legacy=$( jq -r '.legacy' <<< "${msg}" )
+
+    # Check if service is already running
+    if grep -q "$id" "$STATE_FILE"; then
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Service for [$description] already running"
+    else
+        if [[ "${legacy}" == "true" ]]; then
+            [[ $LOG_SERVICE ]] && echo -e "${LOG_WARN} Standbymanager: Legacy not yet implemented [$description]"
+        else
+            [[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbymanager: Starting service for [$description]"
+            nohup /bin/bash ./standbywatcher "$msg" > "/tmp/standbywatcher_$id.log" 2>&1
+            echo "$id $!" >> "$STATE_FILE"
+		fi
+    fi
+}
+
+# TODO: code style
+# Stop a background service
+stop_standbyservice() {
+    local msg="$1"
+    local id=$( echo -n "$msg" | md5sum | cut -d ' ' -f1 )
+    local description=$( jq -r '.description' <<< "${msg}" )
+
+    if grep -q "$id" "$STATE_FILE"; then
+		[[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbymanager: Stopping service for [$description]"
+
+        local pid=$( grep "$id" "$STATE_FILE" | awk '{print $2}' )
+        kill "$pid"
+        sed -i "/$id/d" "$STATE_FILE"
+    fi
+}
+
+#===============================================================
+# Infinitely subscribe to "nanohome/standby/+"
+#===============================================================
+
+# Start a standbywatcher background service if message gets added
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
+while read -r STANDBYMESSAGE; do
+    if [[ -n "${STANDBYMESSAGE}" ]]; then
+        start_standbyservice "${STANDBYMESSAGE}"
+    fi
+done &
+
+# Stop a standbywatcher background service if message gets deleted
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
+while read -r STANDBYMESSAGE; do
+    if [[ -z "${STANDBYMESSAGE}" ]]; then
+        stop_standbyservice "${STANDBYMESSAGE}"
+    fi
+done &
