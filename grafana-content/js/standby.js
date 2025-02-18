@@ -58,7 +58,7 @@ function onMessageArrived(message) {
 	let topicSplit = topic.split("/");
 
 	if ( topicSplit[1]== "devices" ) {
-		populateDeviceAttribute(jsonPayload);
+		populateDeviceAttribute(payload);
 	}
 
 	if ( topicSplit[1] == "standby" ) {

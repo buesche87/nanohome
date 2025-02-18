@@ -76,7 +76,7 @@
                 "showLineNumbers": false,
                 "showMiniMap": false
               },
-              "content": "<div class=\"devmgr statusfalse\" id=\"standbyActive_${Description}\">\r\n\tInactive\r\n</div>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tgetStandbyInfo();\r\n\t\t}\r\n\t}, 500);\r\n</script>",
+              "content": "<div class=\"devmgr statusfalse\" id=\"standbyStatus_${Description}\">\r\n\tInactive\r\n</div>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tgetStandbyInfo();\r\n\t\t}\r\n\t}, 500);\r\n</script>",
               "mode": "html"
             },
             "pluginVersion": "11.4.0",
