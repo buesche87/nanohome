@@ -81,19 +81,19 @@ function onMessageArrived(message) {
 
 // Populate standby settings with content from mqtt message - [json payload]
 function populatePanels(payload) {
-	let standbyData = JSON.parse(payload);
-	let standbyStatus = document.getElementById(standby_statusPrefix + standbyData.description);
-	let standbyThreshold = document.getElementById(standby_thresholdPrefix + standbyData.description);
-	let standbyWait = document.getElementById(standby_waitPrefix + standbyData.description);
+	let jsonData = JSON.parse(payload);
+	let standbyStatus = document.getElementById(standby_statusPrefix + jsonData.description);
+	let standbyThreshold = document.getElementById(standby_thresholdPrefix + jsonData.description);
+	let standbyWait = document.getElementById(standby_waitPrefix + jsonData.description);
 
 	if (checkElement(standbyStatus)) {
-		if ( /^\d+$/.test(standbyData.threshold) ) {
-			standbyThreshold.value = standbyData.threshold;
+		if ( /^\d+$/.test(jsonData.threshold) ) {
+			standbyThreshold.value = jsonData.threshold;
 		}
-		if ( /^\d+$/.test(standbyData.wait) ) {
-			standbyWait.value = standbyData.wait;
+		if ( /^\d+$/.test(jsonData.wait) ) {
+			standbyWait.value = jsonData.wait;
 		}
-		if ( standbyData.threshold > 0 ) {
+		if ( jsonData.threshold > 0 ) {
 			standbyStatus.innerText = "Active";
 			standbyStatus.classList.remove('statusfalse');
 			standbyStatus.classList.add('statusgreen');
@@ -107,8 +107,8 @@ function populatePanels(payload) {
 
 // Save device details to jsonStore - [json payload]
 function populateDeviceJsonStore(payload) {
-	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
 	let jsonData = JSON.parse(payload);
+	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
 
 	if (checkElement(jsonStore)) {
 		jsonStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
