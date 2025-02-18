@@ -1073,7 +1073,7 @@ grafanadashboard_gethomepreference() {
 	)
 
 	if [[ "${result}" == "true" ]]; then
-		echo -e "${LOG_SUCC} Grafana: Home dashboard preference already set" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Home dashboard preference set" >> /proc/1/fd/1
 		jq <<< "${answer}"
 		return 0
 	else
@@ -1097,7 +1097,7 @@ grafanadashboard_sethomepreference() {
 	)
 
 	if [[ "${result}" == "true" ]]; then
-		echo -e "${LOG_SUCC} Grafana: Home dashboard preference set" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Home dashboard preference updated" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
 	else
