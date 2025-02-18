@@ -134,7 +134,7 @@ function generateStandbyJson(description) {
 	if (! checkElement(standbyWait)) { standbyWait = 0; }
 
 	let newElement = {
-		"deviceId": deviceJson.deviceID,
+		"deviceId": deviceJson.deviceId,
 		"component": deviceJson.component,
 		"description": description,
 		"threshold": standbyPower,
