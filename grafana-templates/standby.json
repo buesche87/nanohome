@@ -1,40 +1,4 @@
 {
-  "meta": {
-    "type": "db",
-    "canSave": true,
-    "canEdit": true,
-    "canAdmin": true,
-    "canStar": true,
-    "canDelete": true,
-    "slug": "standby",
-    "url": "/d/adjak60hekvswd/standby",
-    "expires": "0001-01-01T00:00:00Z",
-    "created": "2025-02-18T16:52:41Z",
-    "updated": "2025-02-18T23:06:16Z",
-    "updatedBy": "admin",
-    "createdBy": "nanohome",
-    "version": 12,
-    "hasAcl": false,
-    "isFolder": false,
-    "folderId": 1,
-    "folderUid": "bedgcbaqabbb4c",
-    "folderTitle": "nanohome",
-    "folderUrl": "/dashboards/f/bedgcbaqabbb4c/nanohome",
-    "provisioned": false,
-    "provisionedExternalId": "",
-    "annotationsPermissions": {
-      "dashboard": {
-        "canAdd": true,
-        "canEdit": true,
-        "canDelete": true
-      },
-      "organization": {
-        "canAdd": true,
-        "canEdit": true,
-        "canDelete": true
-      }
-    }
-  },
   "dashboard": {
     "annotations": {
       "list": [
@@ -55,7 +19,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 5,
+    "id": null,
     "links": [],
     "panels": [
       {
@@ -104,8 +68,8 @@
           "overrides": []
         },
         "gridPos": {
-          "h": 3,
-          "w": 11,
+          "h": 2,
+          "w": 14,
           "x": 0,
           "y": 3
         },
@@ -116,7 +80,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"Threshold (W)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"Delay (s)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>",
+          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"Threshold (W)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"Delay (s)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
           "mode": "html"
         },
         "pluginVersion": "11.5.1",
@@ -131,7 +95,7 @@
         },
         "gridPos": {
           "h": 2,
-          "w": 8,
+          "w": 10,
           "x": 14,
           "y": 3
         },
@@ -159,7 +123,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 6
+          "y": 5
         },
         "id": 77,
         "options": {
@@ -216,7 +180,7 @@
     "timezone": "browser",
     "title": "Standby",
     "uid": "adjak60hekvswd",
-    "version": 12,
+    "version": 1,
     "weekStart": ""
   }
 }

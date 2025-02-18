@@ -65,7 +65,7 @@ stop_standbyservice() {
 #===============================================================
 
 # Start a new standbywatcher background service if message gets added
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" -R |
 while read -r STANDBYMESSAGE; do
     if [[ -n "${STANDBYMESSAGE}" ]]; then
         start_standbyservice "${STANDBYMESSAGE}"
