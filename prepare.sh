@@ -4,27 +4,27 @@ appdatapath="./appdata"
 
 # Nanohome
 mkdir -p "$appdatapath/nanohome/data/grafana"
-chmod 775 "$appdatapath/grafana/config"
+chmod 777 "$appdatapath/nanohome/data/grafana"
 
 # Grafana
 mkdir -p "$appdatapath/grafana/config"
-chmod 775 "$appdatapath/grafana/config"
+chmod 777 "$appdatapath/grafana/config"
 cp -f "./configs/grafana.ini" "$appdatapath/grafana/config"
 mkdir -p "$appdatapath/grafana/data"
-chmod 775 "$appdatapath/grafana/data"
+chmod 777 "$appdatapath/grafana/data"
 
 # InfluxDB
 mkdir -p "$appdatapath/influxdb/config"
-chmod 775 "$appdatapath/influxdb/config"
+chmod 777 "$appdatapath/influxdb/config"
 mkdir -p "$appdatapath/influxdb/data"
-chmod 775 "$appdatapath/influxdb/data"
+chmod 777 "$appdatapath/influxdb/data"
 
 # Mosquitto
 mkdir -p "$appdatapath/mosquitto/config"
-chmod 775 "$appdatapath/mosquitto/config"
+chmod 777 "$appdatapath/mosquitto/config"
 cp -f "./configs/mosquitto.conf" "$appdatapath/mosquitto/config"
-chmod 700 "$appdatapath/mosquitto/config/mosquitto.conf"
+# chmod 700 "$appdatapath/mosquitto/config/mosquitto.conf"
 mkdir -p "$appdatapath/mosquitto/data"
-chmod 775 "$appdatapath/mosquitto/data"
+chmod 777 "$appdatapath/mosquitto/data"
 mkdir -p "$appdatapath/mosquitto/log"
-chmod 775 "$appdatapath/mosquitto/log"
+chmod 777 "$appdatapath/mosquitto/log"
