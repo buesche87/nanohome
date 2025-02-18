@@ -9,16 +9,103 @@
 # - Turn off output if so
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Parameter & Variables
-STANDBYCONFIG_JSON=$1
-
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
+)
+
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)
+
+# Temporary storage for active services
+STATE_FILE="/tmp/standbymanager_shelly_plus.state"
+touch "$STATE_FILE"
+
+#===============================================================
+# Functions
+#===============================================================
+
+# Start background service
+start_standbyservice() {
+    local msg="$1"
+    local id=$( echo -n "$msg" | md5sum | cut -d ' ' -f1 )
+
+
+
+    # Check if service is already running
+    if grep -q "$id" "$STATE_FILE"; then
+        echo "Service for [$msg] already running."
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: ${DESCRIPTION}: ${LOGMESSAGE}"
+    else
+        echo "Starting service for [$msg]..."
+        nohup ./your_service.sh "$msg" > "/tmp/service_$id.log" 2>&1 & echo "$id $!" >> "$STATE_FILE"
+    fi
+}
+
+# Stop background service
+stop_standbyservice() {
+    local id="$1"
+
+    if grep -q "$id" "$STATE_FILE"; then
+        local pid=$(grep "$id" "$STATE_FILE" | awk '{print $2}')
+        echo "Stopping service for [$id] (PID: $pid)..."
+        kill "$pid"
+        sed -i "/$id/d" "$STATE_FILE"
+    fi
+}
+
+# Get last published standby state
+get_last_state() {
+
+	local standbyconfig=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${STANDBYTOPIC}"
 	)
 
-# Extract payload and device details from topic
+	local state=$( jq -r .state <<< "${standbyconfig}" )
+	return "${state}"
+}
+
+
+#===============================================================
+# Infinitely subscribe to "nanohome/standby/+"
+#===============================================================
+
+# Only retained messages
+# Process stored and new messages
+# For every json found > create a background service
+# If a message gets deleted > stop the background service
+
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
+while read -r STANDBYMESSAGES; do
+    if [[ -n "$message" ]]; then
+        start_standbyservice "$message"
+    fi
+done &
+
+
+
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
+while read -r STANDBYMESSAGES; do
+	id=$( echo -n "$message" | md5sum | cut -d ' ' -f1 )
+    if [[ -z "$message" ]]; then
+        stop_standbyservice "$message"
+    fi
+done &
+
+
+
+
+# Extract payload and device details from json formatted message
 DEVICEID=$( jq -r '.deviceId' <<< "${STANDBYCONFIG_JSON}" )
 COMPONENT=$( jq -r '.component' <<< "${STANDBYCONFIG_JSON}" )
 DESCRIPTION=$( jq -r '.description' <<< "${STANDBYCONFIG_JSON}" )
@@ -28,27 +115,23 @@ STANDBYWAIT=$( jq -r .wait <<< "${STANDBYCONFIG_JSON}" )
 [[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
 
 STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
-STATUSTOPIC="${DEVICEID}/command/${COMPONENT}"
+STATUSTOPIC="${DEVICEID}/status/${COMPONENT}"
 CONTROLTOPIC="${DEVICEID}/command/${COMPONENT}"
 
-# Get last published state
-get_last_state() {
 
-	local standbyconfig=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --quiet -C 1 -W 2 \
-		-t "${STANDBYTOPIC}"
-	)
 
-	local state=$( jq -r .state <<< "${standbyconfig}" )
 
-	return "${state}"
-}
 
-# Subscribe to devices status topic
+
+
+#===============================================================
+# Infinitely subscribe to "+/status/+"
+#===============================================================
+
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" | \
 	while read -r COMPONENTSTATUS; do
 
-	# Extract current power
+	# Extract current power from json formatted message
 	CURRENTPOWER=$( jq -r .apower <<< "${COMPONENTSTATUS}" )
 
 	# Get last state

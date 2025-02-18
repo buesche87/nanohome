@@ -13,12 +13,21 @@
 # - stop / kill services for removed components
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Configuration
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
-	)
+)
+
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)
 
 # Start component monitoring in background
 start_measurement() {
@@ -39,7 +48,10 @@ convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
 }
 
+#===============================================================
 # Execute every NANOHOME_MEASUREMENTS_LEGACY_INTERVAL seconds
+#===============================================================
+
 while /bin/true; do
 
 	# Subscribe to "shellies/+/+/+/connected"
@@ -49,48 +61,64 @@ while /bin/true; do
 		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
 	)
 
-	# For each component connected and online get device status
 	CONNECTED_COMPONENTS_ARRAY=$(
 		jq -s '.' <<< "${CONNECTED_COMPONENTS}"
 	)
 
+	#===============================================================
+	# For each connected component get device status
+	#===============================================================
+
 	jq -c '.[]' <<< "${CONNECTED_COMPONENTS_ARRAY}" | \
 		while read -r CONNECTED_DEVICE; do
 
-		# Extract payload and device details from topic
+		# Extract topic from json formatted message
 		CONNECTEDTOPIC=$( jq -r '.topic' <<< "${CONNECTED_DEVICE}" )
 		DEVICEID=$( cut -d '/' -f 2 <<< "${CONNECTEDTOPIC}" )
 		COMPONENT=$( cut -d '/' -f 3 <<< "${CONNECTEDTOPIC}")
 		COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${CONNECTEDTOPIC}" )	
 
-		# Exclude components defined in NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY
-		if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
-			continue
-		fi
+		#===============================================================
+		# Filter components not monitored
+		#===============================================================
 
-		# Get connected state and description of component
+		[[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]] && continue
+
+		#===============================================================
+		# Filter components not connected
+		#===============================================================
+
+		CONNECTEDTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
+
 		CONNECTED=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
-			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
+			"${MQTT_RETAINED_OPTIONS[@]}" \
+			-t "${CONNECTEDTOPIC}"
 		)
 
-		CONNECTEDVALUE=$(
-			convert_value "${CONNECTED}"
-		)
+		CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
+
+		[[ $CONNECTEDVALUE -eq 0 ]] && continue
+
+		#===============================================================
+		# Filter components without description
+		#===============================================================
+
+		DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
 
 		DESCRIPTION=$(
 			mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
-			-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
+			"${MQTT_RETAINED_OPTIONS[@]}" \
+			-t "${DESCRIPTIONTOPIC}"
 		)
-		
+
+		[[ -z "${DESCRIPTION}" ]] && continue
+
 		DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
-		# Only monitor connected components and those with a description
-		if [[ $CONNECTEDVALUE -eq 0 ]] || [[ -z "${DESCRIPTION}" ]]; then
-			continue
-		fi
+		#===============================================================
+		# Start measurements
+		#===============================================================
 
 		# Measurement topics to subscribe to
 		ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/energy"
@@ -98,22 +126,16 @@ while /bin/true; do
 		DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/temperature"
 
 		# Check if component is monitored already
-		MONITORED_ENERGY=$(
-			ps | grep "${ENERGYTOPIC}" | grep -v "grep"
-		)
+		MONITORED_ENERGY=$(	ps | grep "${ENERGYTOPIC}" | grep -v "grep"	)
+		MONITORED_POWER=$(	ps | grep "${POWERTOPIC}" | grep -v "grep"	)
+		MONITORED_DEVICETEMP=$(	ps | grep "${DEVICETEMPTOPIC}" | grep -v "grep"	)
 
-		MONITORED_POWER=$(
-			ps | grep "${POWERTOPIC}" | grep -v "grep"
-		)
-
-		MONITORED_DEVICETEMP=$(
-			ps | grep "${DEVICETEMPTOPIC}" | grep -v "grep"
-		)
-
-		# Monitor component and write measurements into influx bucket "Measurements"
+		# Monitor component and write measurements into "Measurements" bucket
 		[[ -z "${MONITORED_ENERGY}" ]] && start_measurement "Energy" "${DESCRIPTION_ESCAPED}" "${ENERGYTOPIC}"
 		[[ -z "${MONITORED_POWER}" ]] && start_measurement "Power" "${DESCRIPTION_ESCAPED}" "${POWERTOPIC}"
 		[[ -z "${MONITORED_DEVICETEMP}" ]] && start_measurement "Devicetemp" "${DESCRIPTION_ESCAPED}" "${DEVICETEMPTOPIC}"
 	done
+
 	sleep $NANOHOME_MEASUREMENTS_LEGACY_INTERVAL
+
 done

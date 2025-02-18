@@ -8,13 +8,14 @@
 # - Publish the result to "nanohome/shell/output"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Configuration
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
+# Define allowed bash commands
 ALLOWED_COMMANDS=(${NANOHOME_SHELL_ALLOWED_COMMANDS//,/ })
 FIFO_FILE=".nanohome_shell.cache"
 
@@ -24,7 +25,7 @@ rm -f "${FIFO_FILE}" && mkfifo "${FIFO_FILE}"
 # Start MQTT subscription
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_CMDINPUT}" > "${FIFO_FILE}" &
 
-# If command is allowed, execute it and publish result
+# If recived command is allowed, execute it and publish result
 while read -r COMMANDLINE <"${FIFO_FILE}"; do
     COMMAND=${COMMANDLINE%% *}
 

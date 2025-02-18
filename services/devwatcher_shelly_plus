@@ -10,18 +10,26 @@
 #   parse measurement values and write them into Influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Function
+# Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
-	}
+}
 
-
-# Configuration
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
-	)
+)
+
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)
 
 #===============================================================
 # Infinitely subscribe to "+/status/+"
@@ -30,7 +38,9 @@ MQTT_CONNECTION_STRING=(
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_STATUS}" | while read -r COMPONENTSTATUS; do
 
-	# Extract payload and topic
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Message recived - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+
+	# Extract payload and topic from json formatted message
 	STATUSMESSAGE=$( jq -r '.payload' <<< "${COMPONENTSTATUS}" )
 	STATUSTOPIC=$( jq -r '.topic' <<< "${COMPONENTSTATUS}" )
 	DEVICEID=$( cut -d '/' -f 1 <<< "${STATUSTOPIC}" )
@@ -41,29 +51,32 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# Filter components not monitored
 	#===============================================================
 
-	if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " =~ " ${COMPONENT} " ]]; then
-		continue
-	fi
-
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Message recived - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+	[[ " ${NANOHOME_NOT_MONITORED_COMPONENTS//,/ } " =~ " ${COMPONENT} " ]] && continue
 
 	#===============================================================
 	# Filter components not connected
 	#===============================================================
 
+	CONNECTEDTOPIC="${DEVICEID}/status/${COMPONENT}/connected"
+
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W 1 \
-		-t "${DEVICEID}/status/${COMPONENT}/connected"
-		)
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${CONNECTEDTOPIC}"
+	)
 
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 
-	if [[ $CONNECTEDVALUE -eq 0 ]] ; then
+	if [[ $CONNECTEDVALUE -eq 0 ]]; then
+
+		# Publish connected=false for newly discovered components, this will make them visible on the device manager dashboard
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
+
+		# Add device ping to influxdb "Devices" bucket
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Payload - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Device - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
 	fi
 
@@ -71,28 +84,30 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# Filter components without description
 	#===============================================================
 
+	DESCRIPTIONTOPIC="${DEVICEID}/status/${COMPONENT}/description"
+
 	DESCRIPTION=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-			--retained-only --nodelay --quiet -C 1 -W 1 \
-			-t "${DEVICEID}/status/${COMPONENT}/description"
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${DESCRIPTIONTOPIC}"
 	)
-
-	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
 	if [[ -z "${DESCRIPTION}" ]]; then
 
+		# Add device ping to influxdb "Devices" bucket
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Payload - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Device - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
 	fi
 
+	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+
 	#===============================================================
-	# Process payload
+	# Process measurement payload
 	#===============================================================
 
-	# Parse message payload
 	POWER=$( jq -r '.apower' <<< "${STATUSMESSAGE}" )
 	OUTPUT=$( jq -r '.output' <<< "${STATUSMESSAGE}" )
 	ENERGY=$(jq -r '.aenergy.total' <<< "${STATUSMESSAGE}" )
@@ -105,31 +120,32 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	BATTERY=$( jq -r '.battery.percent' <<< "${STATUSMESSAGE}" )
 
 	#===============================================================
-	# Manage Dashbaord Panels
+	# Publish output value
 	#===============================================================
 
-	# Publish current output value (used in home dashboard)
+	# This value will be used on the home dashboard
 	if [[ "${CURRENTPOSITION}" != "null" ]]; then
 		OUTPUTVALUE="${CURRENTPOSITION}"
 	else
 		OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 	fi
 
+	OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
+
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-		-t "${DEVICEID}/status/${COMPONENT}/output" \
-		-m "${OUTPUTVALUE}"
+		-t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
 
 	#===============================================================
 	# Write measurements into influx buckets
 	#===============================================================
 
-	# Write device details into Devices bucket
+	# InfluxDB: Write a device ping into the 'Devices' bucket
 	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Payload - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Device - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 
-	# Prepare measurement string for influx cli (line protocol)
+	# Prepare a measurement string for the Influx CLI (line protocol)
 	MEASUREMENT_PAYLOAD="${DESCRIPTION_ESCAPED} "
 
 	[[ "${POWER}" != "null" ]] && MEASUREMENT_PAYLOAD+="Power=${POWER},"
@@ -141,15 +157,14 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	[[ "${ROOM_HUM}" != "null" ]] && MEASUREMENT_PAYLOAD+="Humidity=${ROOM_HUM},"
 	[[ "${BATTERY}" != "null" ]] && MEASUREMENT_PAYLOAD+="Battery=${BATTERY},"
 
-	# Write measurement into influx bucket "Measurements"
+	# InfluxDB: Write measurements into the 'Measurements' bucket
 	if [[ "${MEASUREMENT_PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
 
 		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${MEASUREMENT_PAYLOAD}"
 
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_SUCC} Devwatcher: Measurement added - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Payload - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Measurement - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
 	else
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_WARN} Devwatcher: No payload - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_WARN} Devwatcher: No measurement - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
 	fi
 done

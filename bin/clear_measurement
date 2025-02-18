@@ -9,7 +9,7 @@
 MEASUREMENT="$1"
 
 # Delete measurement
-if [ -n "${MEASUREMENT}" ]; then
+if [[ -n "${MEASUREMENT}" ]]; then
 
 	influx delete --bucket "${INFLUX_BUCKET_MEASUREMENTS}" \
 	  --start '1970-01-01T00:00:00Z' \

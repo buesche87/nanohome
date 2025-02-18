@@ -1,7 +1,7 @@
 /*
----------------------------------------------------------------
+===============================================================
 	MQTT Subscribe
----------------------------------------------------------------
+===============================================================
 */
 
 // Subscribe to all devices connected and description topic
@@ -32,9 +32,9 @@ function getDeviceStatus(device) {
 }
 
 /*
----------------------------------------------------------------
+===============================================================
 	MQTT Publish
----------------------------------------------------------------
+===============================================================
 */
 
 // Connect or disconnect component
@@ -106,9 +106,9 @@ function removeComponent(device) {
 }
 
 /*
----------------------------------------------------------------
+===============================================================
 	onMessageArrived
----------------------------------------------------------------
+===============================================================
 */
 
 // Decide what to do with new mqtt mesages
@@ -120,15 +120,17 @@ function onMessageArrived(message) {
 
 	// Nanohome specific topics
 	if ( topicSplit[0] == "nanohome" ) {
+
+		// Debug
 		console.log('nanohome message arrived: ' + payload);
 
-		// Todo: Feature possibilities like current power, etc.
-		// Populate network status from shelly.getstatus response. 
+		// Parse status message
 		if ( topicSplit[1] == "devicestatus" ) {
-			console.log('Network config retrived');
-			let deviceid = topicSplit[2];
 
+			let deviceid = topicSplit[2];
+			
 			populateNetworkElement(deviceid, payload);
+
 		}
 
 		// TODO: Set example icon
@@ -210,9 +212,9 @@ function onMessageArrived(message) {
 }
 
 /*
----------------------------------------------------------------
+===============================================================
 	Manage Dashboard Panels
----------------------------------------------------------------
+===============================================================
 */
 
 // Populate description and connected - [string payload]
@@ -349,9 +351,9 @@ function setExampleElementDescription(device, component, payload) {
 }
 
 /*
----------------------------------------------------------------
+===============================================================
 	Helper Functions
----------------------------------------------------------------
+===============================================================
 */
 
 // Show example element

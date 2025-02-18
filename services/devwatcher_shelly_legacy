@@ -8,26 +8,37 @@
 # - Write component infos into influx bucket "Devices"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Function
+# Convert string-boolean to 1 or 0
 convert_value() {
 	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
-	}
+}
 
-# Configuration
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
-	)
+)
+
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)
 
 #===============================================================
-# Infinitely subscribe to "shellies/+/input/+" 
+# Infinitely subscribe to "shellies/+/+/+"
 #===============================================================
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	-t "${MQTT_TOPIC_ONLINE_LEGACY}" | while read -r DEVICESTATUS; do
 
-	# Extract payload and device topic 
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
+
+	# Extract payload and topic from json formatted message
 	OUTPUT=$( jq -r '.payload' <<< "${DEVICESTATUS}" )
 	STATUSTOPIC=$( jq -r '.topic' <<< "${DEVICESTATUS}" )
 	DEVICEID=$( cut -d '/' -f 2 <<< "${STATUSTOPIC}" )
@@ -40,44 +51,59 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	# Filter components not monitored
 	#===============================================================
 
-	if [[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]]; then
-		continue
-	fi
+	[[ " ${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY//,/ } " == *" ${COMPONENT} "* ]] && continue
 
 	#===============================================================
-	# Get connected state and description of component
+	# Get components connected state
 	#===============================================================
+
+	CONNECTEDTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 
 	CONNECTED=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W 1 \
-		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${CONNECTEDTOPIC}"
 	)
 
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 
+	if [[ $CONNECTEDVALUE -eq 0 ]]; then
+
+		# Publish connected=false for newly discovered components, this will make them visible on the device manager dashboard
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
+	fi
+
+	#===============================================================
+	# Get components description
+	#===============================================================
+
+	DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
+
 	DESCRIPTION=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -C 1 -W 1 \
-		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${DESCRIPTIONTOPIC}"
 	)
 
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
 
 	#===============================================================
-	# Manage Dashbaord Panels
+	# Publish output value
 	#===============================================================
 
+	# This value will be used on the home dashboard
 	OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 
+	OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
+
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-		-t "shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/output" \
-		-m "${OUTPUTVALUE}"
+		-t "${OUTPUTTOPIC}"	-m "${OUTPUTVALUE}"
 
 	#===============================================================
-	# Write measurements into influx bucket "Devices"
+	# Write measurements into influx buckets
 	#===============================================================
 
+	# InfluxDB: Write a device ping into the 'Devices' bucket
 	if [[ -z "${DESCRIPTION}" ]]; then
 		INFLUX_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	else
@@ -86,7 +112,5 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${INFLUX_PAYLOAD}"
 
-	# Log
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Payload - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
 done
