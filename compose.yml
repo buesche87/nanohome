@@ -67,7 +67,7 @@ services:
       - ./configs/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./appdata/mosquitto/data:/mosquitto/data
       - ./appdata/mosquitto/log:/mosquitto/log
-    entrypoint: ["/bin/sh", "-c", "touch /mosquitto/data/passwd && mosquitto_passwd -b /mosquitto/data/passwd ${MQTT_USER} ${MQTT_PASSWORD} && chown mosquitto:mosquitto /mosquitto/data/passwd && chmod 700 /mosquitto/data/passwd && exec mosquitto -c /mosquitto/config/mosquitto.conf"]
+    entrypoint: ["/bin/sh", "-c", "touch /mosquitto/data/passwd && mosquitto_passwd -b /mosquitto/data/passwd ${MQTT_USER} ${MQTT_PASSWORD} && chown mosquitto:mosquitto /mosquitto/data/passwd && chmod 0700 /mosquitto/data/passwd && exec mosquitto -c /mosquitto/config/mosquitto.conf"]
 
 networks:
   nanohome:
