@@ -57,8 +57,6 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	console.log(payload)
-
 	if ( topicSplit[1]== "devices" ) {
 		populateDeviceAttribute(payload);
 	}
@@ -74,7 +72,7 @@ function onMessageArrived(message) {
 ===============================================================
 */
 
-// Populate standby settings with content from mqtt message
+// Populate standby settings with content from mqtt message - [json payload]
 function populateStandbyPanels(payload) {
 	let standbyData = JSON.parse(payload);
 	let standbyPower = document.getElementById(standby_powerPrefix + standbyData.description);
@@ -91,7 +89,7 @@ function populateStandbyPanels(payload) {
 	}
 }
 
-// Active state on
+// Active state on - [string payload]
 function setStandbyStatus(description) {
 	let standbyStatus = document.getElementById(standby_statusPrefix + description);
 	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
@@ -107,16 +105,16 @@ function setStandbyStatus(description) {
 	}
 }
 
-// Populate jsonstore "device"
-function populateDeviceAttribute(deviceJson) {
-	let description = deviceJson.description;
-	let jsonDataStore = document.getElementById(standby_statusPrefix + description);
+// Populate jsonstore "device" - [json payload]
+function populateDeviceAttribute(payload) {
+	let jsonData = JSON.parse(payload);
+	let jsonDataStore = document.getElementById(standby_statusPrefix + jsonData.description);
 
 	if (checkElement(jsonDataStore)) {
-		jsonDataStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(deviceJson));
+		jsonDataStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
 
 		console.log("Device JSON Populated: ");
-		console.log(deviceJson);
+		console.log(jsonData);
 	}
 }
 
