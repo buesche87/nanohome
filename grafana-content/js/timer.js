@@ -1,5 +1,25 @@
 /*
 ===============================================================
+	Timer Manager
+===============================================================
+*/
+
+// json datastore
+var timer_deviceDataAttribute = "deviceDetails"; // HTML element
+var timer_timerDataAttribute = "timerDetails"; // Attribute name
+
+// HTML element prefixes
+var timer_timerListPrefix = "timerList_"
+var timer_timerEntryPrefix = "details_"
+var timer_timerPeriodPrefix = "timerPeriod_"
+var timer_timerOnPrefix = "timerOn_"
+var timer_timerOffPrefix = "timerOff_"
+var timer_timerStatusPrefix = "timerStatus_"
+var timer_saveButtonPrefix = "timerSaveBtn_"
+var timer_removeButtonPrefix = "timerRemoveBtn_"
+
+/*
+===============================================================
 	MQTT Subscribe
 ===============================================================
 */
@@ -25,7 +45,7 @@ function saveTimer(description) {
 	let existingJson = JSON.parse(jsonDataStore.getAttribute(timer_timerDataAttribute));
 
 	// Define new index for new json element
-	let jsonIndex = checkElement(existingJson) ? checkJsonIndex(existingJson) : (existingJson = [], 1);
+	let jsonIndex = checkElement(existingJson) ? getJsonIndex(existingJson) : (existingJson = [], 1);
 
 	// Add entry to json
 	let newJsonElement = generateTimerJson(description, jsonIndex);

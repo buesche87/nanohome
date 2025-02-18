@@ -56,7 +56,7 @@ function getNanohomeTopics(description) {
 */
 
 // Check latest index in json
-function checkJsonIndex(payload) {
+function getJsonIndex(payload) {
 	let jsonIndex = 1;
 
 	if (checkElement(payload)) {

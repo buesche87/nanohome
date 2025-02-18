@@ -56,6 +56,34 @@ hr.thight {
 	font-family: Consolas,monaco,monospace; 
 }
 
+
+.detailGroup {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	gap: 5px; /* Space between label and input */
+}
+
+
+.detailLabel {
+	flex: 1;
+	height: auto;
+	padding-right: 15px;
+	padding-left: 15px;
+}
+
+.detailValue {
+	flex: 2;
+	height: 44px;
+	padding-right: 15px;
+	padding-left: 15px;
+	width: auto;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+}
+
+
+
 /*
 ---------------------------------------------------------------
 	Status Panel

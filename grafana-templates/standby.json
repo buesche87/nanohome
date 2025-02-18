@@ -49,7 +49,7 @@
         "type": "text"
       },
       {
-        "collapsed": true,
+        "collapsed": false,
         "gridPos": {
           "h": 1,
           "w": 24,
@@ -57,141 +57,192 @@
           "y": 2
         },
         "id": 4,
-        "panels": [
-          {
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 2,
-              "w": 3,
-              "x": 0,
-              "y": 3
-            },
-            "id": 7,
-            "options": {
-              "code": {
-                "language": "plaintext",
-                "showLineNumbers": false,
-                "showMiniMap": false
-              },
-              "content": "<div class=\"devmgr statusfalse\" id=\"standbyStatus_${Description}\">\r\n\tInactive\r\n</div>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tgetStandby(\"${Description}\");\r\n\t\t}\r\n\t}, 500);\r\n</script>",
-              "mode": "html"
-            },
-            "pluginVersion": "11.4.0",
-            "title": "",
-            "transparent": true,
-            "type": "text"
-          },
-          {
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 2,
-              "w": 4,
-              "x": 3,
-              "y": 3
-            },
-            "id": 76,
-            "options": {
-              "code": {
-                "language": "plaintext",
-                "showLineNumbers": false,
-                "showMiniMap": false
-              },
-              "content": "<input  class=\"devmgr boldText\" \n        id=\"standbyThreshold_${Description}\"\n        placeholder=\"Max Standby (W)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocusout='validateStandbyInput(\"${Description}\", this)' \n        onfocus='this.value = \"\"' \n        autocomplete=\"off\" />",
-              "mode": "html"
-            },
-            "pluginVersion": "11.4.0",
-            "title": "",
-            "transparent": true,
-            "type": "text"
-          },
-          {
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 2,
-              "w": 4,
-              "x": 7,
-              "y": 3
-            },
-            "id": 64,
-            "options": {
-              "code": {
-                "language": "plaintext",
-                "showLineNumbers": false,
-                "showMiniMap": false
-              },
-              "content": "<input  class=\"devmgr\" \n        id=\"standbyWait_${Description}\"\n        placeholder=\"Startup wait (s)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocus='this.value = \"\"'\n        autocomplete=\"off\" />",
-              "mode": "html"
-            },
-            "pluginVersion": "11.4.0",
-            "title": "",
-            "transparent": true,
-            "type": "text"
-          },
-          {
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 2,
-              "w": 3,
-              "x": 11,
-              "y": 3
-            },
-            "id": 70,
-            "options": {
-              "code": {
-                "language": "plaintext",
-                "showLineNumbers": false,
-                "showMiniMap": false
-              },
-              "content": "<button class=\"devmgr\"\r\n        id=\"standbyRemoveBtn_${Description}\"\r\n        onclick='removeStandby(\"${Description}\")'>\r\n  Remove\r\n</button>",
-              "mode": "html"
-            },
-            "pluginVersion": "11.4.0",
-            "title": "",
-            "transparent": true,
-            "type": "text"
-          },
-          {
-            "fieldConfig": {
-              "defaults": {},
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 2,
-              "w": 3,
-              "x": 14,
-              "y": 3
-            },
-            "id": 65,
-            "options": {
-              "code": {
-                "language": "plaintext",
-                "showLineNumbers": false,
-                "showMiniMap": false
-              },
-              "content": "<button class=\"devmgr\" \r\n        id=\"standbySaveBtn_${Description}\"\r\n        onclick='saveStandby(\"${Description}\")'\r\n        disabled>\r\n  Save\r\n</button>",
-              "mode": "html"
-            },
-            "pluginVersion": "11.4.0",
-            "title": "",
-            "transparent": true,
-            "type": "text"
-          }
-        ],
+        "panels": [],
         "repeat": "Description",
         "title": "$Description",
         "type": "row"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 5,
+          "x": 0,
+          "y": 3
+        },
+        "id": 78,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<div class=\"detailGroup\">\n\t<label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold:</label>\n  <input class=\"detailValue\" \n         id=\"standbyThreshold_${Description}\"\n         placeholder=\"Threshold (W)\"\n         onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n         onfocusout='validateStandbyInput(\"${Description}\", this)' \n         onfocus='this.value = \"\"' \n         autocomplete=\"off\" />\n</div>\n<div class=\"detailGroup\">\n\t<label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay:</label>\n  <input class=\"detailValue\" \n         id=\"standbyDelay_${Description}\"\n         placeholder=\"Delay (s)\"\n         onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n         onfocus='this.value = \"\"'\n         autocomplete=\"off\" />\n</div>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 2,
+          "w": 4,
+          "x": 7,
+          "y": 3
+        },
+        "id": 64,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<input  class=\"devmgr\" \n        id=\"standbyWait_${Description}\"\n        placeholder=\"Startup wait (s)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocus='this.value = \"\"'\n        autocomplete=\"off\" />",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 2,
+          "w": 3,
+          "x": 11,
+          "y": 3
+        },
+        "id": 70,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<button class=\"devmgr\"\r\n        id=\"standbyRemoveBtn_${Description}\"\r\n        onclick='removeStandby(\"${Description}\")'>\r\n  Remove\r\n</button>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 2,
+          "w": 3,
+          "x": 14,
+          "y": 3
+        },
+        "id": 65,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<button class=\"devmgr\" \r\n        id=\"standbySaveBtn_${Description}\"\r\n        onclick='saveStandby(\"${Description}\")'\r\n        disabled>\r\n  Save\r\n</button>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 2,
+          "w": 4,
+          "x": 7,
+          "y": 5
+        },
+        "id": 76,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<input  class=\"devmgr\" \n        id=\"standbyThreshold_${Description}\"\n        placeholder=\"Max Standby (W)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocusout='validateStandbyInput(\"${Description}\", this)' \n        onfocus='this.value = \"\"' \n        autocomplete=\"off\" />",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 2,
+          "w": 3,
+          "x": 11,
+          "y": 5
+        },
+        "id": 7,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<div class=\"devmgr statusfalse\" id=\"standbyStatus_${Description}\">\r\n\tInactive\r\n</div>\r\n<script>\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tgetStandby(\"${Description}\");\r\n\t\t}\r\n\t}, 300);\r\n</script>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 7
+        },
+        "id": 77,
+        "options": {
+          "code": {
+            "language": "html",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<div style=\"margin-top: -10px;\"><hr></div>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.1",
+        "title": "",
+        "transparent": true,
+        "type": "text"
       }
     ],
     "preload": true,
@@ -208,7 +259,7 @@
           },
           "datasource": {
             "type": "influxdb",
-            "uid": "dedf90q3kscu8e"
+            "uid": "aedgcbahjo3r4d"
           },
           "definition": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
           "includeAll": true,

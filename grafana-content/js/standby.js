@@ -1,5 +1,21 @@
 /*
 ===============================================================
+	Standby Manager
+===============================================================
+*/
+
+// json datastore
+var standby_deviceDataJsonStore = "deviceDataJsonStore"; // HTML element
+var standby_deviceDataAttribute = "deviceDataAttribute"; // Attribute name
+
+// HTML element prefixes
+var standby_statusPrefix = "standbyStatus_";
+var standby_thresholdPrefix = "standbyThreshold_";
+var standby_delayPrefix = "standbyDelay_";
+var standby_saveBtnPrefix = "standbySaveBtn_";
+
+/*
+===============================================================
 	MQTT Subscribe
 ===============================================================
 */
@@ -53,7 +69,7 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	if ( topicSplit[1] == "devices" ) { saveDeviceJsonStore(payload); }
+	if ( topicSplit[1] == "devices" ) { populateDeviceJsonStore(payload); }
 	if ( topicSplit[1] == "standby" ) {	populatePanels(payload);	}
 }
 
@@ -90,14 +106,14 @@ function populatePanels(payload) {
 }
 
 // Save device details to jsonStore - [json payload]
-function saveDeviceJsonStore(payload) {
+function populateDeviceJsonStore(payload) {
 	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
 	let jsonData = JSON.parse(payload);
 
 	if (checkElement(jsonStore)) {
 		jsonStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
 
-		console.log("Device JSON Populated: ");
+		console.log("json for " + jsonData.description + " populated to " + jsonStore.id);
 		console.log(jsonData);
 	}
 }

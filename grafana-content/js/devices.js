@@ -1,5 +1,26 @@
 /*
 ===============================================================
+	Device Manager
+===============================================================
+*/
+
+// HTML element prefixes
+var devmgr_componentPrefix = "component_";
+var devmgr_connectedPrefix = "connected_";
+var devmgr_descriptionPrefix = "description_";
+var devmgr_exBtnDescriptionPrefix = "exBtnDescription_";
+var devmgr_exBtnIconFormPrefix = "exButtonForm_";
+var devmgr_exBtnIconSelect = "exButtonImage-select";
+var devmgr_exSliderDescriptionPrefix = "exSliderDescription_";
+var devmgr_saveBtnPrfix = "savebtn_";
+var devmgr_statusPrefix = "status_";
+var devmgr_summaryPrefix = "summary_";
+
+// Site variables
+var devmgr_tempComponent = "";
+
+/*
+===============================================================
 	MQTT Subscribe
 ===============================================================
 */
