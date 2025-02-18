@@ -57,6 +57,8 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
+	console.log(payload)
+
 	if ( topicSplit[1]== "devices" ) {
 		populateDeviceAttribute(payload);
 	}
@@ -126,13 +128,12 @@ function populateDeviceAttribute(deviceJson) {
 
 // Generate Json for StandbyData
 function generateStandbyJson(description) {
-	let jsonAttribute = document.getElementById(standby_statusPrefix + description);
+	let jsonStore = document.getElementById(standby_statusPrefix + description);
 	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
 	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
-	let deviceJson = JSON.parse(jsonAttribute.getAttribute(standby_deviceDataAttribute));
+	let deviceJson = JSON.parse(jsonStore.getAttribute(standby_deviceDataAttribute));
 
 	if (! checkElement(standbyWait)) { standbyWait = 0; }
-
 	let newElement = {
 		"deviceId": deviceJson.deviceId,
 		"component": deviceJson.component,

@@ -44,7 +44,7 @@ function connectComponent(device) {
 
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
-	console.log('Connect: ' + payload + ' to ' + deviceTopics.connected);
+	// console.log('Connect: Publish "' + payload + '" to ' + deviceTopics.connected);
 
 	mqttPublish(deviceTopics.connected, payload, true);
 	getDeviceInfo();
@@ -61,11 +61,11 @@ function saveComponent(device) {
 
 	// Publish device json to nanohome/devices
 	mqttPublish(nanohomeTopics.device, payload, true);
-	console.log('Publish: ' + nanohomeTopics.device + ' - ' + payload);
+	// console.log('Save: Publish "' + payload + '" to ' + nanohomeTopics.device);
 
 	// Publish description to deviceid/status/component/description
 	mqttPublish(deviceTopics.description, componentDetails.description, true);
-	console.log('Publish: ' + deviceTopics.description + ' - ' + componentDetails.description);
+	// console.log('Save: Publish "' + componentDetails.description + '" to ' + deviceTopics.description);
 
 	getDeviceStatus(device);
 	getDeviceInfo();
@@ -77,13 +77,13 @@ function createDashboardElement(device) {
 	let deviceCommands = getDeviceCommands(device, componentDetails);
 
 	// confirm creation of element
-	let confirmDialog = confirm('Save device and create dashboard element?');
+	let confirmDialog = confirm('Save "' + componentDetails.description + '" and create home dashboard panel?');
 
 	if (confirmDialog) {
 		saveComponent(device);
 		shellCommand(deviceCommands.createPanel);
 		getDeviceInfo();
-		console.log ('Shell command: ' + deviceCommands.createPanel);
+		// console.log ('Shell command: ' + deviceCommands.createPanel);
 	}
 }
 
@@ -120,29 +120,23 @@ function onMessageArrived(message) {
 
 	// Nanohome specific topics
 	if ( topicSplit[0] == "nanohome" ) {
-
-		// Debug
-		console.log('nanohome message arrived: ' + payload);
+		let deviceid = topicSplit[2];
+		
+		// console.log('nanohome message arrived: ' + payload);
 
 		// Parse status message
 		if ( topicSplit[1] == "devicestatus" ) {
-
-			let deviceid = topicSplit[2];
-			
 			populateNetworkElement(deviceid, payload);
-
 		}
 
-		// TODO: Set example icon
-		// TODO: Set example element description (statt unten)
+		// Set example panel description and icon
 		if ( topicSplit[1] == "devices" ) {
-			console.log('Device config retrived');
-
+			setExampleElementDescription(payload);
 			setExampleElementIcon(payload);
 		}
 	} 
 	
-	// Shelly Plus devices
+	// Shelly Plus device messages
 	else if ( topicSplit[0].startsWith("shelly") ) {
 
 		let deviceid = topicSplit[0];
@@ -174,7 +168,6 @@ function onMessageArrived(message) {
 		// Show description (shelly-deviceid/status/component/description)
 		if (topicSplit[3] == "description") {
 			populateStatusElement(deviceid, component, topicSplit[3], payload);
-			setExampleElementDescription(deviceid, component, payload);
 			// console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	} 
@@ -262,8 +255,9 @@ function populateComponentElement(device, component) {
 
 // Populate network - [json payload]
 function populateNetworkElement(device, payload) {
-	let htmlElements = getDevicesHtmlElements(device);
 	let statusData = JSON.parse(payload);
+	let htmlElements = getDevicesHtmlElements(device);
+
 
 	let networkElement = htmlElements.status;
 
@@ -294,58 +288,41 @@ function populateNetworkElement(device, payload) {
 // Set network to legacy - [string payload]
 function setStatusLegacy(device) {
 	let htmlElements = getDevicesHtmlElements(device);
-	let statusText = "Legacy";
 
 	if (checkElement(htmlElements.status)) {
-		htmlElements.status.innerText = statusText;
+		htmlElements.status.innerText = "Legacy";
 		htmlElements.status.classList.remove('statusfalse');
 		htmlElements.status.classList.add('statusgreen')
 	}
 }
 
-// Set icon on "example" panel - [json payload]
-function setExampleElementIcon(payload) {
-	let dashboardData = JSON.parse(payload);
+// Set example panel description - [json payload]
+function setExampleElementDescription(payload) {
+	let jsonData = JSON.parse(payload);
+	let exBtnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + jsonData.deviceId);
+	let exSliderDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + jsonData.deviceId);
 
-	if (checkElement(dashboardData)) {
-		let device = dashboardData.deviceId;
-		let icon = dashboardData.icon;
-		let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
-
-		if (checkElement(iconForm)) {
-			let radioButtons = iconForm.elements[devmgr_exBtnIconSelect];
-			
-			for (let i = 0; i < radioButtons.length; i++) {
-				if (radioButtons[i].value === icon) {
-					radioButtons[i].checked = true;
-					break;
-				}
-			}
-		}
+	if ( checkElement(exBtnDescription) ) {
+		exBtnDescription.textContent = jsonData.description;
+	} 
+	else if ( checkElement(exSliderDescription) ) {
+		exSliderDescription.textContent = jsonData.description;
 	}
 }
 
-// Set "description of "example" panel - [string payload]
-function setExampleElementDescription(device, component, payload) {
-	let htmlElements = getDevicesHtmlElements(device);
-	let exBtnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
-	let exSliderDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + device);
+// Set example panel icon - [json payload]
+function setExampleElementIcon(payload) {
+	let jsonData = JSON.parse(payload);
+	let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + jsonData.deviceId);
 
-	// exit if htmlElement is hidden or missing
-    if (!checkElement(htmlElements.component)) {
-		console.log("setExampleElementDescription: exit function because of hidden or missing component element");
-        return;
-    }
-
-	// set description to be displayed on example element
-	let description = checkElement(payload) ? payload : "";
-
-	// set textContent of example element
-	if ( component == htmlElements.component.value ) {
-		if ( checkElement(exBtnDescription) ) {
-			exBtnDescription.textContent = description;
-		} else if ( checkElement(exSliderDescription) ) {
-			exSliderDescription.textContent = description;
+	if (checkElement(iconForm)) {
+		let radioButtons = iconForm.elements[devmgr_exBtnIconSelect];
+		
+		for (let i = 0; i < radioButtons.length; i++) {
+			if (radioButtons[i].value === jsonData.icon) {
+				radioButtons[i].checked = true;
+				break;
+			}
 		}
 	}
 }
@@ -381,7 +358,7 @@ function getDevicesHtmlElements(device) {
 		component:   document.getElementById(devmgr_componentPrefix + device),
 		connected:   document.getElementById(devmgr_connectedPrefix + device),
 		status:      document.getElementById(devmgr_statusPrefix + device),
-		saveButton:  document.getElementById(devmgr_saveBtnPrfix + device)
+		saveButton:  document.getElementById(devmgr_saveBtnPrfix + device),
 	}
 }
 

@@ -58,8 +58,6 @@ function mqttPublish(topic, payload, retained) {
         message.retained = retained;
         mqtt.send(message);
     }
-
-    console.log('Publish: ' + topic + ' < ' + payload);
 }
 
 // Subscribe to topic for [timout] seconds
