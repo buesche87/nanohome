@@ -49,12 +49,13 @@ hr.thight {
 
 .detailLabel {
 	flex: 1;
-	height: auto;
+	height: 44px;
 	width: auto;
 	padding: 15px;
 }
 
 .detailEntry {
+	flex: 2;
 	background-color: var(--background-color);
 	color: var(--text-color);
 	text-decoration: none;
@@ -67,7 +68,7 @@ hr.thight {
 	justify-content: center;
 	padding: 10px;
 	width: 100%;
-	height: 42px;
+	height: 44px;
 }
 
 .detailValue {
