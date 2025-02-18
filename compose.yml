@@ -4,12 +4,19 @@ services:
     hostname: nanohome
     container_name: nanohome
     restart: no
+    depends_on:
+      influxdb: 
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "pgrep -x nanohome_shell && pgrep -x devwatcher_shelly_plus && pgrep -x devwatcher_shelly_legacy && pgrep -x measurements_shelly_legacy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - nanohome
-    depends_on:
-      - influxdb
-      - grafana
-      - mosquitto
     volumes:
       - ./appdata/nanohome/data:/nanohome/data
     env_file: .env
@@ -19,6 +26,12 @@ services:
     hostname: influxdb
     container_name: influxdb
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     networks:
       - nanohome
     ports:
@@ -40,6 +53,12 @@ services:
     hostname: grafana
     container_name: grafana
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - nanohome
     ports:
@@ -58,6 +77,12 @@ services:
     hostname: mosquitto
     container_name: mosquitto
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "1883"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     networks:
       - nanohome
     ports:
@@ -67,7 +92,7 @@ services:
       - ./configs/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./appdata/mosquitto/data:/mosquitto/data
       - ./appdata/mosquitto/log:/mosquitto/log
-    entrypoint: ["/bin/sh", "-c", "touch /mosquitto/data/passwd && mosquitto_passwd -b /mosquitto/data/passwd ${MQTT_USER} ${MQTT_PASSWORD} && exec mosquitto -c /mosquitto/config/mosquitto.conf"]
+    entrypoint: ["/bin/sh", "-c", "mosquitto_passwd -b /mosquitto/data/passwd ${MQTT_USER} ${MQTT_PASSWORD} && exec mosquitto -c /mosquitto/config/mosquitto.conf"]
 
 networks:
   nanohome:
