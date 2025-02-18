@@ -36,8 +36,6 @@ MQTT_RETAINED_OPTIONS=(
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "${MQTT_TOPIC_ONLINE_LEGACY}" | 
 while read -r DEVICESTATUS; do
 
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
-
 	# Extract payload and topic from json formatted message
 	OUTPUT=$( jq -r '.payload' <<< "${DEVICESTATUS}" )
 	STATUSTOPIC=$( jq -r '.topic' <<< "${DEVICESTATUS}" )
@@ -46,6 +44,8 @@ while read -r DEVICESTATUS; do
 	COMPONENTINDEX=$( cut -d '/' -f 4 <<< "${STATUSTOPIC}" )
 	COMPONENTMERGED="${COMPONENT}:${COMPONENTINDEX}"
 	ONLINEVALUE=1 # Assume getting a message equals device is online
+
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
 
 	#===============================================================
 	# Filter components not monitored
@@ -112,5 +112,5 @@ while read -r DEVICESTATUS; do
 
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${INFLUX_PAYLOAD}"
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Payload - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Device ping saved - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
 done
