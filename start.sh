@@ -1080,14 +1080,11 @@ grafanadashboard_gethomepreference() {
 	fi	
 }
 
-
 grafanadashboard_sethomepreference() {
-
-	local home_id=$1
 
 	local answer=$(
 		curl -s "${grafanaapiheaders_token[@]}" \
-		-X PUT -d '{"homeDashboardId":'$home_id'}' http://$GRAFANA_SERVICE/api/org/preferences
+		-X PUT -d '{"homeDashboardUID":'$GRAFANA_DASHBOARD_UID_HOME'}' http://$GRAFANA_SERVICE/api/org/preferences
 	)
 
 	local result=$(
@@ -1104,9 +1101,6 @@ grafanadashboard_sethomepreference() {
 		return 1
 	fi	
 }
-
-grafanadashboard_gethomepreference "${GRAFANA_DASHBOARD_UID_HOME}" || \
-grafanadashboard_sethomepreference "${GRAFANA_DASHBOARD_UID_HOME}"
 
 # Mosquitto: 
 ############################################################
