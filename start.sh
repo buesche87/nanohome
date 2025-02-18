@@ -33,10 +33,6 @@ export MQTT_TOPIC_TIMER="nanohome/timer"
 export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
-# MQTT Pub/Sub settings
-export MQTT_SUBSCRIBE_TIMEOUT_BIN=1 # Timeout in seconds if no messages published
-export MQTT_SUBSCRIBE_TIMEOUT_SERVICE=10 # Timeout in seconds if no messages published
-
 # InfluxDB settings
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter

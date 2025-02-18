@@ -8,16 +8,17 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 
 # Parameter & Variables
+DESCRIPTION=$1
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
-# Get standby json from "nanohome/standby/+"
+# Get standby json from "nanohome/standby/"
 PUBLISHED_STANDBYCONFIG_JSON=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --nodelay --quiet -W $MQTT_SUBSCRIBE_TIMEOUT_BIN \
-	-t "${MQTT_TOPIC_STANDBY}" 
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --retained-only --nodelay --quiet -W 2 \
+	-t "${MQTT_TOPIC_STANDBY}/${DESCRIPTION}" 
 )
 
 if [[ -z "${PUBLISHED_STANDBYCONFIG_JSON}" ]]; then
