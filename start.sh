@@ -1134,5 +1134,4 @@ fi
 crond -f &
 
 # Finish and start bash
-# exec bash
-wait
+exec /bin/bash
