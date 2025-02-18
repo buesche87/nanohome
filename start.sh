@@ -1145,4 +1145,4 @@ fi
 crond -f &
 
 # Finish and start bash
-exec /bin/bash
+exec /bin/bash -i
