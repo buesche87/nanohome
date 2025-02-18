@@ -310,10 +310,10 @@ influxauthtoken_validate() {
 
 	if ( $result )
 	then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with correct permissions" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" has correct permissions" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found with missing permissions. Delete it first" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" has missing permissions. Delete it first" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -328,11 +328,13 @@ influxauthtoken_objects=$(
 
 # No token found
 if [[ "$influxauthtoken_objects" -eq 0 ]]; then
+	echo -e "${LOG_INFO} InfluxDB: No auth token found" >> /proc/1/fd/1
 	influxauthtoken=$( influxauthtoken_create )
 fi
 
 # One token found
 if [[ "$influxauthtoken_objects" -eq 1 ]]; then
+	echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_TOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 	influxauthtoken_validate "${influxauthtoken_found}"
 
 	influxauthtoken=$(
@@ -388,7 +390,7 @@ grafanaapibasicauth_test() {
 		echo -e "${LOG_SUCC} Grafana: Basic auth successful" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Basic auth failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Basic auth failed. Check credentials in .env file" >> /proc/1/fd/1
 		exit 1
 	fi
 }
@@ -416,8 +418,7 @@ grafanaserviceaccount_find() {
 		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
 		jq <<< "${output}"
 	else
-		echo -e "${LOG_WARN} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -471,8 +472,7 @@ grafanaserviceaccounttoken_find() {
 		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
 		jq <<< "${answer}"
 	else
-		echo -e "${LOG_WARN} Grafana: Service account token not found" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana: Service account token not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -494,9 +494,9 @@ grafanaserviceaccounttoken_delete() {
 	if [[ "${result}" == "true" ]]; then
 		echo -e "${LOG_SUCC} Grafana: Existing service account token deleted" >> /proc/1/fd/1
 	else
-		echo -e "${LOG_WARN} Grafana: Existing service account token failed to delete" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed to delete existing service account token" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
-		return 1
+		exit 1
 	fi
 }
 
@@ -526,7 +526,7 @@ grafanaserviceaccounttoken_create() {
 
 if [[ -z "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
 
-	[[ $LOG_START ]] && echo -e "${LOG_INFO} Grafana: No service account token provided in env-file" >> /proc/1/fd/1
+	echo -e "${LOG_WARN} Grafana: No service account token provided in .env file" >> /proc/1/fd/1
 
 	# Validate basic auth connection
 	grafanaapibasicauth_test
@@ -649,8 +649,7 @@ grafanadatasource_search() {
 		jq <<< "${output}"
 		return 0
 	else
-		echo -e "${LOG_WARN} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
-		jq <<< "${answer}" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -811,7 +810,7 @@ grafanadashfolder_search() {
 		jq <<< "${output}"
 		return 0
 	else
-		echo -e "${LOG_WARN} Grafana: Folder \"${foldername}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana: Folder \"${foldername}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -897,7 +896,7 @@ grafanadashboard_find() {
 		jq <<< "${output}"
 		return 0
 	else
-		echo -e "${LOG_WARN} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
 		return 1
 	fi	
 }
@@ -1055,11 +1054,34 @@ if [[ -z "${grafanadashboard_measurements_exists}" ]]; then
 fi
 
 ############################################################
-# Grafana: Home dashboard
+# Grafana: Home dashboard preference
 ############################################################
-# - Set the dashboard in grafana settings
+# - Set home dashboard preference in grafana settings
 
-grafanadashboard_setHome() {
+grafanadashboard_gethomepreference() {
+
+	local answer=$(
+		curl -s "${grafanaapiheaders_token[@]}" \
+		-X GET http://$GRAFANA_SERVICE/api/org/preferences
+	)
+
+	local result=$(
+		jq --arg uid "${GRAFANA_DASHBOARD_UID_HOME}" '.homeDashboardUID == $uid' <<< "${answer}"
+	)
+
+	if [[ "${result}" == "true" ]]; then
+		echo -e "${LOG_SUCC} Grafana: Home dashboard preference already set" >> /proc/1/fd/1
+		jq <<< "${answer}"
+		return 0
+	else
+		echo -e "${LOG_INFO} Grafana: Home dashboard preference not set" >> /proc/1/fd/1
+		jq <<< "${answer}" >> /proc/1/fd/1
+		return 1
+	fi	
+}
+
+
+grafanadashboard_sethomepreference() {
 
 	local home_id=$1
 
@@ -1073,23 +1095,18 @@ grafanadashboard_setHome() {
 	)
 
 	if [[ "${result}" == "true" ]]; then
-		echo -e "${LOG_SUCC} Grafana: Home dashboard set" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Home dashboard preference set" >> /proc/1/fd/1
 		jq <<< "${output}"
 		return 0
 	else
-		echo -e "${LOG_WARN} Grafana: Failed setting home dashboard" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana: Failed setting home dashboard preference" >> /proc/1/fd/1
 		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi	
 }
 
-grafanadashboard_home_id=$(
-	curl -s "${grafanaapiheaders_token[@]}" \
-	-X GET http://$GRAFANA_SERVICE/api/dashboards/uid/$GRAFANA_DASHBOARD_UID_HOME \
-	| jq -r '.dashboard.id'
-)
-
-grafanadashboard_setHome "${grafanadashboard_home_id}"
+grafanadashboard_gethomepreference "${GRAFANA_DASHBOARD_UID_HOME}" || \
+grafanadashboard_sethomepreference "${GRAFANA_DASHBOARD_UID_HOME}"
 
 # Mosquitto: 
 ############################################################
@@ -1134,4 +1151,4 @@ fi
 crond -f &
 
 # Finish and start bash
-exec /bin/bash
+exec /bin/bash -i
