@@ -1,3 +1,4 @@
+#!/bin/bash
 # Use this script to prepare some directories for your docker containers
 
 appdatapath="./appdata"
