@@ -1156,4 +1156,4 @@ fi
 crond -f &
 
 # Finish and start bash
-exec /bin/bash
+tail -f /dev/null
