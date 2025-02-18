@@ -228,7 +228,7 @@ Every container start the nanohome validates the environment with the commands f
 - Export additional variables (customize only if you know what you're doing)
 - Validate or create an influx cli config
 - Find or create neccessary influx buckets
-- Validate or create a read-only influxdb api token that will be used in grafana for datasource connections
+- Validate or create a read-only influxdb api token that will be used for grafana datasource connections
 - If no grafana service account token provided in env-file, a service account will be created
 - Additionally a new token will be generated every start, the old one gets deleted
 - Validate grafana api connection with provided or created sa token
