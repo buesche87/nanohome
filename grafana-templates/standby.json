@@ -10,10 +10,10 @@
     "url": "/d/adjak60hekvswd/standby",
     "expires": "0001-01-01T00:00:00Z",
     "created": "2025-02-18T16:52:41Z",
-    "updated": "2025-02-18T23:00:26Z",
+    "updated": "2025-02-18T23:06:16Z",
     "updatedBy": "admin",
     "createdBy": "nanohome",
-    "version": 10,
+    "version": 12,
     "hasAcl": false,
     "isFolder": false,
     "folderId": 1,
@@ -104,8 +104,8 @@
           "overrides": []
         },
         "gridPos": {
-          "h": 4,
-          "w": 7,
+          "h": 3,
+          "w": 11,
           "x": 0,
           "y": 3
         },
@@ -116,33 +116,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold:</label>\n    <input class=\"detailValue\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"Threshold (W)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay:</label>\n    <input class=\"detailValue\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"Delay (s)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>",
-          "mode": "html"
-        },
-        "pluginVersion": "11.5.1",
-        "title": "",
-        "transparent": true,
-        "type": "text"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 3,
-          "x": 7,
-          "y": 3
-        },
-        "id": 70,
-        "options": {
-          "code": {
-            "language": "plaintext",
-            "showLineNumbers": false,
-            "showMiniMap": false
-          },
-          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"devmgr statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"devmgr\"\r\n            id=\"standbyRemoveBtn_${Description}\"\r\n            onclick='removeStandby(\"${Description}\")'>\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
+          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"Threshold (W)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"Delay (s)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.1",
@@ -157,18 +131,18 @@
         },
         "gridPos": {
           "h": 2,
-          "w": 3,
+          "w": 8,
           "x": 14,
           "y": 3
         },
-        "id": 65,
+        "id": 70,
         "options": {
           "code": {
             "language": "plaintext",
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<button class=\"devmgr\" \r\n        id=\"standbySaveBtn_${Description}\"\r\n        onclick='saveStandby(\"${Description}\")'\r\n        disabled>\r\n  Save\r\n</button>",
+          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\"\r\n            onclick='saveStandby(\"${Description}\")'\r\n            disabled>\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\"\r\n            onclick='removeStandby(\"${Description}\")'>\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.1",
@@ -185,7 +159,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 7
+          "y": 6
         },
         "id": 77,
         "options": {
@@ -242,7 +216,7 @@
     "timezone": "browser",
     "title": "Standby",
     "uid": "adjak60hekvswd",
-    "version": 10,
+    "version": 12,
     "weekStart": ""
   }
 }
