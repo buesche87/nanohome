@@ -79,7 +79,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	#===============================================================
 
 	if [[ -z "${DESCRIPTION}" ]]; then
-		echo -e "${LOG_INFO} Devwatcher Legacy: Description - [${DESCRIPTION}]" >> /proc/1/fd/1
 		INFLUX_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	else
 		INFLUX_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
@@ -88,6 +87,6 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" \
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${INFLUX_PAYLOAD}"
 
 	# Log
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived from [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Line protocol payload [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Line protocol payload - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
 done
