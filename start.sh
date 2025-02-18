@@ -1155,5 +1155,5 @@ fi
 # Start crond
 crond -f &
 
-# Finish and start bash
+# Finish
 tail -f /dev/null

@@ -17,4 +17,4 @@ RUN wget -qO- https://dl.influxdata.com/influxdb/releases/influxdb2-client-lates
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 VOLUME /nanohome
-CMD ["/bin/sh", "-c", "exec /start.sh"]
+CMD ["/start.sh"]

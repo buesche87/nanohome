@@ -10,7 +10,7 @@ services:
       grafana:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "sh", "-c", "pgrep -x nanohome_shell && pgrep -x devwatcher_shelly_plus && pgrep -x devwatcher_shelly_legacy && pgrep -x measurements_shelly_legacy"]
+      test: ["CMD", "sh", "-c", "pgrep -f nanohome_shell && pgrep -f devwatcher_shelly_plus && pgrep -f devwatcher_shelly_legacy && pgrep -f measurements_shelly_legacy"]
       interval: 60s
       timeout: 5s
       retries: 3
