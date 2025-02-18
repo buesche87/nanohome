@@ -40,23 +40,6 @@ hr.thight {
 ---------------------------------------------------------------
 */
 
-/* TODO */
-
-.timerDiv {
-	display: flex;
-	flex-direction: row;
-	justify-content: center;
-	align-items: center;
-	height: 100%;
-}
-
-.listBox {
-	text-align: left;
-	text-align-last: left;
-	font-family: Consolas,monaco,monospace; 
-}
-
-
 .detailGroup {
 	display: flex;
 	align-items: center;
@@ -64,24 +47,21 @@ hr.thight {
 	gap: 5px; /* Space between label and input */
 }
 
-
 .detailLabel {
 	flex: 1;
 	height: auto;
-	padding-right: 15px;
-	padding-left: 15px;
+	width: auto;
+	padding: 15px;
 }
 
 .detailValue {
 	flex: 2;
 	height: 44px;
-	padding-right: 15px;
-	padding-left: 15px;
 	width: auto;
+	padding: 15px;
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 }
-
 
 
 /*
@@ -92,7 +72,7 @@ hr.thight {
 
 .detailsDiv {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	gap: 10px;
 	width: 100%;
 	align-items: flex-start;
