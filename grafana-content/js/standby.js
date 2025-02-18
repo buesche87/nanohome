@@ -15,6 +15,15 @@ function getStandbyInfo() {
 	mqttSubscribe(standbyTopicAll, longsubscribe);
 }
 
+// Get standby info - OnLoad per device
+function getStandby(description) {
+	let deviceTopic = "nanohome/devices/" + description; 
+	let standbyTopic = "nanohome/standby/" + description; 
+
+	mqttSubscribe(deviceTopic, longsubscribe);
+	mqttSubscribe(standbyTopic, longsubscribe);
+}
+
 /*
 ===============================================================
 	MQTT Publish
