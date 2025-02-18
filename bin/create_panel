@@ -57,7 +57,7 @@ if [[ "${LEGACY}" == "true" ]]; then
     COMPONENT_SEARCH="${COMPONENT%%:*}";
     COMPONENT="${COMPONENT#*:}"
 else
-    COMPONENT_SEARCH="${COMPONENT}";
+    COMPONENT_SEARCH="${COMPONENT%%:*}";
 fi
 
 # Define panel template
