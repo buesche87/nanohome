@@ -106,7 +106,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\"\r\n            onclick='saveStandby(\"${Description}\")'\r\n            disabled>\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\"\r\n            onclick='removeStandby(\"${Description}\")'>\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
+          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\"\r\n            onclick='saveStandby(\"${Description}\")'>\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\"\r\n            onclick='removeStandby(\"${Description}\")'>\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.1",
