@@ -102,7 +102,7 @@
                 "showLineNumbers": false,
                 "showMiniMap": false
               },
-              "content": "<input  class=\"devmgr boldText\" \n        id=\"standbyPower_${Description}\"\n        placeholder=\"Max Standby (W)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocusout='validateStandbyInput(\"${Description}\", this)' \n        onfocus='this.value = \"\"' \n        autocomplete=\"off\" />",
+              "content": "<input  class=\"devmgr boldText\" \n        id=\"standbyThreshold_${Description}\"\n        placeholder=\"Max Standby (W)\"\n        onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n        onfocusout='validateStandbyInput(\"${Description}\", this)' \n        onfocus='this.value = \"\"' \n        autocomplete=\"off\" />",
               "mode": "html"
             },
             "pluginVersion": "11.4.0",

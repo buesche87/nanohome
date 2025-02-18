@@ -1,19 +1,8 @@
-
-
-// TODO:
-// - Überarbeiten
-
 /*
 ===============================================================
 	MQTT Subscribe
 ===============================================================
 */
-
-// Get Device Info - Subscribe to the MQTT topics
-function getStandbyInfo() {
-	mqttSubscribe(deviceTopicAll, longsubscribe);
-	mqttSubscribe(standbyTopicAll, longsubscribe);
-}
 
 // Get standby info - OnLoad per device
 function getStandby(description) {
@@ -32,10 +21,10 @@ function getStandby(description) {
 
 // Save standby values
 function saveStandby(description) {
-	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
+	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
 	let standbyTopic = "nanohome/standby/" + description;
 
-	if (/^\d+$/.test(standbyPower)) {
+	if ( /^\d+$/.test(standbyThreshold) ) {
 		let newJsonElement = generateStandbyJson(description);
 		mqttSubscribe(standbyTopic, longsubscribe);
 		mqttPublish(standbyTopic, JSON.stringify(newJsonElement), true);
@@ -84,37 +73,30 @@ function onMessageArrived(message) {
 // Populate standby settings with content from mqtt message - [json payload]
 function populateStandbyPanels(payload) {
 	let standbyData = JSON.parse(payload);
-	let standbyPower = document.getElementById(standby_powerPrefix + standbyData.description);
+	let standbyStatus = document.getElementById(standby_statusPrefix + standbyData.description);
+	let standbyThreshold = document.getElementById(standby_thresholdPrefix + standbyData.description);
 	let standbyWait = document.getElementById(standby_waitPrefix + standbyData.description);
 
-	if (checkElement(standbyPower)) {
-		if (/^\d+$/.test(standbyData.standby)) {
-			standbyPower.value = standbyData.standby;
+	if (checkElement(standbyStatus)) {
+		if ( /^\d+$/.test(standbyData.threshold) ) {
+			standbyThreshold.value = standbyData.threshold;
 		}
-		if (/^\d+$/.test(standbyData.wait)) {
+		if ( /^\d+$/.test(standbyData.wait) ) {
 			standbyWait.value = standbyData.wait;
 		}
-		setStandbyStatus(description);
+		if ( standbyData.threshold > 0 ) {
+			standbyStatus.innerText = "Active";
+			standbyStatus.classList.remove('statusfalse');
+			standbyStatus.classList.add('statusgreen');
+		} else {
+			standbyStatus.innerText = "Inactive";
+			standbyStatus.classList.remove('statusgreen');
+			standbyStatus.classList.add('statusfalse');
+		}
 	}
 }
 
-// Active state on - [string payload]
-function setStandbyStatus(description) {
-	let standbyStatus = document.getElementById(standby_statusPrefix + description);
-	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
-	
-	if (checkElement(standbyPower) && standbyPower != "" ) {
-		standbyStatus.innerText = "Active";
-		standbyStatus.classList.remove('statusfalse');
-		standbyStatus.classList.add('statusgreen');
-	} else {
-		standbyStatus.innerText = "Inactive";
-		standbyStatus.classList.remove('statusgreen');
-		standbyStatus.classList.add('statusfalse');
-	}
-}
-
-// Populate jsonstore "device" - [json payload]
+// Populate device details to jsonDataStore - [json payload]
 function populateDeviceAttribute(payload) {
 	let jsonData = JSON.parse(payload);
 	let jsonDataStore = document.getElementById(standby_statusPrefix + jsonData.description);
@@ -136,7 +118,7 @@ function populateDeviceAttribute(payload) {
 // Generate Json for StandbyData
 function generateStandbyJson(description) {
 	let jsonDataStore = document.getElementById(standby_statusPrefix + description);
-	let standbyPower = document.getElementById(standby_powerPrefix + description).value;
+	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
 	let standbyWait = document.getElementById(standby_waitPrefix + description).value;
 
 	let deviceJson = JSON.parse(jsonDataStore.getAttribute(standby_deviceDataAttribute));
@@ -146,7 +128,7 @@ function generateStandbyJson(description) {
 		"deviceId": deviceJson.deviceId,
 		"component": deviceJson.component,
 		"description": description,
-		"threshold": standbyPower,
+		"threshold": standbyThreshold,
 		"wait": standbyWait,
 		"state": "off",
 		"legacy": deviceJson.legacy
@@ -162,7 +144,7 @@ function generateStandbyJson(description) {
 
 // Clear standby button
 function clearStandby(description) {
-	var standbyPower = document.getElementById(standby_powerPrefix + description);
+	var standbyPower = document.getElementById(standby_thresholdPrefix + description);
 	var standbyWait = document.getElementById(standby_waitPrefix + description);
 	
 	standbyPower.value = "";
