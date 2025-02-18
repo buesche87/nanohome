@@ -101,7 +101,7 @@ influxconfig_search() {
 
 	if [[ "${result}" == "true" ]]; then
 		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" found" >> /proc/1/fd/1
-		jq '.token = "<SECURETOKEN>"' <<< ${answer}
+		jq --arg name "${INFLUX_CONFIG}" '(.[$name].token) |= "<SECURETOKEN>"' <<< "${answer}"
 		return 0
 	else
 		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUX_CONFIG}\" not found" >> /proc/1/fd/1
