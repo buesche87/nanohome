@@ -525,8 +525,8 @@ grafanaserviceaccounttoken_create() {
 }
 
 if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
-	[[ $LOG_START ]] && echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
-elif [[ -z "${GRAFANA_ADMIN}" ]] && [[ -z "${GRAFANA_PASS}" ]] && [[ -z "${GRAFANA_SERVICEACCOUNT}" ]]; then
+	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
+elif [[ -n "${GRAFANA_ADMIN}" ]] && [[ -n "${GRAFANA_PASS}" ]] && [[ -n "${GRAFANA_SERVICEACCOUNT}" ]]; then
 
 	echo -e "${LOG_WARN} Grafana: No service account token provided in .env file" >> /proc/1/fd/1
 
@@ -582,7 +582,7 @@ elif [[ -z "${GRAFANA_ADMIN}" ]] && [[ -z "${GRAFANA_PASS}" ]] && [[ -z "${GRAFA
 
 	[[ $LOG_START ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "${grafanaserviceaccount_token}" >> /proc/1/fd/1
 else
-	[[ $LOG_START ]] && echo -e "${LOG_ERRO} Grafana: Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Grafana: Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
 	exit 1
 fi
 
