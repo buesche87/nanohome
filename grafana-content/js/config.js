@@ -99,8 +99,6 @@ var standby_deviceDataAttribute = "deviceDetails"; // Attribute name
 
 // HTML element prefixes
 var standby_statusPrefix = "standbyStatus_";
-
-var standby_activePrefix = "standbyActive_";
 var standby_powerPrefix = "standbyPower_";
 var standby_waitPrefix = "standbyWait_";
 var standby_saveBtnPrefix = "standbySaveBtn_";
