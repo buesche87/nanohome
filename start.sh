@@ -1152,8 +1152,8 @@ fi
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
 
 # Nanohome standby manager
-/bin/bash ${NANOHOME_ROOTPATH}/services/standbymanager &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbymanager started" >> /proc/1/fd/1
+/bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
 
 # Start crond
 crond -f &

@@ -9,85 +9,121 @@
 # - Turn off output if so
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# MQTT connection string with credentials
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
+JSONCONFIG=$1
 
-# MQTT retained message subscription options
-MQTT_RETAINED_OPTIONS=(
-	--retained-only
-	--nodelay
-	--quiet
-	-C 1
-	-W 1
-)
+# Extract payload and device details from json formatted message
+DEVICEID=$( jq -r '.deviceId' <<< "${JSONCONFIG}" )
+COMPONENT=$( jq -r '.component' <<< "${JSONCONFIG}" )
+DESCRIPTION=$( jq -r '.description' <<< "${JSONCONFIG}" )
+THRESHOLD=$( jq -r .threshold <<< "${JSONCONFIG}" )
+STANDBYWAIT=$( jq -r .wait <<< "${JSONCONFIG}" )
+LEGACY=$( jq -r '.legacy' <<< "${JSONCONFIG}" )
+[[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
 
-# Temporary storage for active services
-STATE_FILE="/tmp/standbymanager.state"
-touch "$STATE_FILE"
+# Legacy
+if [[ "${LEGACY}" == "true" ]]; then
+	COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
+	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
 
-#===============================================================
-# Functions
-#===============================================================
+	STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
+	STATUSTOPIC="shellies/${DEVICEID}/${COMPONENTDEV}/${COMPONENTINDEX}/power"
+	CONTROLTOPIC="shellies/${DEVICEID}/${COMPONENTDEV}/${COMPONENTINDEX}/command"
+else 
+	STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
+	STATUSTOPIC="${DEVICEID}/status/${COMPONENT}"
+	CONTROLTOPIC="${DEVICEID}/command/${COMPONENT}"
+fi
 
-# TODO: code style
-# TODO: Legacy support (start a different script)
-# Start a background service
-start_standbyservice() {
-    local msg="$1"
-    local id=$( echo -n "$msg" | md5sum | cut -d ' ' -f1 )
-	local description=$( jq -r '.description' <<< "${msg}" )
-    local legacy=$( jq -r '.legacy' <<< "${msg}" )
+# Get last published standby state
+get_last_state() {
 
-    # Check if service is already running
-    if grep -q "$id" "$STATE_FILE"; then
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Service for [$description] already running" >> /proc/1/fd/1
-    else
-        if [[ "${legacy}" == "true" ]]; then
-            [[ $LOG_SERVICE ]] && echo -e "${LOG_WARN} Standbymanager: Legacy not yet implemented [$description]" >> /proc/1/fd/1
-        else
-            [[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbymanager: Starting service for [$description]" >> /proc/1/fd/1
-            nohup /bin/bash ./standbywatcher "$msg" > "/tmp/standbywatcher_$id.log" 2>&1
-            echo "$id $!" >> "$STATE_FILE"
-		fi
-    fi
+	local currentStateJson=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		"${MQTT_RETAINED_OPTIONS[@]}" \
+		-t "${STANDBYTOPIC}"
+	)
+
+	local state=$( jq -r .state <<< "${currentStateJson}" )
+	return "${state}"
 }
 
-# TODO: code style
-# Stop a background service
-stop_standbyservice() {
-    local msg="$1"
-    local id=$( echo -n "$msg" | md5sum | cut -d ' ' -f1 )
-    local description=$( jq -r '.description' <<< "${msg}" )
+# Turn off an output
+turn_off_device() {
+	mosquitto_pub "${MQTT_CONNECTION_STRING[@]}" -t "${CONTROLTOPIC}" -m "off"
+}
 
-    if grep -q "$id" "$STATE_FILE"; then
-		[[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbymanager: Stopping service for [$description]" >> /proc/1/fd/1
-
-        local pid=$( grep "$id" "$STATE_FILE" | awk '{print $2}' )
-        kill "$pid"
-        sed -i "/$id/d" "$STATE_FILE"
-    fi
+# Update state in nanohome
+update_state() {
+	local json=$1
+	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${STANDBYTOPIC}" -m "${json}"
 }
 
 #===============================================================
-# Infinitely subscribe to "nanohome/standby/+"
+# Infinitely subscribe to components status/power topic
 #===============================================================
 
-# Start a standbywatcher background service if message gets added
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
-while read -r STANDBYMESSAGE; do
-    if [[ -n "${STANDBYMESSAGE}" ]]; then
-        start_standbyservice "${STANDBYMESSAGE}"
-    fi
-done &
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
+while read -r CURRENTPOWER; do
 
-# Stop a standbywatcher background service if message gets deleted
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
-while read -r STANDBYMESSAGE; do
-    if [[ -z "${STANDBYMESSAGE}" ]]; then
-        stop_standbyservice "${STANDBYMESSAGE}"
-    fi
-done &
+	# Extract current power from json formatted message
+	if [[ "${LEGACY}" == "false" ]]; then
+		CURRENTPOWER=$( jq -r .apower <<< "${CURRENTPOWER}" )
+	fi
+
+	# Get last standby state
+	LAST_STATE=$( get_last_state )
+
+	# Manage standby - don't kill the device if it just started
+	if awk 'BEGIN { exit !('$CURRENTPOWER' == 0) }'; then
+
+		NEW_STATE="off"
+		LOGMESSAGE="Off, nothing to do"
+	
+	elif awk 'BEGIN { exit !('$CURRENTPOWER' < '$THRESHOLD') }'; then
+		case "${LAST_STATE}" in
+			"off")
+				NEW_STATE="on"
+				LOGMESSAGE="Just started"
+				sleep $STANDBYWAIT
+				;;
+			"on")
+				NEW_STATE="off"
+				LOGMESSAGE="Below threshold - turning off"
+				turn_off_device
+				;;
+			*)
+				NEW_STATE="off"
+				LOGMESSAGE="Something happened that shouldn't"
+				;;
+		esac
+	elif awk 'BEGIN { exit !('$CURRENTPOWER' > '$THRESHOLD') }'; then
+		case "${LAST_STATE}" in
+			"off")
+				NEW_STATE="on"
+				LOGMESSAGE="Just started"
+				sleep $STANDBYWAIT
+				;;
+			"on")
+				NEW_STATE="on"
+				LOGMESSAGE="On - nothing to do"
+				;;
+			*)
+				NEW_STATE="off"
+				LOGMESSAGE="Something happened that shouldn't"
+				;;
+		esac
+	fi
+
+	# Update the json with a new state and publish it
+	if [[ "${NEW_STATE}" != "${LAST_STATE}" ]]
+				
+		JSONCONFIG_UPDATED=$(
+			jq --arg state "${NEW_STATE}" '.state = "$state"' <<< "${JSONCONFIG}"
+		)
+
+		update_state "${JSONCONFIG_UPDATED}"
+	fi
+
+	# Log
+	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbymanager: ${DESCRIPTION} - ${LOGMESSAGE}" >> /proc/1/fd/1
+done
