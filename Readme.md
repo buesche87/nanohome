@@ -244,11 +244,11 @@ Every container start the nanohome validates the environment with the commands f
 ## TODO
 
 - [done] Fix missing datasource in dashboard templates
-- start.sh: only set home dashboard if not already set
+- [done] start.sh: only set home dashboard if not already set
+- [done] Docker health checks
+- [done] Create/finish a docker compose for all services
 - Finish and test standby manager
 - Manage orphaned devices and components
 - Restart legacy measurement services on description change
 - Implement shelly dimmer
 - More icons for dashboard panels
-- Docker health checks
-- Create/finish a docker compose for all services
