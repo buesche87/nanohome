@@ -102,5 +102,5 @@ while read -r COMPONENTSTATUS; do
 	fi
 
 	# Log
-	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbywatcher: ${DESCRIPTION} - ${LOGMESSAGE}"
+	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbywatcher: ${DESCRIPTION} - ${LOGMESSAGE}" >> /proc/1/fd/1
 done
