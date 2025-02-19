@@ -4,19 +4,19 @@
 ===============================================================
 */
 
-// json datastore
-var timer_deviceDataAttribute = "deviceDetails"; // HTML element
-var timer_timerDataAttribute = "timerDetails"; // Attribute name
+// mqtt message cache
+var deviceDataAttribute = "deviceDetails"; // HTML element
+var timerDataAttribute = "timerDetails"; // Attribute name
 
 // HTML element prefixes
-var timer_timerListPrefix = "timerList_"
-var timer_timerEntryPrefix = "details_"
-var timer_timerPeriodPrefix = "timerPeriod_"
-var timer_timerOnPrefix = "timerOn_"
-var timer_timerOffPrefix = "timerOff_"
-var timer_timerStatusPrefix = "timerStatus_"
-var timer_saveButtonPrefix = "timerSaveBtn_"
-var timer_removeButtonPrefix = "timerRemoveBtn_"
+var timerListPrefix = "timerList_"
+var timerEntryPrefix = "details_"
+var timerPeriodPrefix = "timerPeriod_"
+var timerOnPrefix = "timerOn_"
+var timerOffPrefix = "timerOff_"
+var timerStatusPrefix = "timerStatus_"
+var saveButtonPrefix = "timerSaveBtn_"
+var removeButtonPrefix = "timerRemoveBtn_"
 
 /*
 ===============================================================
@@ -25,9 +25,12 @@ var timer_removeButtonPrefix = "timerRemoveBtn_"
 */
 
 // Get Device Info - subscribe to all timer
-function getTimerInfo() {
-	mqttSubscribe(deviceTopicAll, longsubscribe);
-	mqttSubscribe(timerTopicAll, longsubscribe);
+function getTimerInfo(description) {
+	let deviceTopic = "nanohome/devices/" + description;
+	let timerTopic = "nanohome/timer/" + description;
+
+	mqttSubscribe(deviceTopic, fastsubscribe);
+	mqttSubscribe(timerTopic, fastsubscribe);
 }
 
 /*
@@ -39,67 +42,65 @@ function getTimerInfo() {
 // Save timer
 function saveTimer(description) {
 	let nanohomeTopics = getNanohomeTopics(description);
-	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
-	// Get timer json from datastore
-	let existingJson = JSON.parse(jsonDataStore.getAttribute(timer_timerDataAttribute));
+	// Load timer config from cache
+	let dataStore = document.getElementById(timerStatusPrefix + description);
+	let existingConfig = JSON.parse(dataStore.getAttribute(timerDataAttribute));
 
-	// Define new index for new json element
-	let jsonIndex = checkElement(existingJson) ? getJsonIndex(existingJson) : (existingJson = [], 1);
+	// Calculate an index for a new entry in the json array or create a new array if no config was found
+	let jsonIndex = checkElement(existingConfig) ? getJsonIndex(existingConfig) : (existingConfig = [], 1);
 
-	// Add entry to json
+	// Create the entry and add it to the config
 	let newJsonElement = generateTimerJson(description, jsonIndex);
-	existingJson.push(newJsonElement);
+	existingConfig.push(newJsonElement);
 
-	// Save modified json into datastore
-	populateTimerAttribute(existingJson, description);
+	// Save the modified config to cache and publish it to "nanohome/timer/#"
+	copyToCache(existingConfig, description, "timer")
+	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingConfig), true);
 
-	// Populate the timer list
-	populateTimerList(existingJson, description);
+	// Repopulate the timer list and set current status
+	populateTimerList(existingConfig, description);
+	setTimerStatus(existingConfig, description);
 
-	// Set timer status element
-	setTimerActive(existingJson, description);
-
-	// Publish timer json to "nanohome/timer"
-	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingJson), true);
-
-	// Run "create_timer" through nanohome shell
-	mqttPublish(cmdInputTopic, "create_timer", false);
+	// TODO - Test: Run a service
+	// Run "create_timer" through nanohome shell to enable the timer
+	// mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
 // Remove selected timer
 function removeTimer(description) {
 	let timerDetails = getTimerHtmlElements(description);
 	let nanohomeTopics = getNanohomeTopics(description);
-	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
 
-	// Get index of selected timer in list
+	// Load timer json from datastore
+	let dataStore = document.getElementById(timerStatusPrefix + description);
+	let existingConfig = JSON.parse(dataStore.getAttribute(timerDataAttribute));
+
+	// Get timer details from selected entry
 	let selectedIndex = timerDetails.timerList.selectedIndex;
 	var selectedData = timerDetails.timerList.options[selectedIndex].value;
 
-	// Get timer json from datastore
-	let existingJson = JSON.parse(jsonDataStore.getAttribute(timer_timerDataAttribute));
-
-	// Remove selected timer
-	existingJson = existingJson.filter(function(obj) {
+	// Remove selected timer from json
+	existingConfig = existingConfig.filter(function(obj) {
 		let objString = JSON.stringify(obj);
 		return objString !== selectedData;
 	});
 
-	// Save modified json into datastore
-	populateTimerAttribute(existingJson, description);
+	// Save modified json to datastore
+	copyToCache(existingConfig, description, "timer")
 
-	// Populate the timer list
-	populateTimerList(existingJson, description);
+	// Repopulate the timer list
+	populateTimerList(existingConfig, description);
 
 	// Set timer status element
-	setTimerActive(existingJson, description);
+	setTimerStatus(existingConfig, description);
 
 	// Publish timer json to "nanohome/timer"
-	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingJson), true);
+	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingConfig), true);
 
+	// TODO - Test: Run a service
 	// Run "create_timer" through nanohome shell
-	mqttPublish(cmdInputTopic, "create_timer", false);
+	// mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
 /*
@@ -116,14 +117,17 @@ function onMessageArrived(message) {
 
 	jsonPayload = JSON.parse(payload);
 
-	if ( topicSplit[1]== "devices" ) {
-		populateDeviceAttribute(jsonPayload);
+	if ( topicSplit[1] == "devices" ) {
+		let description = topicSplit[2];
+		copyToCache(jsonPayload, description, "devices");
 	}
 
-	if ( topicSplit[1] == "timer" ) {
-		populateTimerAttribute(jsonPayload, topicSplit[2]);
+	else if ( topicSplit[1] == "timer" ) {
+		let description = topicSplit[2];
+
+		copyToCache(jsonPayload, description, "timer");
 		populateTimerList(jsonPayload, topicSplit[2]);
-		setTimerActive(jsonPayload, topicSplit[2]);
+		setTimerStatus(jsonPayload, topicSplit[2]);
 	} 
 }
 
@@ -133,28 +137,22 @@ function onMessageArrived(message) {
 ===============================================================
 */
 
-// Populate jsonstore "device"
-function populateDeviceAttribute(deviceJson) {
-	let description = deviceJson.description;
-	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
+// Save config to cache
+function copyToCache(jsonPayload, description, cache) {
+	let dataStore = document.getElementById(timerStatusPrefix + description);
 
-	if (checkElement(jsonDataStore)) {
-		jsonDataStore.setAttribute(timer_deviceDataAttribute, JSON.stringify(deviceJson));
+	if (checkElement(dataStore)) {
+		switch(cache) {
+			case "devices":
+				dataStore.setAttribute(deviceDataAttribute, JSON.stringify(jsonPayload));
+				break;
+			case "timer":
+				dataStore.setAttribute(timerDataAttribute, JSON.stringify(jsonPayload));
+				break;
+		} 
 
-		console.log("Device JSON Populated: ");
-		console.log(deviceJson);
-	}
-}
-
-// Populate jsonstore "timer"
-function populateTimerAttribute(timerJson, description) {
-	let jsonDataStore = document.getElementById(timer_timerStatusPrefix + description);
-
-	if (checkElement(jsonDataStore)) {
-		jsonDataStore.setAttribute(timer_timerDataAttribute, JSON.stringify(timerJson));
-
-		console.log("Timer JSON Populated: ");
-		console.log(timerJson);
+		console.log('"' + description + '" config saved to "' + cache + '" cache');
+		console.log(jsonPayload);
 	}
 }
 
@@ -163,29 +161,32 @@ function populateTimerList(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
 	if (checkElement(timerDetails.timerList)) {
+
+		console.log('Populating timer list "' + description + '"');
+
 		// Clear timer list
 		for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
 
 		// Populate timer list
 		timerJson.forEach(function(entry) {
 			var option = document.createElement("option");
-			option.textContent = entry.timerPeriodText;
 
+			// Set display text of entry
+			option.textContent = entry.timerPeriodText;
 			option.textContent += entry.timerOn ? " - On: " + entry.timerOn : "";
 			option.textContent += entry.timerOff ? " - Off: " + entry.timerOff : "";
 
+			// Set json config as value
 			option.value = JSON.stringify(entry);
 			timerDetails.timerList.appendChild(option);
 
-			// debug
-			console.log("Timer List Populated: ");
 			console.log(entry);
 		});
 	}
 }
 
-// Set active state if json data available
-function setTimerActive(timerJson, description) {
+// Set timer status active/inactive
+function setTimerStatus(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
 	if (checkElement(timerDetails.timerStatus)) {	
@@ -210,16 +211,21 @@ function setTimerActive(timerJson, description) {
 // Generate a new timer json
 function generateTimerJson(description, index) {
 	let timerDetails = getTimerHtmlElements(description);
-	let deviceJson = JSON.parse(timerDetails.timerStatus.getAttribute(timer_deviceDataAttribute));
 
+	// Load config from cache
+	let dataStore = document.getElementById(timerStatusPrefix + description);
+	let deviceConfig = JSON.parse(dataStore.getAttribute(deviceDataAttribute));
+
+	// Generate config with provided values
 	let selectedIndex = timerDetails.timerPeriod.selectedIndex;
 	let selectedText = timerDetails.timerPeriod.options[selectedIndex].textContent;
 
 	let newElement = {
 		"index": index,
-		"deviceId": deviceJson.deviceId,
-		"component": deviceJson.component,
-		"description": deviceJson.description,
+		"deviceId": deviceConfig.deviceId,
+		"component": deviceConfig.component,
+		"description": deviceConfig.description,
+		"legacy": deviceConfig.legacy,
 		"timerPeriodText": selectedText,
 		"timerPeriodValue": timerDetails.timerPeriod.value,
 		"timerOn": timerDetails.timerOn.value,
@@ -228,41 +234,36 @@ function generateTimerJson(description, index) {
 	return newElement;
 }
 
+// Copy selected timer in listbox to timer details
+function timerSelected(description) {
+	let timerDetails = getTimerHtmlElements(description);
+	let selectedTimerConfig = timerDetails.timerList.value;
+	let selectedTimer = JSON.parse(selectedTimerConfig);
+
+	timerDetails.timerPeriod.value = selectedTimer.timerPeriodValue
+	timerDetails.timerOn.value = selectedTimer.timerOn
+	timerDetails.timerOff.value = selectedTimer.timerOff
+	timerDetails.removeButton.disabled = false;
+}
+
 /*
 ===============================================================
 	Helper Functions
 ===============================================================
 */
 
-// Get current timers html elements
+// Get current devices html elements
 function getTimerHtmlElements(description) {
 	return {
-		timerList:    document.getElementById(timer_timerListPrefix + description),
-		timerEntry:   document.getElementById(timer_timerEntryPrefix + description),
-		timerPeriod:  document.getElementById(timer_timerPeriodPrefix + description),
-		timerOn:      document.getElementById(timer_timerOnPrefix + description),
-		timerOff:     document.getElementById(timer_timerOffPrefix + description),
-		timerStatus:  document.getElementById(timer_timerStatusPrefix + description),
-		saveButton:   document.getElementById(timer_saveButtonPrefix + description),
-		removeButton: document.getElementById(timer_removeButtonPrefix + description)
+		timerList:    document.getElementById(timerListPrefix + description),
+		timerEntry:   document.getElementById(timerEntryPrefix + description),
+		timerPeriod:  document.getElementById(timerPeriodPrefix + description),
+		timerOn:      document.getElementById(timerOnPrefix + description),
+		timerOff:     document.getElementById(timerOffPrefix + description),
+		timerStatus:  document.getElementById(timerStatusPrefix + description),
+		saveButton:   document.getElementById(saveButtonPrefix + description),
+		removeButton: document.getElementById(removeButtonPrefix + description)
 	}
-}
-
-// Get selected timer entry in listbox
-function timerSelected(description) {
-	let timerDetails = getTimerHtmlElements(description);
-
-	timerDetails.removeButton.disabled = false;
-
-	let selectedTimerJson = timerDetails.timerList.value;
-	let selectedTimer = JSON.parse(selectedTimerJson);
-
-	console.log("Seelcted Timer: ");
-	console.log(selectedTimer);
-
-	timerDetails.timerPeriod.value = selectedTimer.timerPeriodValue
-	timerDetails.timerOn.value = selectedTimer.timerOn
-	timerDetails.timerOff.value = selectedTimer.timerOff
 }
 
 // Manage timer input

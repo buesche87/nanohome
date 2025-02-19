@@ -1,0 +1,39 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////////////////
+# nanohome - timerwatcher
+#
+# Recreate crontabfile "nanohome" on every message published to "nanohome/timer/+"
+# 
+#/////////////////////////////////////////////////////////////////////////////////////////////////
+
+# MQTT connection string with credentials
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+# Service Topic: "nanohome/timer/+"
+SERVICETOPIC="${MQTT_TOPIC_TIMER}/+"
+
+#===============================================================
+# Script to process on new message
+#===============================================================
+
+start_processing() {
+    local msg="$1"
+    local timestamp=$( date '+%y-%m-%d_%H-%M-%S' )
+    local description=$( jq -r '.description' <<< "${msg}" )
+
+    /bin/bash "${NANOHOME_ROOTPATH}/bin/create_timer" > "/tmp/create_panel_${description}_${timestamp}.log" 2>&1
+}
+
+#===============================================================
+# Infinitely subscribe to "nanohome/timer/+"
+#===============================================================
+
+# Start process on every message
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" -R |
+while read -r MESSAGE; do
+    start_processing "${MESSAGE}"
+done &

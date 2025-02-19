@@ -22,6 +22,9 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
+# Service Topic: "nanohome/standby/+"
+SERVICETOPIC="${MQTT_TOPIC_STANDBY}/+"
+
 # Temporary storage for active services
 STATE_FILE="/tmp/standbywatcher.state"
 touch "$STATE_FILE"
@@ -38,10 +41,10 @@ start_standbyservice() {
 
     # Check if service is already running
     if grep -q "$id" "$STATE_FILE"; then
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbywatcher: Standbymanager service for [$description] already running" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbywatcher: standbymanager for [$description] already running" >> /proc/1/fd/1
     else
-        [[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbywatcher: Starting new standbymanager service for [$description]" >> /proc/1/fd/1
-        nohup /bin/bash ./standbymanager "$msg" > "/tmp/standbymanager_$id.log" 2>&1
+        [[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbywatcher: starting new standbymanager for [$description]" >> /proc/1/fd/1
+        nohup /bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "$msg" > "/tmp/standbymanager_$id.log" 2>&1
     fi
 }
 
@@ -52,7 +55,7 @@ stop_standbyservice() {
     local description=$( jq -r '.description' <<< "${msg}" )
 
     if grep -q "$id" "$STATE_FILE"; then
-		[[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbywatcher: Disabling standbymanager service for [$description]" >> /proc/1/fd/1
+		[[ $LOG_SERVICE ]] && echo -e "${LOG_SUCC} Standbywatcher: disabling standbymanager for [$description]" >> /proc/1/fd/1
 
         local pid=$( grep "$id" "$STATE_FILE" | awk '{print $2}' )
         kill "$pid"
@@ -64,18 +67,18 @@ stop_standbyservice() {
 # Infinitely subscribe to "nanohome/standby/+"
 #===============================================================
 
-# Start a new standbywatcher background service if message gets added
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" -R |
-while read -r STANDBYMESSAGE; do
-    if [[ -n "${STANDBYMESSAGE}" ]]; then
-        start_standbyservice "${STANDBYMESSAGE}"
+# Start a standbymanager if a new config gets published
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" -R |
+while read -r MESSAGE; do
+    if [[ -n "${MESSAGE}" ]]; then
+        start_standbyservice "${MESSAGE}"
     fi
 done &
 
-# Stop a standbywatcher background service if message gets deleted
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${MQTT_TOPIC_STANDBY}/+" --retained-only |
-while read -r STANDBYMESSAGE; do
-    if [[ -z "${STANDBYMESSAGE}" ]]; then
-        stop_standbyservice "${STANDBYMESSAGE}"
+# Stop a standbymanager if a config gets deleted
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" --retained-only |
+while read -r MESSAGE; do
+    if [[ -z "${MESSAGE}" ]]; then
+        stop_standbyservice "${MESSAGE}"
     fi
 done &

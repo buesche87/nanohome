@@ -20,7 +20,7 @@ STANDBYWAIT=$( jq -r .wait <<< "${JSONCONFIG}" )
 LEGACY=$( jq -r '.legacy' <<< "${JSONCONFIG}" )
 [[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
 
-# Legacy
+# Define mqtt topics
 if [[ "${LEGACY}" == "true" ]]; then
 	COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
 	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )

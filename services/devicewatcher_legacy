@@ -1,6 +1,6 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# nanohome - devwatcher service legacy
+# nanohome - Devicewatcher service legacy
 #
 # Discover shelly gen 1 devices
 # - Subscribe to all devices "input" topic
@@ -45,7 +45,7 @@ while read -r DEVICESTATUS; do
 	COMPONENTMERGED="${COMPONENT}:${COMPONENTINDEX}"
 	ONLINEVALUE=1 # Assume getting a message equals device is online
 
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Message recived - [${DEVICEID}/${COMPONENTMERGED}]" >> /proc/1/fd/1
 
 	#===============================================================
 	# Filter components not monitored
@@ -112,5 +112,5 @@ while read -r DEVICESTATUS; do
 
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${INFLUX_PAYLOAD}"
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher Legacy: Device ping saved - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
 done

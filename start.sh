@@ -1139,19 +1139,23 @@ fi
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome shell started" >> /proc/1/fd/1
 
-# Nanohome devwatcher
-/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher started" >> /proc/1/fd/1
+# Nanohome devicewatcher
+/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devicewatcher started" >> /proc/1/fd/1
 
-# Nanohome devwatcher legacy
-/bin/bash ${NANOHOME_ROOTPATH}/services/devwatcher_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devwatcher legacy started" >> /proc/1/fd/1
+# Nanohome devicewatcher legacy
+/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher_legacy &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devicewatcher legacy started" >> /proc/1/fd/1
 
 # Nanohome measurements legacy
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
 
-# Nanohome standby manager
+# Nanohome standbywatcher
+/bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
+
+# Nanohome timerwatcher
 /bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
 

@@ -45,7 +45,7 @@ while read -r COMPONENTSTATUS; do
 	COMPONENT=$( cut -d '/' -f 3 <<< "${STATUSTOPIC}" )
 	ONLINEVALUE=1 # Assume getting a message equals device is online
 
-	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devwatcher: Message recived - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Devicewatcher: Message recived - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
 
 	#===============================================================
 	# Filter components not monitored
@@ -76,7 +76,7 @@ while read -r COMPONENTSTATUS; do
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Device ping saved - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
 	fi
 
@@ -98,7 +98,7 @@ while read -r COMPONENTSTATUS; do
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 		influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Device ping saved - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
 	fi
 
@@ -143,7 +143,7 @@ while read -r COMPONENTSTATUS; do
 	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${DEVICE_PAYLOAD}"
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Device ping saved - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 
 	# Prepare a measurement string for the Influx CLI (line protocol)
 	MEASUREMENT_PAYLOAD="${DESCRIPTION_ESCAPED} "
@@ -163,8 +163,8 @@ while read -r COMPONENTSTATUS; do
 		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${MEASUREMENT_PAYLOAD}"
 
-		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devwatcher: Measurement saved - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Measurement saved - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
 	else
-		[[ $LOG_DEBUG ]] && echo -e "${LOG_WARN} Devwatcher: No measurement - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_WARN} Devicewatcher: No measurement - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
 	fi
 done

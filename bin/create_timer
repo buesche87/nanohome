@@ -3,42 +3,51 @@
 # nanohome - create_timer
 #
 # Create a timer
-# - Get retainded timer json from each component
+# - Get retainded timer configs for each connected device
 # - Clear the crontab file "/etc/crontabs/nanohome"
-# - Create a new crontab entry for every timer published
+# - Create a new crontab entry for every config published
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Parameter & Variables
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
 	-P "${MQTT_PASSWORD}"
 )
 
+# Define subscribe topic: "nanohome/timer/+"
+SUBSCRIBETOPIC="${MQTT_TOPIC_TIMER}/+"
+
+# Load timer configs
+PUBLISHED_TIMER_CONFIGS=$(
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+	--retained-only --nodelay --quiet -W 2 \
+	-t "${SUBSCRIBETOPIC}" 
+)
+
+# Exit script if no timer are configured
+if [[ -z "${PUBLISHED_TIMER_CONFIGS}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+	exit 1
+elif [[ "${PUBLISHED_TIMER_CONFIGS}" == "[]" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No timer configured on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+	echo "" > "${NANOHOME_CRONTABS}" && exit 0
+fi
+
+# Crontab entry templates
 CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t _DEVICEID_/command/_COMPONENT_ -m _MESSAGE_"
 CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
-# Get all timer json from "nanohome/timer/+"
-PUBLISHED_TIMER_JSON=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--retained-only --nodelay --quiet -W 2 \
-	-t "${MQTT_TOPIC_TIMER}/+" 
-)
-
-if [[ -z "${PUBLISHED_TIMER_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_TIMER}/+\"" >> /proc/1/fd/1
-    exit 1
-fi
-
-# Clear current crontab file
+# Clear crontab file
 echo "" > "${NANOHOME_CRONTABS}"
 
-# Add every timer from json to the crontab file
-CONFIGURED_TIMER_JSON=$(
-	jq -s 'add' <<< "${PUBLISHED_TIMER_JSON}"
+# Create an array containing all configs retreived
+PUBLISHED_TIMER_ARRAY=$(
+	jq -s 'add' <<< "${PUBLISHED_TIMER_CONFIGS}"
 )
 
-jq -c '.[]' <<< "${CONFIGURED_TIMER_JSON}" | \
+# Create a crontab entry for each config
+jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 	while read -r TIMER; do
 
 	# Extract payload and device details from topic
@@ -51,14 +60,12 @@ jq -c '.[]' <<< "${CONFIGURED_TIMER_JSON}" | \
 	LEGACY=$( jq -r .legacy <<< "${TIMER}" )
 
 	if [[ "${LEGACY}" == "true" ]]; then
-		CRONENTRY="${CRONENTRY_TEMPLATE_LEGACY}"
-
 		COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
 		COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
 
+		CRONENTRY="${CRONENTRY_TEMPLATE_LEGACY}"
 		CRONENTRY="${CRONENTRY//_COMPONENTDEV_/${COMPONENTDEV}}"
 		CRONENTRY="${CRONENTRY//_COMPONENTINDEX_/${COMPONENTINDEX}}"
-
 	else
 		CRONENTRY="${CRONENTRY_TEMPLATE}"
 		CRONENTRY="${CRONENTRY//_COMPONENT_/${COMPONENT}}"

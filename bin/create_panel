@@ -30,7 +30,7 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
-# Get dashboard json from "nanohome/devices/$1"
+# Get dashboard configs from "nanohome/devices/$1"
 PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
         --retained-only --quiet -C 1 -W 1 \
