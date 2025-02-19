@@ -39,15 +39,15 @@ function getDeviceStatus(device) {
 	let componentDetails = getComponentDetails(device);
 
 	if (checkElement(componentDetails)) {
-		let deviceTopics = getDeviceTopics(device, componentDetails);
+		let componentTopics = getComponentTopics(componentDetails);
 
 		if ( componentDetails.legacy ) {
 			setStatusLegacy(device);
 		} else {
-			let payload = '{"id":999, "src":"' + deviceTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
+			let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
 
-			mqttSubscribe(deviceTopics.rpcDest, longsubscribe);
-			mqttPublish(deviceTopics.rpc, payload, false);
+			mqttSubscribe(componentTopics.rpcDest, longsubscribe);
+			mqttPublish(componentTopics.rpc, payload, false);
 		}
 	}
 }
@@ -61,33 +61,31 @@ function getDeviceStatus(device) {
 // Connect or disconnect component
 function connectComponent(device) {
 	let componentDetails = getComponentDetails(device);
-	let deviceTopics = getDeviceTopics(device, componentDetails);
-
+	let componentTopics = getComponentTopics(componentDetails);
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
-	// console.log('Connect: Publish "' + payload + '" to ' + deviceTopics.connected);
+	// Publish new connected state to devices component topic
+	mqttPublish(componentTopics.connected, payload, true);
 
-	mqttPublish(deviceTopics.connected, payload, true);
+	// Refresh dashboard
 	getDeviceInfo();
 }
 
 // Save component details
 function saveComponent(device) {
 	let componentDetails = getComponentDetails(device);
-	let deviceTopics = getDeviceTopics(device, componentDetails);
+	let componentTopics = getComponentTopics(componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
-
-	let jsonElement = generateComponentJson(device, componentDetails);
+	let jsonElement = generateComponentJson(componentDetails);
 	let payload = JSON.stringify(jsonElement);
 
 	// Publish device json to nanohome/devices
 	mqttPublish(nanohomeTopics.device, payload, true);
-	// console.log('Save: Publish "' + payload + '" to ' + nanohomeTopics.device);
-
-	// Publish description to deviceid/status/component/description
-	mqttPublish(deviceTopics.description, componentDetails.description, true);
-	// console.log('Save: Publish "' + componentDetails.description + '" to ' + deviceTopics.description);
-
+	
+	// Publish description devices component topic
+	mqttPublish(componentTopics.description, componentDetails.description, true);
+	
+	// Refresh dashboard
 	getDeviceStatus(device);
 	getDeviceInfo();
 }
@@ -95,35 +93,33 @@ function saveComponent(device) {
 // Create new dashboard element through nanohome_shell
 function createDashboardElement(device) {
 	let componentDetails = getComponentDetails(device);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
+	let componentCommands = getComponentCommands(componentDetails);
 
-	// confirm creation of element
+	// Confirm creation of element
 	let confirmDialog = confirm('Save "' + componentDetails.description + '" and create home dashboard panel?');
 
+	// Publish new device json and create dashboard panel
 	if (confirmDialog) {
 		saveComponent(device);
-		shellCommand(deviceCommands.createPanel);
+		shellCommand(componentCommands.createPanel);
 		getDeviceInfo();
-		// console.log ('Shell command: ' + deviceCommands.createPanel);
 	}
 }
 
-// TODO: Test
 // Clear measurement through nanohome_shell
 function clearMeasurement(device) {
 	let componentDetails = getComponentDetails(device);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
+	let componentCommands = getComponentCommands(componentDetails);
 
-	shellCommand(deviceCommands.clearMeasurement);
+	shellCommand(componentCommands.clearMeasurement);
 }
 
-// TODO: Test
 // Remove device through nanohome_shell
 function removeComponent(device) {
 	let componentDetails = getComponentDetails(device);
-	let deviceCommands = getDeviceCommands(device, componentDetails);
+	let componentCommands = getComponentCommands(componentDetails);
 
-	shellCommand(deviceCommands.removeComponent);
+	shellCommand(componentCommands.removeComponent);
 }
 
 /*
@@ -139,15 +135,15 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	// Nanohome specific topics
+	//================================
+	// Topic: nanohome/+/+
+	//================================
 	if ( topicSplit[0] == "nanohome" ) {
 		let deviceid = topicSplit[2];
 		
-		// console.log('nanohome message arrived: ' + payload);
-
 		// Parse status message
 		if ( topicSplit[1] == "devicestatus" ) {
-			populateNetworkElement(deviceid, payload);
+			populateNetworkElement(payload);
 		}
 
 		// Set example panel description and icon
@@ -157,45 +153,37 @@ function onMessageArrived(message) {
 		}
 	} 
 	
-	// Shelly Plus device messages
+	//================================
+	// Topic: shelly/+/+/+
+	//================================
 	else if ( topicSplit[0].startsWith("shelly") ) {
-
 		let deviceid = topicSplit[0];
 		let component = topicSplit[2];
 
-		// Show components and example button
-		if (topicSplit[1] == "status") {
+		populateComponentElement(deviceid, component);
 
-			// console.log('Shelly Status Payload');
-			// console.log(payload);
-
-			populateComponentElement(deviceid, component);
-			// populateStatusElement(deviceid, component, topicSplit[3], payload);
-			
-			// Show example button or slider
-			if (component.includes("switch")) {
-				showExampleElement(deviceid, "btnContainer");
-			} else if (component.includes("cover")) {
-				showExampleElement(deviceid, "sliderContainer");
-			}
+		// Show example button or slider
+		if (component.includes("switch")) {
+			showExampleElement(deviceid, "btnContainer");
+		} else if (component.includes("cover")) {
+			showExampleElement(deviceid, "sliderContainer");
 		}
 
-		// Show connected state (shelly-deviceid/status/component/connected)
+		// Populate connected state
 		if (topicSplit[3] == "connected") {
 			populateStatusElement(deviceid, component, topicSplit[3], payload);
-			// console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
-		// Show description (shelly-deviceid/status/component/description)
+		// Populate description
 		if (topicSplit[3] == "description") {
 			populateStatusElement(deviceid, component, topicSplit[3], payload);
-			// console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	} 
 	
-	// Shelly Legacy devices
+	//================================
+	// Topic: shellies/+/+/+/+
+	//================================
 	else if ( topicSplit[0] == "shellies" ) {
-
 		let deviceid = topicSplit[1]
 		let componentdev = topicSplit[2]
 		let componentidx = topicSplit[3]
@@ -204,23 +192,19 @@ function onMessageArrived(message) {
 		populateComponentElement(deviceid, componentMerged);
 		setStatusLegacy(deviceid);
 
-		// Show example button legacy
+		// Show example button
 		if (componentdev.includes("relay")) {
 			showExampleElement(deviceid, "btnContainer");
-			// console.log('Example button: ' + deviceid);
 		}
 
-		// Show connected state (shellies/shelly-deviceid/componentdev/componentindex/connected)
+		// Populate connected state
 		if (topicSplit[4] == "connected") {
 			populateStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			// console.log('Connected status: "' + payload + '" (' +  deviceid + ')');
 		}
 
-		// Show description (shellies/shelly-deviceid/componentdev/componentindex/description)
+		// Populate description
 		if (topicSplit[4] == "description") {
 			populateStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			// setExampleElementDescription(deviceid, componentMerged, payload);
-			// console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	}
 }
@@ -274,17 +258,15 @@ function populateComponentElement(device, component) {
 	}
 }
 
-// Populate network - [json payload]
-function populateNetworkElement(device, payload) {
+// Populate status with ip address and update notification - [json payload]
+function populateNetworkElement(payload) {
 	let statusData = JSON.parse(payload);
-	let htmlElements = getDevicesHtmlElements(device);
-
-
+	let htmlElements = getDevicesHtmlElements(statusData.src);
 	let networkElement = htmlElements.status;
 
 	// exit if networkElement is hidden or missing
     if (!checkElement(networkElement)) {
-		console.log("setExampleElementDescription: exit - network element for \"" + device + "\" hidden or missing");
+		console.log("setExampleElementDescription: exit - network element for \"" + statusData.src + "\" hidden or missing");
         return;
     }
 
@@ -306,7 +288,7 @@ function populateNetworkElement(device, payload) {
 	}
 }
 
-// Set network to legacy - [string payload]
+// Set status to legacy - [string payload]
 function setStatusLegacy(device) {
 	let htmlElements = getDevicesHtmlElements(device);
 
@@ -325,8 +307,7 @@ function setExampleElementDescription(payload) {
 
 	if ( checkElement(exBtnDescription) ) {
 		exBtnDescription.textContent = jsonData.description;
-	} 
-	else if ( checkElement(exSliderDescription) ) {
+	} else if ( checkElement(exSliderDescription) ) {
 		exSliderDescription.textContent = jsonData.description;
 	}
 }
@@ -354,10 +335,10 @@ function setExampleElementIcon(payload) {
 ===============================================================
 */
 
-// Generate component json, gets published to "nanohome/devices"
-function generateComponentJson(device, componentDetails) {
+// Generate component json, gets published to "nanohome/devices" - [object payload]
+function generateComponentJson(componentDetails) {
 	let newComponentJson = {
-		"deviceId": device,
+		"deviceId": componentDetails.deviceId,
 		"component": componentDetails.component,
 		"description": componentDetails.description,
 		"icon": componentDetails.exButtonImage,
@@ -372,7 +353,43 @@ function generateComponentJson(device, componentDetails) {
 ===============================================================
 */
 
-// Get current devices html elements
+// Return device commands for current device - [object payload]
+function getComponentCommands(componentDetails) {
+	if (componentDetails.legacy) {
+		return {
+			createPanel:      'create_panel "' + componentDetails.description + '"',
+			removeComponent:  'remove_component "' + componentDetails.description + '"',
+			clearMeasurement: 'clear_measurement "' + componentDetails.description + '"'
+		}
+	} else {
+		return {
+			createPanel:      'create_panel "' + componentDetails.description + '"',
+			removeComponent:  'remove_component "' + componentDetails.description + '"',
+			clearMeasurement: 'clear_measurement "' + componentDetails.description + '"'
+		}
+	}
+}
+
+// Return devices mqtt topics - [object payload]
+function getComponentTopics(componentDetails) {
+	if (componentDetails.legacy) {
+		let componentSplit = componentDetails.component.split(":");
+		return {
+			connected:   "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
+			description: "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
+		}
+	} else {
+		return {
+			connected:   componentDetails.deviceId + "/status/" + componentDetails.component + "/connected",
+			description: componentDetails.deviceId + "/status/" + componentDetails.component + "/description",
+			rpc:         componentDetails.deviceId + "/rpc",
+			rpcSource:   "nanohome/devicestatus/" + componentDetails.deviceId,
+			rpcDest:     "nanohome/devicestatus/" + componentDetails.deviceId + "/rpc"
+		}
+	}
+}
+
+// Get current devices html elements - [string payload]
 function getDevicesHtmlElements(device) {
 	return {
 		description: document.getElementById(devmgr_descriptionPrefix + device),
@@ -383,7 +400,7 @@ function getDevicesHtmlElements(device) {
 	}
 }
 
-// Get current components values
+// Get current components values - [string payload]
 function getComponentDetails(device) {
 	let htmlElements = getDevicesHtmlElements(device);
 
@@ -401,6 +418,7 @@ function getComponentDetails(device) {
 		}
 
 		return {
+			deviceId:            device,
 			description:         document.getElementById(devmgr_descriptionPrefix + device).value,
 			component:           document.getElementById(devmgr_componentPrefix + device).value,
 			connected:           document.getElementById(devmgr_connectedPrefix + device).textContent,
@@ -415,7 +433,7 @@ function getComponentDetails(device) {
 	}
 }
 
-// Show example element
+// Show example element - [string payload]
 function showExampleElement(device, element) {
 	let divElement = document.getElementById(element + "_" + device);
 
@@ -423,9 +441,4 @@ function showExampleElement(device, element) {
 		divElement.classList.remove('elementHidden');
 		divElement.classList.add('elementFlex');
 	}
-}
-
-// OnFocus description [not in use?]
-function descriptionFocus(device) {
-	devmgr_tempComponent = document.getElementById(devmgr_descriptionPrefix + device);
 }

@@ -4,42 +4,6 @@
 ===============================================================
 */
 
-// Return device commands for current device
-function getDeviceCommands(device, deviceDetails) {
-	if (deviceDetails.legacy) {
-		return {
-			createPanel:      'create_panel "' + deviceDetails.description + '"',
-			removeComponent:  'remove_component "' + deviceDetails.description + '"',
-			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
-		}
-	} else {
-		return {
-			createPanel:      'create_panel "' + deviceDetails.description + '"',
-			removeComponent:  'remove_component "' + deviceDetails.description + '"',
-			clearMeasurement: 'clear_measurement "' + deviceDetails.description + '"'
-		}
-	}
-}
-
-// Return devices mqtt topics
-function getDeviceTopics(device, componentDetails) {
-	if (componentDetails.legacy) {
-		let componentSplit = componentDetails.component.split(":");
-		return {
-			connected:   "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
-			description: "shellies/" + device + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
-		}
-	} else {
-		return {
-			connected:   device + "/status/" + componentDetails.component + "/connected",
-			description: device + "/status/" + componentDetails.component + "/description",
-			rpc:         device + "/rpc",
-			rpcSource:   "nanohome/devicestatus/" + device,
-			rpcDest:     "nanohome/devicestatus/" + device + "/rpc"
-		}
-	}
-}
-
 // Return nanohome mqtt topics
 function getNanohomeTopics(description) {
 	return {
