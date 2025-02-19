@@ -170,7 +170,7 @@ function onMessageArrived(message) {
 			// console.log(payload);
 
 			populateComponentElement(deviceid, component);
-			populateStatusElement(deviceid, component, topicSplit[3], payload);
+			// populateStatusElement(deviceid, component, topicSplit[3], payload);
 			
 			// Show example button or slider
 			if (component.includes("switch")) {
@@ -219,7 +219,7 @@ function onMessageArrived(message) {
 		// Show description (shellies/shelly-deviceid/componentdev/componentindex/description)
 		if (topicSplit[4] == "description") {
 			populateStatusElement(deviceid, componentMerged, topicSplit[4], payload);
-			setExampleElementDescription(deviceid, componentMerged, payload);
+			// setExampleElementDescription(deviceid, componentMerged, payload);
 			// console.log('Description loaded: "' + payload + '" (' +  deviceid + ')');
 		}
 	}
