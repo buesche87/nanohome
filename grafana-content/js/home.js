@@ -4,7 +4,7 @@
 ===============================================================
 */
 
-// Identify mqtt messages source
+// Identify source of mqtt message
 var home_outputComponent = "";
 var command;
 

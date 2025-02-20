@@ -150,13 +150,13 @@ button:disabled, button:disabled:hover {
 }
 
 .statusgreen {
-	background-color: green;
-	border: 1px solid green;
+	background-color: #009700;
+	border: 1px solid #009700;
 }
 
 .statusorange {
-	background-color: orange;
-	border: 1px solid orange;
+	background-color: #d77f00;
+	border: 1px solid #d77f00;
 }
 
 .elementHidden {

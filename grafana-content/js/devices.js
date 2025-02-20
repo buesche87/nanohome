@@ -25,6 +25,7 @@ var devmgr_tempComponent = "";
 ===============================================================
 */
 
+/*
 // Subscribe to all devices connected and description topic
 function getDeviceInfo() {
 	mqttSubscribe(connectedTopicAll, fastsubscribe);
@@ -33,22 +34,29 @@ function getDeviceInfo() {
 	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 	mqttSubscribe(deviceTopicAll, fastsubscribe);
 }
+*/
 
 // Get device infos (onLoad - per device)
 function getDeviceStatus(device) {
-	let componentDetails = getComponentDetails(device);
+	let componentDetails = readHtmlPanels(device);
+
+	mqttSubscribe(deviceTopicAll, fastsubscribe);
 
 	if (checkElement(componentDetails)) {
-		let componentTopics = getComponentTopics(componentDetails);
+
+		let componentTopics = getDeviceTopics(componentDetails);
 
 		if ( componentDetails.legacy ) {
 			setStatusLegacy(device);
 		} else {
-			let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
 
+			let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
 			mqttSubscribe(componentTopics.rpcDest, longsubscribe);
 			mqttPublish(componentTopics.rpc, payload, false);
 		}
+
+		mqttSubscribe(componentTopics.connected, fastsubscribe); 
+		mqttSubscribe(componentTopics.description, fastsubscribe); 
 	}
 }
 
@@ -60,8 +68,8 @@ function getDeviceStatus(device) {
 
 // Connect or disconnect component
 function connectComponent(device) {
-	let componentDetails = getComponentDetails(device);
-	let componentTopics = getComponentTopics(componentDetails);
+	let componentDetails = readHtmlPanels(device);
+	let componentTopics = getDeviceTopics(componentDetails);
 	let payload = componentDetails.connected === "Disconnected" ? "true" : "false";
 
 	// Publish new connected state to devices component topic
@@ -73,10 +81,10 @@ function connectComponent(device) {
 
 // Save component details
 function saveComponent(device) {
-	let componentDetails = getComponentDetails(device);
-	let componentTopics = getComponentTopics(componentDetails);
+	let componentDetails = readHtmlPanels(device);
+	let componentTopics = getDeviceTopics(componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
-	let jsonElement = generateComponentJson(componentDetails);
+	let jsonElement = generateComponentConfig(componentDetails);
 	let payload = JSON.stringify(jsonElement);
 
 	// Publish device json to nanohome/devices
@@ -91,9 +99,9 @@ function saveComponent(device) {
 }
 
 // Create new dashboard element through nanohome_shell
-function createDashboardElement(device) {
-	let componentDetails = getComponentDetails(device);
-	let componentCommands = getComponentCommands(componentDetails);
+function createPanel(device) {
+	let componentDetails = readHtmlPanels(device);
+	let componentCommands = getShellCommands(componentDetails);
 
 	// Confirm creation of element
 	let confirmDialog = confirm('Save "' + componentDetails.description + '" and create home dashboard panel?');
@@ -108,16 +116,16 @@ function createDashboardElement(device) {
 
 // Clear measurement through nanohome_shell
 function clearMeasurement(device) {
-	let componentDetails = getComponentDetails(device);
-	let componentCommands = getComponentCommands(componentDetails);
+	let componentDetails = readHtmlPanels(device);
+	let componentCommands = getShellCommands(componentDetails);
 
 	shellCommand(componentCommands.clearMeasurement);
 }
 
 // Remove device through nanohome_shell
 function removeComponent(device) {
-	let componentDetails = getComponentDetails(device);
-	let componentCommands = getComponentCommands(componentDetails);
+	let componentDetails = readHtmlPanels(device);
+	let componentCommands = getShellCommands(componentDetails);
 
 	shellCommand(componentCommands.removeComponent);
 }
@@ -336,7 +344,7 @@ function setExampleElementIcon(payload) {
 */
 
 // Generate component json, gets published to "nanohome/devices" - [object payload]
-function generateComponentJson(componentDetails) {
+function generateComponentConfig(componentDetails) {
 	let newComponentJson = {
 		"deviceId": componentDetails.deviceId,
 		"component": componentDetails.component,
@@ -353,42 +361,6 @@ function generateComponentJson(componentDetails) {
 ===============================================================
 */
 
-// Return device commands for current device - [object payload]
-function getComponentCommands(componentDetails) {
-	if (componentDetails.legacy) {
-		return {
-			createPanel:      'create_panel "' + componentDetails.description + '"',
-			removeComponent:  'remove_component "' + componentDetails.description + '"',
-			clearMeasurement: 'clear_measurement "' + componentDetails.description + '"'
-		}
-	} else {
-		return {
-			createPanel:      'create_panel "' + componentDetails.description + '"',
-			removeComponent:  'remove_component "' + componentDetails.description + '"',
-			clearMeasurement: 'clear_measurement "' + componentDetails.description + '"'
-		}
-	}
-}
-
-// Return devices mqtt topics - [object payload]
-function getComponentTopics(componentDetails) {
-	if (componentDetails.legacy) {
-		let componentSplit = componentDetails.component.split(":");
-		return {
-			connected:   "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
-			description: "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
-		}
-	} else {
-		return {
-			connected:   componentDetails.deviceId + "/status/" + componentDetails.component + "/connected",
-			description: componentDetails.deviceId + "/status/" + componentDetails.component + "/description",
-			rpc:         componentDetails.deviceId + "/rpc",
-			rpcSource:   "nanohome/devicestatus/" + componentDetails.deviceId,
-			rpcDest:     "nanohome/devicestatus/" + componentDetails.deviceId + "/rpc"
-		}
-	}
-}
-
 // Get current devices html elements - [string payload]
 function getDevicesHtmlElements(device) {
 	return {
@@ -401,18 +373,20 @@ function getDevicesHtmlElements(device) {
 }
 
 // Get current components values - [string payload]
-function getComponentDetails(device) {
+function readHtmlPanels(device) {
 	let htmlElements = getDevicesHtmlElements(device);
 
 	if (checkElement(htmlElements.component)) {
 		let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
 		let icon = "";
 		let legacy = false;
-
+		
+		// Get icon if example button is visible
 		if (checkElement(iconForm)) {
 			icon = iconForm.elements[devmgr_exBtnIconSelect].value;
 		}
 
+		// Set legacy flag if component name is one of the legacyKeywords
 		if (legacyKeywords.some(legacyKeywords => htmlElements.component.value.includes(legacyKeywords))) {
 			legacy = true;
 		}

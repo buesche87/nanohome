@@ -1,7 +1,7 @@
 
 /*
 ===============================================================
-	MQTT Websocket Connection
+	MQTT Options
 ===============================================================
 */
 
@@ -15,17 +15,10 @@ var reconnectTimeout = 2000;
 var cleansession = true;
 var path = "";
 var mqttClient = "nanohome_dasboard";
-var mqttConnected = false;
-
-/*
-===============================================================
-	Pub/Sub Options
-===============================================================
-*/
-
 var fastsubscribe = 250;
 var normalsubscribe = 500;
 var longsubscribe = 1000;
+var mqttConnected = false;
 
 /*
 ===============================================================
@@ -43,17 +36,43 @@ var cmdOutputTopic = "nanohome/shell/output";
 */
 
 var legacyKeywords = ["relay"];
-
-var connectedTopicAll = "+/status/+/connected";
-var descriptionTopicAll = "+/status/+/description";
-var outputTopicAll = "+/status/+/output";
 var deviceTopicAll = "nanohome/devices/+";
-var standbyTopicAll = "nanohome/standby/+";
-var timerTopicAll = "nanohome/timer/+";
-
+var outputTopicAll = "+/status/+/output";
 var outputTopicAllLegacy = "shellies/+/relay/0";
-var connectedTopicAllLegacy = "shellies/+/+/+/connected";
-var descriptionTopicAllLegacy = "shellies/+/+/+/description";
+//var connectedTopicAll = "+/status/+/connected";
+//var descriptionTopicAll = "+/status/+/description";
+//var standbyTopicAll = "nanohome/standby/+";
+//var timerTopicAll = "nanohome/timer/+";
+//var connectedTopicAllLegacy = "shellies/+/+/+/connected";
+//var descriptionTopicAllLegacy = "shellies/+/+/+/description";
+
+// Device commands - [object payload]
+function getShellCommands(componentDetails) {
+	return {
+		createPanel:      'create_panel "' + componentDetails.description + '"',
+		removeComponent:  'remove_component "' + componentDetails.description + '"',
+		clearMeasurement: 'clear_measurement "' + componentDetails.description + '"' 
+	}
+}
+
+// Return devices mqtt topics - [object payload]
+function getDeviceTopics(componentDetails) {
+	if (componentDetails.legacy) {
+		let componentSplit = componentDetails.component.split(":");
+		return {
+			connected:   "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
+			description: "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/description",
+		}
+	} else {
+		return {
+			connected:   componentDetails.deviceId + "/status/" + componentDetails.component + "/connected",
+			description: componentDetails.deviceId + "/status/" + componentDetails.component + "/description",
+			rpc:         componentDetails.deviceId + "/rpc",
+			rpcSource:   "nanohome/devicestatus/" + componentDetails.deviceId,
+			rpcDest:     "nanohome/devicestatus/" + componentDetails.deviceId + "/rpc"
+		}
+	}
+}
 
 /*
 ===============================================================
