@@ -7,26 +7,11 @@
 :root {
 	--background-color: rgba(0, 0, 0, 0.1);
 	--text-color: white;
-	--border-color: #ccc;
+	--border-color: #4f4f4f;
 	--border-radius: 2px;
-	--input-width: 100%;
-	--input-height: 28px;
-	--label-height: 28px;
-}
-
-.devmgr {
-	background-color: var(--background-color);
-	color: var(--text-color);
-	text-decoration: none;
-	cursor: pointer;
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 10px;
-	width: 100%;
+	--input-height: 46px;
+	--gap-size: 10px;
+	--padding: 15px;
 }
 
 hr.thight {
@@ -40,22 +25,31 @@ hr.thight {
 ---------------------------------------------------------------
 */
 
+.detailsDiv {
+	display: flex;
+	flex-direction: row;
+	gap: var(--gap-size);
+	width: 100%;
+	align-items: flex-start;
+}
+
 .detailGroup {
 	display: flex;
-	align-items: center;
 	width: 100%;
-	gap: 5px; /* Space between label and input */
+	align-items: center;
+	gap: var(--gap-size);
 }
 
 .detailLabel {
-	flex: 1;
-	height: 44px;
+	flex: 2;
+	padding-left: var(--padding);
+	padding-right: var(--padding);
 	width: auto;
-	padding: 15px;
+	height: var(--input-height);
 }
 
 .detailEntry {
-	flex: 2;
+	flex: 1;
 	background-color: var(--background-color);
 	color: var(--text-color);
 	text-decoration: none;
@@ -66,16 +60,18 @@ hr.thight {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: 10px;
-	width: 100%;
-	height: 44px;
+	padding-left: var(--padding);
+	padding-right: var(--padding);
+	width: 30%;
+	height: var(--input-height);
 }
 
 .detailValue {
 	flex: 2;
 	height: 42px;
 	width: auto;
-	padding: 15px;
+	padding-left: var(--padding);
+	padding-right: var(--padding);
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 }
@@ -86,13 +82,7 @@ hr.thight {
 ---------------------------------------------------------------
 */
 
-.detailsDiv {
-	display: flex;
-	flex-direction: row;
-	gap: 10px;
-	width: 100%;
-	align-items: flex-start;
-}
+
 
 .inputGroup {
 	display: flex;
