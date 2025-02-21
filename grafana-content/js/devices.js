@@ -293,9 +293,12 @@ function populateDescription(device, component, payload) {
 }
 
 // Populate status with ip address and update notification - [json input]
-function populateNetworkElement(statusData) {
-	// let statusData = JSON.parse(payload);
+function populateNetworkElement(payload) {
+	let statusData = JSON.parse(payload);
 	let htmlElements = getHtmlElements(statusData.src);
+
+	console.log('populateNetworkElement:');
+	console.log(JSON.parse(payload));
 
 	// Stop processing if network element is hidden
     if ( elementHiddenOrMissing(htmlElements.status) ) { return false; }
