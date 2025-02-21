@@ -47,9 +47,9 @@ var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 // Return nanohome mqtt topics
 function getNanohomeTopics(description) {
 	return {
-		device:      "nanohome/devices/" + description,
-		standby:     "nanohome/standby/" + description,
-		timer:       "nanohome/timer/" + description
+		device:  "nanohome/devices/" + description,
+		standby: "nanohome/standby/" + description,
+		timer:   "nanohome/timer/" + description
 	}
 }
 
