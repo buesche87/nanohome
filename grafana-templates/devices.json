@@ -1,40 +1,4 @@
 {
-  "meta": {
-    "type": "db",
-    "canSave": true,
-    "canEdit": true,
-    "canAdmin": true,
-    "canStar": true,
-    "canDelete": true,
-    "slug": "devices",
-    "url": "/d/fe47pva0wy8lcb/devices",
-    "expires": "0001-01-01T00:00:00Z",
-    "created": "2025-02-18T16:52:41Z",
-    "updated": "2025-02-21T22:02:36Z",
-    "updatedBy": "admin",
-    "createdBy": "nanohome",
-    "version": 9,
-    "hasAcl": false,
-    "isFolder": false,
-    "folderId": 1,
-    "folderUid": "bedgcbaqabbb4c",
-    "folderTitle": "nanohome",
-    "folderUrl": "/dashboards/f/bedgcbaqabbb4c/nanohome",
-    "provisioned": false,
-    "provisionedExternalId": "",
-    "annotationsPermissions": {
-      "dashboard": {
-        "canAdd": true,
-        "canEdit": true,
-        "canDelete": true
-      },
-      "organization": {
-        "canAdd": true,
-        "canEdit": true,
-        "canDelete": true
-      }
-    }
-  },
   "dashboard": {
     "annotations": {
       "list": [
@@ -55,7 +19,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 3,
+    "id": null,
     "links": [],
     "panels": [
       {
@@ -438,7 +402,7 @@
     "timezone": "",
     "title": "Devices",
     "uid": "fe47pva0wy8lcb",
-    "version": 9,
+    "version": 1,
     "weekStart": ""
   }
 }
