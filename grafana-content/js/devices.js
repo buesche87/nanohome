@@ -140,14 +140,14 @@ function onMessageArrived(message) {
 		// Parse status message
 		if ( topicSplit[1] == "devicestatus" ) {
 			console.log('Device status received:');
-			console.log(JSON.parse(message));
+			console.log(message);
 			populateNetworkElement(payload);
 		}
 
 		// Set example panel description and icon
 		if ( topicSplit[1] == "devices" ) {
 			console.log('Device info received:');
-			console.log(JSON.parse(message));
+			console.log(message);
 			setExampleElementDescription(payload);
 			setExampleElementIcon(payload);
 		}
