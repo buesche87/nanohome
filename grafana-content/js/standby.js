@@ -86,23 +86,24 @@ function populatePanels(payload) {
 	let standbyThreshold = document.getElementById(standby_thresholdPrefix + jsonData.description);
 	let standbyWait = document.getElementById(standby_delayPrefix + jsonData.description);
 
-	if (checkElement(standbyStatus)) {
-		if ( /^\d+$/.test(jsonData.threshold) ) {
-			standbyThreshold.value = jsonData.threshold;
-		}
-		if ( /^\d+$/.test(jsonData.wait) ) {
-			standbyWait.value = jsonData.wait;
-		}
-		if ( jsonData.threshold > 0 ) {
-			standbyStatus.innerText = "Active";
-			standbyStatus.classList.remove('statusfalse');
-			standbyStatus.classList.add('statusgreen');
-		} else {
-			standbyStatus.innerText = "Inactive";
-			standbyStatus.classList.remove('statusgreen');
-			standbyStatus.classList.add('statusfalse');
-		}
+	// Stop processing if status element is hidden
+    if (elementHiddenOrMissing(standbyStatus)) { return; }	
+
+	// If threshold and wait time values are a digit, populate it
+	if ( /^\d+$/.test(jsonData.threshold) ) { standbyThreshold.value = jsonData.threshold; }
+	if ( /^\d+$/.test(jsonData.wait) ) { standbyWait.value = jsonData.wait;	}
+
+	// If threshold is set bigger than 0 set status element active
+	if ( jsonData.threshold > 0 ) {
+		standbyStatus.innerText = "Active";
+		standbyStatus.classList.remove('statusfalse');
+		standbyStatus.classList.add('statusgreen');
+	} else {
+		standbyStatus.innerText = "Inactive";
+		standbyStatus.classList.remove('statusgreen');
+		standbyStatus.classList.add('statusfalse');
 	}
+
 }
 
 // Save device details to jsonStore - [json payload]
@@ -110,12 +111,14 @@ function populateDeviceJsonStore(payload) {
 	let jsonData = JSON.parse(payload);
 	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
 
-	if (checkElement(jsonStore)) {
-		jsonStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
+	// Stop processing if datastore is hidden
+    if (elementHiddenOrMissing(jsonStore)) { return; }
 
-		console.log("json for " + jsonData.description + " populated to " + jsonStore.id);
-		console.log(jsonData);
-	}
+	// Save standby config to devices ddatastore
+	jsonStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
+
+	console.log("json for " + jsonData.description + " populated to " + jsonStore.id);
+	console.log(jsonData);
 }
 
 /*
@@ -124,15 +127,16 @@ function populateDeviceJsonStore(payload) {
 ===============================================================
 */
 
-// Generate Json for StandbyData
+// Generate json for standby configuration
 function generateStandbyJson(description) {
 	let jsonStore = document.getElementById(standby_statusPrefix + description);
 	let jsonData = JSON.parse(jsonStore.getAttribute(standby_deviceDataAttribute));
-
 	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
 	let standbyWait = document.getElementById(standby_delayPrefix + description).value;
 
-	if (! checkElement(standbyWait)) { standbyWait = 0; }
+	// Set optional wait time to 0 if it was not set
+	if (elementHiddenOrMissing(standbyWait)) { standbyWait = 0; }
+
 	let newElement = {
 		"description": description,
 		"deviceId": jsonData.deviceId,
@@ -142,6 +146,7 @@ function generateStandbyJson(description) {
 		"wait": standbyWait,
 		"state": "off"
 	};
+
 	return newElement;
 }
 

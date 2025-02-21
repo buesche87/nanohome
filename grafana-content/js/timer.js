@@ -48,7 +48,7 @@ function saveTimer(description) {
 	let existingConfig = JSON.parse(dataStore.getAttribute(timerDataAttribute));
 
 	// Calculate an index for a new entry in the json array or create a new array if no config was found
-	let jsonIndex = checkElement(existingConfig) ? getJsonIndex(existingConfig) : (existingConfig = [], 1);
+	let jsonIndex = !elementHiddenOrMissing(existingConfig) ? getJsonIndex(existingConfig) : (existingConfig = [], 1);
 
 	// Create the entry and add it to the config
 	let newJsonElement = generateTimerJson(description, jsonIndex);
@@ -141,65 +141,71 @@ function onMessageArrived(message) {
 function copyToCache(jsonPayload, description, cache) {
 	let dataStore = document.getElementById(timerStatusPrefix + description);
 
-	if (checkElement(dataStore)) {
-		switch(cache) {
-			case "devices":
-				dataStore.setAttribute(deviceDataAttribute, JSON.stringify(jsonPayload));
-				break;
-			case "timer":
-				dataStore.setAttribute(timerDataAttribute, JSON.stringify(jsonPayload));
-				break;
-		} 
+	// Stop processing datastore is hidden
+    if (elementHiddenOrMissing(dataStore)) { return; }
 
-		console.log('"' + description + '" config saved to "' + cache + '" cache');
-		console.log(jsonPayload);
-	}
+	// Save config to devices datastore
+	switch(cache) {
+		case "devices":
+			dataStore.setAttribute(deviceDataAttribute, JSON.stringify(jsonPayload));
+			break;
+		case "timer":
+			dataStore.setAttribute(timerDataAttribute, JSON.stringify(jsonPayload));
+			break;
+	} 
+
+	console.log('"' + description + '" config saved to "' + cache + '" cache');
+	console.log(jsonPayload);
 }
 
 // Populate the timer list
 function populateTimerList(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
-	if (checkElement(timerDetails.timerList)) {
+	// Stop processing if timer list element is hidden
+    if (elementHiddenOrMissing(timerDetails.timerList)) { return; }
 
-		console.log('Populating timer list "' + description + '"');
+	console.log('Populating timer list "' + description + '"');
 
-		// Clear timer list
-		for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
+	// Clear timer list
+	for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
 
-		// Populate timer list
-		timerJson.forEach(function(entry) {
-			var option = document.createElement("option");
+	// Populate timer list
+	timerJson.forEach(function(entry) {
+		var option = document.createElement("option");
 
-			// Set display text of entry
-			option.textContent = entry.timerPeriodText;
-			option.textContent += entry.timerOn ? " - On: " + entry.timerOn : "";
-			option.textContent += entry.timerOff ? " - Off: " + entry.timerOff : "";
+		// Set display text of entry
+		option.textContent = entry.timerPeriodText;
+		option.textContent += entry.timerOn ? " - On: " + entry.timerOn : "";
+		option.textContent += entry.timerOff ? " - Off: " + entry.timerOff : "";
 
-			// Set json config as value
-			option.value = JSON.stringify(entry);
-			timerDetails.timerList.appendChild(option);
+		// Set json config as value
+		option.value = JSON.stringify(entry);
+		timerDetails.timerList.appendChild(option);
 
-			console.log(entry);
-		});
-	}
+		console.log(entry);
+	});
+
 }
 
 // Set timer status active/inactive
 function setTimerStatus(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
-	if (checkElement(timerDetails.timerStatus)) {	
-		if (checkElement(timerJson) && JSON.stringify(timerJson) != "[]") {
-			timerDetails.timerStatus.innerText = "Active";
-			timerDetails.timerStatus.classList.remove('statusfalse');
-			timerDetails.timerStatus.classList.add('statusgreen');
-		} else {
-			timerDetails.timerStatus.innerText = "Inactive";
-			timerDetails.timerStatus.classList.remove('statusgreen');
-			timerDetails.timerStatus.classList.add('statusfalse');
-		}
+	// Stop processing if status elements is hidden
+    if (elementHiddenOrMissing(timerDetails.timerStatus)) { return; }
+
+	// Set status element
+	if (!elementHiddenOrMissing(timerJson) && JSON.stringify(timerJson) != "[]") {
+		timerDetails.timerStatus.innerText = "Active";
+		timerDetails.timerStatus.classList.remove('statusfalse');
+		timerDetails.timerStatus.classList.add('statusgreen');
+	} else {
+		timerDetails.timerStatus.innerText = "Inactive";
+		timerDetails.timerStatus.classList.remove('statusgreen');
+		timerDetails.timerStatus.classList.add('statusfalse');
 	}
+
 }
 
 /*

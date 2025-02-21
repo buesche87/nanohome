@@ -4,25 +4,30 @@
 ===============================================================
 */
 
-// Check latest index in json
+// Check latest index in json, return 1 
 function getJsonIndex(payload) {
 	let jsonIndex = 1;
 
-	if (checkElement(payload)) {
-		for (var j = 0; j < payload.length; j++) {
-			if (payload[j].index > jsonIndex) {
-				jsonIndex = payload[j].index;
-			}
+	// Stop processing if payload is empty
+    if (elementHiddenOrMissing(payload)) { return; }
+
+	// Get 
+	for (var j = 0; j < payload.length; j++) {
+		if (payload[j].index > jsonIndex) {
+			jsonIndex = payload[j].index;
 		}
-		jsonIndex++;
 	}
+
+	// Increment index
+	// TODO: Prüfen ob immer +1 zu viel ist
+	jsonIndex++;
 	return jsonIndex;
 }
 
 // Check if html element is defined eg. not hidden or missing
-function checkElement(element) {
-	return typeof element !== "undefined" && element !== null;
-}
+function elementHiddenOrMissing(element) {
+	return typeof element === "undefined" || element === null;
+  }
 
 // Execute command with nanohome shell
 function shellCommand(payload) {

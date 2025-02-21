@@ -25,40 +25,29 @@ var devmgr_tempComponent = "";
 ===============================================================
 */
 
-/*
-// Subscribe to all devices connected and description topic
-function getDeviceInfo() {
-	mqttSubscribe(connectedTopicAll, fastsubscribe);
-	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
-	mqttSubscribe(descriptionTopicAll, fastsubscribe);
-	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
-	mqttSubscribe(deviceTopicAll, fastsubscribe);
-}
-*/
-
 // Get device infos (onLoad - per device)
 function getDeviceStatus(device) {
 	let componentDetails = readHtmlPanels(device);
 
-	// Subscribe to all devices to get basic information
+	// Subscribe to all devices to get basic device information
 	mqttSubscribe(deviceTopicAll, normalsubscribe);
 	mqttSubscribe(connectedTopicAll, fastsubscribe);
 	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
 	mqttSubscribe(descriptionTopicAll, fastsubscribe);
 	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 
-	if (checkElement(componentDetails)) {
-		let componentTopics = getDeviceTopics(componentDetails);
+	// Stop processing if html panels are hidden
+	if (elementHiddenOrMissing(componentDetails)) { return; }
 
-		if ( componentDetails.legacy ) {
-			setStatusLegacy(device);
-		} else {
+	// Set legacy or request status from shelly
+	let componentTopics = getDeviceTopics(componentDetails);
 
-			let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
-			mqttSubscribe(componentTopics.rpcDest, longsubscribe);
-			mqttPublish(componentTopics.rpc, payload, false);
-			console.log('Subscribe to: ' + componentTopics.rpcDest);
-		}
+	if ( componentDetails.legacy ) {
+		setStatusLegacy(device);
+	} else {
+		let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
+		mqttSubscribe(componentTopics.rpcDest, longsubscribe);
+		mqttPublish(componentTopics.rpc, payload, false);
 	}
 }
 
@@ -68,7 +57,7 @@ function getDeviceStatus(device) {
 ===============================================================
 */
 
-// Connect or disconnect component
+// Connect or disconnect a component to nanohome
 function connectComponent(device) {
 	let componentDetails = readHtmlPanels(device);
 	let componentTopics = getDeviceTopics(componentDetails);
@@ -81,7 +70,7 @@ function connectComponent(device) {
 	getDeviceInfo();
 }
 
-// Save component details
+// Save component details as json to mqtt topic nanohome/devices/#
 function saveComponent(device) {
 	let componentDetails = readHtmlPanels(device);
 	let componentTopics = getDeviceTopics(componentDetails);
@@ -100,7 +89,7 @@ function saveComponent(device) {
 	getDeviceInfo();
 }
 
-// Create new dashboard element through nanohome_shell
+// Create a new dashboard panel through nanohome_shell
 function createPanel(device) {
 	let componentDetails = readHtmlPanels(device);
 	let componentCommands = getShellCommands(componentDetails);
@@ -108,7 +97,7 @@ function createPanel(device) {
 	// Confirm creation of element
 	let confirmDialog = confirm('Save "' + componentDetails.description + '" and create home dashboard panel?');
 
-	// Publish new device json and create dashboard panel
+	// Publish any changes and create a panel
 	if (confirmDialog) {
 		saveComponent(device);
 		shellCommand(componentCommands.createPanel);
@@ -221,23 +210,27 @@ function onMessageArrived(message) {
 
 /*
 ===============================================================
-	Populate Data
+	Populate Dashboard Data
 ===============================================================
 */
 
-// Populate description and connected - [string payload]
+// Populate description and connected state - [string payload]
 function populateStatusElement(device, component, element, payload) {
 	let htmlElements = getDevicesHtmlElements(device);
 	let divElement = document.getElementById(element + "_" + device);
 
-	if (checkElement(divElement) && checkElement(htmlElements.component) && component == htmlElements.component.value) {
+	// Stop processing if html elements are hidden or missing
+    if (elementHiddenOrMissing(divElement) || elementHiddenOrMissing(htmlElements.component)) { return false; }
 
-		if (element == "description" && checkElement(payload)) {
+	// Stop processing if component in config is not the one requested
+    if ( component != htmlElements.component.value ) { return false; }
+
+		if (element == "description" && !elementHiddenOrMissing(payload)) {
 			divElement.value = payload;
 		} else if (element == "description") {
 			divElement.value = "";
 		}
-
+	
 		if (element == "connected" && payload == "true") {
 			divElement.textContent = "Connected";
 			divElement.classList.add('statusgreen');
@@ -247,24 +240,27 @@ function populateStatusElement(device, component, element, payload) {
 			divElement.classList.add('statusfalse');
 			divElement.classList.remove('statusgreen');
 		}
-	}
 }
 
-// Populate component (if nonexistent) - [string payload]
+// Populate component dropdown - [string payload]
 function populateComponentElement(device, component) {
 	let componentSelect = document.getElementById(devmgr_componentPrefix + device);
 	let optionExists = false;
 
-	if (checkElement(componentSelect)) {
-		for (var i = 0; i < componentSelect.options.length; i++) {
-			if (componentSelect.options[i].value === component) {
-				optionExists = true;
-				return;
-			}
+	// Stop processing if network element is hidden
+    if (elementHiddenOrMissing(componentSelect)) { return; }
+
+	// Check if component was already populated
+	for (var i = 0; i < componentSelect.options.length; i++) {
+		if (componentSelect.options[i].value === component) {
+			optionExists = true;
+			return;
 		}
-		if (optionExists == false) {
-			componentSelect.options[componentSelect.options.length] = new Option(component, component);
-		}
+	}
+
+	// Add it if not
+	if (optionExists == false) {
+		componentSelect.options[componentSelect.options.length] = new Option(component, component);
 	}
 }
 
@@ -274,24 +270,26 @@ function populateNetworkElement(payload) {
 	let htmlElements = getDevicesHtmlElements(statusData.src);
 	let networkElement = htmlElements.status;
 
-	// exit if networkElement is hidden or missing
-    if (!checkElement(networkElement)) {
-		console.log("setExampleElementDescription: exit - network element for \"" + statusData.src + "\" hidden or missing");
-        return;
-    }
+	// Stop processing if network element is hidden
+    if (elementHiddenOrMissing(networkElement)) { return; }
 
+	// Parse json data and populate network panel
 	let ipaddress = statusData?.result?.wifi?.sta_ip;
 	let update = statusData?.result?.sys?.available_updates?.stable?.version;
 	let statusText = "Offline";
 
-	if (checkElement(update) && checkElement(ipaddress)) {
+	// Stop processing if ip adress is missing from json
+    if (elementHiddenOrMissing(ipaddress)) { return; }
+
+	// Populate ip address or update notification
+	if (!elementHiddenOrMissing(update)) {
 		statusText = ipaddress;
 		statusText += "\n";
 		statusText += "(Update: v" + update + ")";
 		networkElement.innerText = statusText;
 		networkElement.classList.remove('statusfalse');
 		networkElement.classList.add('statusorange');
-	} else if (checkElement(ipaddress)) {
+	} else {
 		networkElement.innerText = ipaddress;
 		networkElement.classList.remove('statusfalse');
 		networkElement.classList.add('statusgreen');
@@ -302,11 +300,12 @@ function populateNetworkElement(payload) {
 function setStatusLegacy(device) {
 	let htmlElements = getDevicesHtmlElements(device);
 
-	if (checkElement(htmlElements.status)) {
-		htmlElements.status.innerText = "Legacy";
-		htmlElements.status.classList.remove('statusfalse');
-		htmlElements.status.classList.add('statusgreen')
-	}
+	// Stop processing if status panel is hidden
+    if (elementHiddenOrMissing(htmlElements.status)) { return false; }
+
+	htmlElements.status.innerText = "Legacy";
+	htmlElements.status.classList.remove('statusfalse');
+	htmlElements.status.classList.add('statusgreen')
 }
 
 // Set example panel description - [json payload]
@@ -315,9 +314,10 @@ function setExampleElementDescription(payload) {
 	let exBtnDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + jsonData.deviceId);
 	let exSliderDescription = document.getElementById(devmgr_exBtnDescriptionPrefix + jsonData.deviceId);
 
-	if ( checkElement(exBtnDescription) ) {
+	// Populate button or slider, the one thats visible
+	if ( !elementHiddenOrMissing(exBtnDescription) ) {
 		exBtnDescription.textContent = jsonData.description;
-	} else if ( checkElement(exSliderDescription) ) {
+	} else if ( !elementHiddenOrMissing(exSliderDescription) ) {
 		exSliderDescription.textContent = jsonData.description;
 	}
 }
@@ -327,14 +327,16 @@ function setExampleElementIcon(payload) {
 	let jsonData = JSON.parse(payload);
 	let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + jsonData.deviceId);
 
-	if (checkElement(iconForm)) {
-		let radioButtons = iconForm.elements[devmgr_exBtnIconSelect];
-		
-		for (let i = 0; i < radioButtons.length; i++) {
-			if (radioButtons[i].value === jsonData.icon) {
-				radioButtons[i].checked = true;
-				break;
-			}
+	// Stop processing if icon element is hidden or does not exist
+    if (elementHiddenOrMissing(iconForm)) { return false; }
+
+	// Show icon configured in json
+	let radioButtons = iconForm.elements[devmgr_exBtnIconSelect];
+	
+	for (let i = 0; i < radioButtons.length; i++) {
+		if (radioButtons[i].value === jsonData.icon) {
+			radioButtons[i].checked = true;
+			break;
 		}
 	}
 }
@@ -377,35 +379,35 @@ function getDevicesHtmlElements(device) {
 // Get current components values - [string payload]
 function readHtmlPanels(device) {
 	let htmlElements = getDevicesHtmlElements(device);
+	let icon = "";
+	let legacy = false;
 
-	if (checkElement(htmlElements.component)) {
-		let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
-		let icon = "";
-		let legacy = false;
-		
-		// Get icon if example button is visible
-		if (checkElement(iconForm)) {
-			icon = iconForm.elements[devmgr_exBtnIconSelect].value;
-		}
+	// Stop processing if component element is hidden
+    if (elementHiddenOrMissing(htmlElements.component)) { return false; }
 
-		// Set legacy flag if component name is one of the legacyKeywords
-		if (legacyKeywords.some(legacyKeywords => htmlElements.component.value.includes(legacyKeywords))) {
-			legacy = true;
-		}
+	// Get html element containing the icons
+	let iconForm = document.getElementById(devmgr_exBtnIconFormPrefix + device);
 
-		return {
-			deviceId:            device,
-			description:         document.getElementById(devmgr_descriptionPrefix + device).value,
-			component:           document.getElementById(devmgr_componentPrefix + device).value,
-			connected:           document.getElementById(devmgr_connectedPrefix + device).textContent,
-			status:              document.getElementById(devmgr_statusPrefix + device).textContent,
-			exBtnDescription:    document.getElementById(devmgr_exBtnDescriptionPrefix + device).textContent,
-			exSliderDescription: document.getElementById(devmgr_exSliderDescriptionPrefix + device).textContent,
-			exButtonImage:       icon,
-			legacy:              legacy
-		}
-	} else {
-		return false;
+	// Get icon if example button is visible
+	if (!elementHiddenOrMissing(iconForm)) {
+		icon = iconForm.elements[devmgr_exBtnIconSelect].value;
+	}
+
+	// Set legacy flag if component name is one of the legacyKeywords
+	if (legacyKeywords.some(legacyKeywords => htmlElements.component.value.includes(legacyKeywords))) {
+		legacy = true;
+	}
+
+	return {
+		deviceId:            device,
+		description:         document.getElementById(devmgr_descriptionPrefix + device).value,
+		component:           document.getElementById(devmgr_componentPrefix + device).value,
+		connected:           document.getElementById(devmgr_connectedPrefix + device).textContent,
+		status:              document.getElementById(devmgr_statusPrefix + device).textContent,
+		exBtnDescription:    document.getElementById(devmgr_exBtnDescriptionPrefix + device).textContent,
+		exSliderDescription: document.getElementById(devmgr_exSliderDescriptionPrefix + device).textContent,
+		exButtonImage:       icon,
+		legacy:              legacy
 	}
 }
 
@@ -413,8 +415,9 @@ function readHtmlPanels(device) {
 function showExampleElement(device, element) {
 	let divElement = document.getElementById(element + "_" + device);
 
-	if (checkElement(divElement)) {
-		divElement.classList.remove('elementHidden');
-		divElement.classList.add('elementFlex');
-	}
+	// Stop processing if html elements are missing
+	if (elementHiddenOrMissing(divElement)) { return false; }
+
+	divElement.classList.remove('elementHidden');
+	divElement.classList.add('elementFlex');
 }

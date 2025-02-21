@@ -90,7 +90,7 @@ function onMessageArrived(message) {
 				output = statusData?.target_pos;
 			}
 			
-			if (checkElement(output)) {
+			if (!elementHiddenOrMissing(output)) {
 				setElementStatus(deviceid, component, output);
 			}
 		}
@@ -124,21 +124,23 @@ function onMessageArrived(message) {
 function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
 
-	if (checkElement(panelElement)) {
-		switch(payload) {
-			case "0":
-			case "0.0":
-			case 100:
-			case "100":
-			case "off":
-			case "false":
-			case false:
-				panelElement.classList.remove('statusgreen');
-				break;
-			default:
-				panelElement.classList.add('statusgreen');
-		} 
-	}
+	// Stop processing if panel is hidden or missing
+    if (elementHiddenOrMissing(panelElement)) { return; }	
+
+	// Set panel status
+	switch(payload) {
+		case "0":
+		case "0.0":
+		case 100:
+		case "100":
+		case "off":
+		case "false":
+		case false:
+			panelElement.classList.remove('statusgreen');
+			break;
+		default:
+			panelElement.classList.add('statusgreen');
+	} 
 }
 
 // Show slider position on output element for 5 seconds
