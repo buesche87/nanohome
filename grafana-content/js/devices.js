@@ -430,11 +430,10 @@ function getElementValues(device) {
 		deviceId:            device,
 		description:         htmlElements.description.value,
 		component:           htmlElements.component.value,
-		connected:           htmlElements.connected.value,
-		status:              htmlElements.status.value,
-		exBtnDescription:    htmlElements.exBtnDescription.value,
-		exBtnIconForm:       htmlElements.exBtnIconForm.value,
-		exSliderDescription: htmlElements.exSliderDescription.value,
+		connected:           htmlElements.connected.textContent,
+		status:              htmlElements.status.textContent,
+		exBtnDescription:    htmlElements.exBtnDescription.textContent,
+		exSliderDescription: htmlElements.exSliderDescription.textContent,
 		icon:                icon,
 		legacy:              legacy
 	}
