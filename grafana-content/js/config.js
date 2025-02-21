@@ -39,13 +39,10 @@ var legacyKeywords = ["relay"];
 var deviceTopicAll = "nanohome/devices/+";
 var outputTopicAll = "+/status/+/output";
 var outputTopicAllLegacy = "shellies/+/relay/0";
-//var connectedTopicAll = "+/status/+/connected";
-//var descriptionTopicAll = "+/status/+/description";
-//var standbyTopicAll = "nanohome/standby/+";
-//var timerTopicAll = "nanohome/timer/+";
-//var connectedTopicAllLegacy = "shellies/+/+/+/connected";
-//var descriptionTopicAllLegacy = "shellies/+/+/+/description";
-
+var connectedTopicAll = "+/status/+/connected";
+var connectedTopicAllLegacy = "shellies/+/+/+/connected";
+var descriptionTopicAll = "+/status/+/description";
+var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 
 // Return nanohome mqtt topics
 function getNanohomeTopics(description) {
