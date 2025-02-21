@@ -27,6 +27,7 @@ var devmgr_tempComponent = "";
 
 // Get device status (onLoad - all devices)
 function getDeviceStatus() {
+	mqttSubscribe(deviceTopicAll, normalsubscribe);
 	mqttSubscribe(connectedTopicAll, fastsubscribe);
 	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
 	mqttSubscribe(descriptionTopicAll, fastsubscribe);
@@ -37,12 +38,9 @@ function getDeviceStatus() {
 function getDeviceDetails(device) {
 	let componentDetails = getElementValues(device);
 	let componentTopics = getDeviceTopics(componentDetails);
-	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
-	// Get retained configs
 	getDeviceStatus();
-	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
-	
+
 	// Stop processing if component element is missing
 	if ( !componentDetails.component ) { return false; }
 
@@ -55,6 +53,7 @@ function getDeviceDetails(device) {
 		mqttPublish(componentTopics.rpc, payload, false);
 	}
 }
+
 
 /*
 ===============================================================
