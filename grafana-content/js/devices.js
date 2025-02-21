@@ -27,7 +27,6 @@ var devmgr_tempComponent = "";
 
 // Get device status (onLoad - all devices)
 function getDeviceStatus() {
-	mqttSubscribe(deviceTopicAll, normalsubscribe);
 	mqttSubscribe(connectedTopicAll, fastsubscribe);
 	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
 	mqttSubscribe(descriptionTopicAll, fastsubscribe);
@@ -36,13 +35,15 @@ function getDeviceStatus() {
 
 // Get device details (onLoad - per device)
 function getDeviceDetails(device) {
+	let htmlElements = getHtmlElements(device);
 	let componentDetails = getElementValues(device);
 	let componentTopics = getDeviceTopics(componentDetails);
+	let nanohomeTopics = getNanohomeTopics(componentTopics.description);
 
-	getDeviceStatus();
+	// Stop processing if status panel is hidden
+    if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
-	// Stop processing if component element is missing
-	if ( !componentDetails.component ) { return false; }
+	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
 
 	// Set legacy or request status from shelly
 	if ( componentDetails.legacy ) {
