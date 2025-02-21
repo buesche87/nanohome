@@ -314,7 +314,7 @@ function populateNetworkElement(payload) {
 	htmlElements.status.classList.remove('statusfalse');
 
 	// Populate ip address or update notification
-	if ( !elementHiddenOrMissing(update) ) {
+	if ( elementHiddenOrMissing(update) ) {
 		htmlElements.status.innerText = ipaddress;
 		htmlElements.status.classList.add('statusgreen');
 	} else {
