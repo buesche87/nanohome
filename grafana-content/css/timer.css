@@ -36,6 +36,7 @@ hr.thight {
 	text-align-last: left;
 	font-family: Consolas,monaco,monospace;
 	overflow: hidden;
+	width: 100%;
 }
 
 select[size].listBox {
@@ -73,14 +74,14 @@ select[size].listBox {
 }
 
 .statusElement {
-	width: 100%;
 	color: var(--text-color);
 	background-color: var(--background-color);
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 	padding-left: var(--padding);
 	padding-right: var(--padding);
-	height: var(--input-heigh);
+	height: var(--input-height);
+	width: 100%;
 }
 
 div.statusElement {
@@ -99,12 +100,12 @@ div.statusElement {
 
 .detailValue {
 	flex: 2;
-	height: var(--input-heigh);
 	padding-right: var(--padding);
 	padding-left: var(--padding);
 	width: auto;
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
+	height: var(--input-height);
 }
 
 /*
