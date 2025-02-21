@@ -13,6 +13,7 @@
 	--input-width: 100%;
 	--input-height: 28px;
 	--label-height: 28px;
+	--gap-size: 10px;
 }
 
 .devmgr {
@@ -53,8 +54,14 @@ hr.thight {
 
 .statusRow {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
 	align-items: center;
+	width: 100%;
+	gap: var(--gap-size);
+}
+
+.statusGroup {
+	display: flex;
 	width: 100%;
 	gap: var(--gap-size);
 }
@@ -68,6 +75,13 @@ hr.thight {
 	padding-right: 15px;
 	width: 100%;
 	height: 46px;
+}
+
+div.statusElement {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
 }
 
 .detailLabel {
