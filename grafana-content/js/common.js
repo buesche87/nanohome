@@ -4,7 +4,7 @@
 ===============================================================
 */
 
-// Check latest index in json, return 1 
+// Rturn latest index in json array, return 1 if none set
 function getJsonIndex(payload) {
 	let jsonIndex = 1;
 
@@ -19,15 +19,27 @@ function getJsonIndex(payload) {
 	}
 
 	// Increment index
-	// TODO: Prüfen ob immer +1 zu viel ist
 	jsonIndex++;
 	return jsonIndex;
 }
 
-// Check if html element is defined eg. not hidden or missing
+/*
+// Check if html element is defined not hidden or missing
 function elementHiddenOrMissing(element) {
 	return typeof element === "undefined" || element === null;
-  }
+}
+*/
+
+// Check if html element is hidden or missing
+function elementHiddenOrMissing(...elements) {
+	return elements.some(element => element === undefined || element === null);
+}
+
+
+// Check if variable is empty
+function checkEmpty(variable) {
+    return variable?.toString().trim() === "";
+}
 
 // Execute command with nanohome shell
 function shellCommand(payload) {

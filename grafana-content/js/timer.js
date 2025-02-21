@@ -142,7 +142,7 @@ function copyToCache(jsonPayload, description, cache) {
 	let dataStore = document.getElementById(timerStatusPrefix + description);
 
 	// Stop processing datastore is hidden
-    if (elementHiddenOrMissing(dataStore)) { return; }
+    if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
 	// Save config to devices datastore
 	switch(cache) {
@@ -154,7 +154,7 @@ function copyToCache(jsonPayload, description, cache) {
 			break;
 	} 
 
-	console.log('"' + description + '" config saved to "' + cache + '" cache');
+	console.log('"' + description + '" config saved to "' + cache + '" cache' );
 	console.log(jsonPayload);
 }
 
@@ -163,12 +163,12 @@ function populateTimerList(timerJson, description) {
 	let timerDetails = getTimerHtmlElements(description);
 
 	// Stop processing if timer list element is hidden
-    if (elementHiddenOrMissing(timerDetails.timerList)) { return; }
+    if ( elementHiddenOrMissing(timerDetails.timerList) ) { return false; }
 
 	console.log('Populating timer list "' + description + '"');
 
 	// Clear timer list
-	for (a in timerDetails.timerList.options) { timerDetails.timerList.options.remove(0); }
+	for ( a in timerDetails.timerList.options ) { timerDetails.timerList.options.remove(0); }
 
 	// Populate timer list
 	timerJson.forEach(function(entry) {

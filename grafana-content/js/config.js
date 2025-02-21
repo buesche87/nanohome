@@ -72,15 +72,6 @@ function getDeviceTopics(componentDetails) {
 	}
 }
 
-// Device commands - [object payload]
-function getShellCommands(componentDetails) {
-	return {
-		createPanel:      'create_panel "' + componentDetails.description + '"',
-		removeComponent:  'remove_component "' + componentDetails.description + '"',
-		clearMeasurement: 'clear_measurement "' + componentDetails.description + '"' 
-	}
-}
-
 /*
 ===============================================================
 	3rd Party .js
