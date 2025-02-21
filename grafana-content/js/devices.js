@@ -40,7 +40,8 @@ function getDeviceInfo() {
 function getDeviceStatus(device) {
 	let componentDetails = readHtmlPanels(device);
 
-	mqttSubscribe(deviceTopicAll, fastsubscribe);
+	mqttSubscribe(deviceTopicAll, normalsubscribe);
+	console.log('Subscribe to: ' + deviceTopicAll);
 
 	if (checkElement(componentDetails)) {
 
@@ -53,10 +54,16 @@ function getDeviceStatus(device) {
 			let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
 			mqttSubscribe(componentTopics.rpcDest, longsubscribe);
 			mqttPublish(componentTopics.rpc, payload, false);
+			console.log('Subscribe to: ' + componentTopics.rpcDest);
 		}
 
 		mqttSubscribe(componentTopics.connected, fastsubscribe); 
 		mqttSubscribe(componentTopics.description, fastsubscribe); 
+
+		console.log('Subscribe to: ' + componentTopics.connected);
+		console.log('Subscribe to: ' + componentTopics.description);
+		
+
 	}
 }
 
