@@ -46,18 +46,19 @@ var outputTopicAllLegacy = "shellies/+/relay/0";
 //var connectedTopicAllLegacy = "shellies/+/+/+/connected";
 //var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 
-// Device commands - [object payload]
-function getShellCommands(componentDetails) {
+
+// Return nanohome mqtt topics
+function getNanohomeTopics(description) {
 	return {
-		createPanel:      'create_panel "' + componentDetails.description + '"',
-		removeComponent:  'remove_component "' + componentDetails.description + '"',
-		clearMeasurement: 'clear_measurement "' + componentDetails.description + '"' 
+		device:      "nanohome/devices/" + description,
+		standby:     "nanohome/standby/" + description,
+		timer:       "nanohome/timer/" + description
 	}
 }
 
 // Return devices mqtt topics - [object payload]
 function getDeviceTopics(componentDetails) {
-	if (componentDetails.legacy) {
+	if ( componentDetails.legacy ) {
 		let componentSplit = componentDetails.component.split(":");
 		return {
 			connected:   "shellies/" + componentDetails.deviceId + "/" + componentSplit[0] + "/" + componentSplit[1] + "/connected",
@@ -71,6 +72,15 @@ function getDeviceTopics(componentDetails) {
 			rpcSource:   "nanohome/devicestatus/" + componentDetails.deviceId,
 			rpcDest:     "nanohome/devicestatus/" + componentDetails.deviceId + "/rpc"
 		}
+	}
+}
+
+// Device commands - [object payload]
+function getShellCommands(componentDetails) {
+	return {
+		createPanel:      'create_panel "' + componentDetails.description + '"',
+		removeComponent:  'remove_component "' + componentDetails.description + '"',
+		clearMeasurement: 'clear_measurement "' + componentDetails.description + '"' 
 	}
 }
 

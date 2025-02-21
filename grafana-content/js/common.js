@@ -1,20 +1,5 @@
 /*
 ===============================================================
-	Nanohome Device Functions
-===============================================================
-*/
-
-// Return nanohome mqtt topics
-function getNanohomeTopics(description) {
-	return {
-		device:      "nanohome/devices/" + description,
-		standby:     "nanohome/standby/" + description,
-		timer:       "nanohome/timer/" + description
-	}
-}
-
-/*
-===============================================================
 	Global Helper Functions
 ===============================================================
 */

@@ -40,11 +40,14 @@ function getDeviceInfo() {
 function getDeviceStatus(device) {
 	let componentDetails = readHtmlPanels(device);
 
+	// Subscribe to all devices to get basic information
 	mqttSubscribe(deviceTopicAll, normalsubscribe);
-	console.log('Subscribe to: ' + deviceTopicAll);
+	mqttSubscribe(connectedTopicAll, fastsubscribe);
+	mqttSubscribe(connectedTopicAllLegacy, fastsubscribe);
+	mqttSubscribe(descriptionTopicAll, fastsubscribe);
+	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 
 	if (checkElement(componentDetails)) {
-
 		let componentTopics = getDeviceTopics(componentDetails);
 
 		if ( componentDetails.legacy ) {
@@ -56,14 +59,6 @@ function getDeviceStatus(device) {
 			mqttPublish(componentTopics.rpc, payload, false);
 			console.log('Subscribe to: ' + componentTopics.rpcDest);
 		}
-
-		mqttSubscribe(componentTopics.connected, fastsubscribe); 
-		mqttSubscribe(componentTopics.description, fastsubscribe); 
-
-		console.log('Subscribe to: ' + componentTopics.connected);
-		console.log('Subscribe to: ' + componentTopics.description);
-		
-
 	}
 }
 
