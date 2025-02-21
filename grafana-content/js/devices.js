@@ -297,9 +297,6 @@ function populateNetworkElement(payload) {
 	let statusData = JSON.parse(payload);
 	let htmlElements = getHtmlElements(statusData.src);
 
-	console.log('populateNetworkElement:');
-	console.log(JSON.parse(payload));
-
 	// Stop processing if network element is hidden
     if ( elementHiddenOrMissing(htmlElements.status) ) { return false; }
 
@@ -308,7 +305,7 @@ function populateNetworkElement(payload) {
 	let update = statusData?.result?.sys?.available_updates?.stable?.version;
 	let statusText = "Offline";
 
-	console.log('IP: ' + update);
+	console.log('IP: ' + ipaddress);
 	console.log('Update: ' + update);
 
 	// Stop processing if ip adress is missing from json
@@ -317,13 +314,11 @@ function populateNetworkElement(payload) {
 	htmlElements.status.classList.remove('statusfalse');
 
 	// Populate ip address or update notification
-	if ( checkEmpty(update) ) {
+	if ( !elementHiddenOrMissing(update) ) {
 		htmlElements.status.innerText = ipaddress;
 		htmlElements.status.classList.add('statusgreen');
 	} else {
-		statusText = ipaddress;
-		statusText += "\n";
-		statusText += "(Update: v" + update + ")";
+		statusText = ipaddress + "\n" +	"(Update: v" + update + ")";
 		htmlElements.status.innerText = statusText;
 		htmlElements.status.classList.add('statusorange');
 	}
