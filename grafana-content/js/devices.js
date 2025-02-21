@@ -403,7 +403,7 @@ function getHtmlElements(device) {
 }
 
 // Get current devices element values - [object input]
-function getElementsValue(device) {
+function getElementValues(device) {
 	let htmlElements = getHtmlElements(device);
 
 	// Stop processing if component element is hidden
