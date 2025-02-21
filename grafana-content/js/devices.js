@@ -305,19 +305,19 @@ function populateNetworkElement(payload) {
 	let update = statusData?.result?.sys?.available_updates?.stable?.version;
 	let statusText = "Offline";
 
-	console.log('IP: ' + ipaddress);
-	console.log('Update: ' + update);
-
 	// Stop processing if ip adress is missing from json
     if ( checkEmpty(ipaddress) ) { return false; }
 
 	htmlElements.status.classList.remove('statusfalse');
+	console.log(statusData.device + ' IP: ' + ipaddress);
 
 	// Populate ip address or update notification
 	if ( elementHiddenOrMissing(update) ) {
+
 		htmlElements.status.innerText = ipaddress;
 		htmlElements.status.classList.add('statusgreen');
 	} else {
+		console.log(statusData.device + ' Update: v' + update);
 		statusText = ipaddress + "\n" +	"(Update: v" + update + ")";
 		htmlElements.status.innerText = statusText;
 		htmlElements.status.classList.add('statusorange');
