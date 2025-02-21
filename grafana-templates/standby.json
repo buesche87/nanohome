@@ -43,7 +43,7 @@
           "content": "<head>\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"../public/nanohome/css/standby.css\" />\n</head>\n<div id=\"deviceData\" style=\"font-size: large;\">\n\tStandby\n\t<hr class=\"thight\"></hr>\n</div>\n<script>\n\tfunction loadScript(url) {\n\t\treturn new Promise((resolve, reject) => {\n\n\t\t\tvar script = document.createElement(\"script\");\n\t\t\tscript.type = \"text/javascript\";\n\t\t\tscript.src = url;\n\n\t\t\tscript.onload = () => {\n\t\t\t\tconsole.log(\"Script loaded: \" + url.replace('../public/nanohome/js/',''));\n\t\t\t\tresolve();\n\t\t\t};\n\t\t\tscript.onerror = () => reject(new Error(`Failed to load script: ${url}`));\n\n\t\t\tdocument.head.appendChild(script);\n\t\t});\n\t}\n\n\tasync function loadScriptsInOrder(scripts) {\n\t\ttry {\n\t\t\tfor (const url of scripts) {\n\t\t\t\tawait loadScript(url);\n\t\t\t}\n\t\t} catch (error) {\n\t\t\tconsole.error(\"An error occurred:\", error);\n\t\t}\n\t}\n\n\tloadScriptsInOrder([\n\t\t\"../public/nanohome/js/config.js\",\n\t\t\"../public/nanohome/js/common.js\",\n\t\t\"../public/nanohome/js/standby.js\",\n\t\t\"../public/nanohome/js/mqtt.js\"\n\t]);\n</script>",
           "mode": "html"
         },
-        "pluginVersion": "11.5.1",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -80,10 +80,10 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"Threshold (W)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay:</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"Delay (s)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
+          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold (W)</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"Threshold (W)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay (s)</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"Delay (s)\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
           "mode": "html"
         },
-        "pluginVersion": "11.5.1",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -109,7 +109,7 @@
           "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\"\r\n            onclick='saveStandby(\"${Description}\")'>\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\"\r\n            onclick='removeStandby(\"${Description}\")'>\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
           "mode": "html"
         },
-        "pluginVersion": "11.5.1",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -135,7 +135,7 @@
           "content": "<div style=\"margin-top: -10px;\"><hr></div>",
           "mode": "html"
         },
-        "pluginVersion": "11.5.1",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"

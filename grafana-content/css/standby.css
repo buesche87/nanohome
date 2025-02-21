@@ -45,7 +45,6 @@ hr.thight {
 	padding-left: var(--padding);
 	padding-right: var(--padding);
 	width: auto;
-	height: var(--input-height);
 }
 
 .detailEntry {
