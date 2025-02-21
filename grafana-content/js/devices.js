@@ -38,7 +38,7 @@ function getDeviceDetails(device) {
 	let htmlElements = getHtmlElements(device);
 	let componentDetails = getElementValues(device);
 	let componentTopics = getDeviceTopics(componentDetails);
-	let nanohomeTopics = getNanohomeTopics(componentTopics.description);
+	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 	// Stop processing if status panel is hidden
     if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
@@ -240,7 +240,6 @@ function populateComponentElement(device, component) {
 	}
 }
 
-
 // Populate connection state - [string input]
 function populateConnectionState(device, component, payload) {
 	let htmlElements = getHtmlElements(device);
@@ -290,8 +289,8 @@ function populateDescription(device, component, payload) {
 }
 
 // Populate status with ip address and update notification - [json input]
-function populateNetworkElement(payload) {
-	let statusData = JSON.parse(payload);
+function populateNetworkElement(statusData) {
+	// let statusData = JSON.parse(payload);
 	let htmlElements = getHtmlElements(statusData.src);
 
 	// Stop processing if network element is hidden
@@ -315,7 +314,9 @@ function populateNetworkElement(payload) {
 		htmlElements.status.innerText = ipaddress;
 		htmlElements.status.classList.add('statusgreen');
 	} else {
-		statusText = ipaddress + "\n" + "(Update: v" + update + ")";
+		statusText = ipaddress;
+		statusText += "\n";
+		statusText += "(Update: v" + update + ")";
 		htmlElements.status.innerText = statusText;
 		htmlElements.status.classList.add('statusorange');
 	}
