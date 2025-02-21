@@ -1,4 +1,40 @@
 {
+  "meta": {
+    "type": "db",
+    "canSave": true,
+    "canEdit": true,
+    "canAdmin": true,
+    "canStar": true,
+    "canDelete": true,
+    "slug": "devices",
+    "url": "/d/fe47pva0wy8lcb/devices",
+    "expires": "0001-01-01T00:00:00Z",
+    "created": "2025-02-18T16:52:41Z",
+    "updated": "2025-02-21T23:00:40Z",
+    "updatedBy": "admin",
+    "createdBy": "nanohome",
+    "version": 10,
+    "hasAcl": false,
+    "isFolder": false,
+    "folderId": 1,
+    "folderUid": "bedgcbaqabbb4c",
+    "folderTitle": "nanohome",
+    "folderUrl": "/dashboards/f/bedgcbaqabbb4c/nanohome",
+    "provisioned": false,
+    "provisionedExternalId": "",
+    "annotationsPermissions": {
+      "dashboard": {
+        "canAdd": true,
+        "canEdit": true,
+        "canDelete": true
+      },
+      "organization": {
+        "canAdd": true,
+        "canEdit": true,
+        "canDelete": true
+      }
+    }
+  },
   "dashboard": {
     "annotations": {
       "list": [
@@ -19,7 +55,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": null,
+    "id": 3,
     "links": [],
     "panels": [
       {
@@ -132,7 +168,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "\t<div class=\"statusDiv\">\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tid=\"savebtn_${Device}\"\r\n\t\t\t\t\t\t\tonclick='saveComponent(\"${Device}\")'>\r\n\t\t\t\tSave\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\r\n\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\tstyle=\"color: orange\"\r\n\t\t\t\t\t\tid=\"clearMeasurement_${Device}\"\r\n\t\t\t\t\t\tonclick='clearMeasurement(\"${Device}\")'>\r\n\t\t\tClear Measurements\r\n\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\t\t\r\n\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\tstyle=\"color: red\"\r\n\t\t\t\t\t\tid=\"removeDevice_${Device}\"\r\n\t\t\t\t\t\tonclick='removeDevice(\"${Device}\")'>\r\n\t\t\tRemove Device\r\n\t\t</button>\r\n\t\t</div>\r\n\t</div>",
+          "content": "\t<div class=\"statusDiv\">\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tid=\"savebtn_${Device}\"\r\n\t\t\t\t\t\t\tonclick='saveComponent(\"${Device}\")'>\r\n\t\t\t\tSave\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tstyle=\"color: orange\"\r\n\t\t\t\t\t\t\tid=\"clearMeasurement_${Device}\"\r\n\t\t\t\t\t\t\tonclick='clearMeasurement(\"${Device}\")'>\r\n\t\t\t\tClear Measurements\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\t\t\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tstyle=\"color: red\"\r\n\t\t\t\t\t\t\tid=\"removeDevice_${Device}\"\r\n\t\t\t\t\t\t\tonclick='removeDevice(\"${Device}\")'>\r\n\t\t\t\tRemove Device\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
@@ -402,7 +438,7 @@
     "timezone": "",
     "title": "Devices",
     "uid": "fe47pva0wy8lcb",
-    "version": 1,
+    "version": 10,
     "weekStart": ""
   }
 }
