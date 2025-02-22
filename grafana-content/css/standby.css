@@ -15,8 +15,8 @@
 }
 
 hr.thight {
-        margin-top: 12px;
-        margin-bottom: 6px;
+	margin-top: 12px;
+	margin-bottom: 6px;
 }
 
 /*
@@ -52,6 +52,7 @@ hr.thight {
 	background-color: var(--background-color);
 	color: var(--text-color);
 	text-decoration: none;
+	text-align: center;
 	cursor: pointer;
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
@@ -61,7 +62,7 @@ hr.thight {
 	justify-content: center;
 	padding-left: var(--padding);
 	padding-right: var(--padding);
-	width: 30%;
+	width: 33%;
 	height: var(--input-height);
 }
 
@@ -71,41 +72,6 @@ hr.thight {
 	width: auto;
 	padding-left: var(--padding);
 	padding-right: var(--padding);
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-}
-
-/*
----------------------------------------------------------------
-	Status Panel
----------------------------------------------------------------
-*/
-
-
-
-.inputGroup {
-	display: flex;
-	align-items: center;
-	width: 100%;
-	gap: 5px; /* Space between label and input */
-}
-
-.inputLabel {
-	flex: 1; /* Label takes up space proportionally */
-	height: auto;
-	padding-right: 10px;
-}
-
-.inputValue {
-	flex: 2; /* Input field takes up more space */
-	height: var(--input-height);
-	width: auto; /* Allow input field to adjust */
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
-}
-
-select.inputValue {
-	height: var(--input-height);
 	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 }

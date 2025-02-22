@@ -78,8 +78,15 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	if ( topicSplit[1] == "devices" ) { saveToDeviceStore(payload); }
-	if ( topicSplit[1] == "standby" ) {	populatePanels(payload);	}
+	if ( topicSplit[1] == "devices" ) { 
+		console.log('Device config received:');
+		console.log(JSON.parse(payload));
+		saveToDeviceStore(JSON.parse(payload)); 
+	} else if ( topicSplit[1] == "standby" ) {	
+		console.log('Standby config received:');
+		console.log(JSON.parse(payload));
+		populatePanels(JSON.parse(payload));
+	}
 }
 
 /*
