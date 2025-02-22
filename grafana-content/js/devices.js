@@ -219,7 +219,6 @@ function onMessageArrived(message) {
 ===============================================================
 */
 
-
 // Populate component dropdown - [string input]
 function populateComponentElement(device, component) {
 	let componentSelect = document.getElementById(devmgr_componentPrefix + device);

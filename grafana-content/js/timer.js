@@ -133,7 +133,7 @@ function onMessageArrived(message) {
 */
 
 // Save config to cache
-function saveToStore(jsonPayload, description, cache) {$
+function saveToStore(jsonPayload, description, cache) {
 	let htmlElements = getHtmlElements(description);
 	let dataStore = htmlElements.timerStatus;;
 
@@ -156,7 +156,7 @@ function populateTimerList(timerJson, description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if timer list element is hidden
-    if ( elementHiddenOrMissing(htmlElements.timerList) ) { return false; }
+	if ( elementHiddenOrMissing(htmlElements.timerList) ) { return false; }
 
 	// Clear timer list
 	for ( a in htmlElements.timerList.options ) { htmlElements.timerList.options.remove(0); }
