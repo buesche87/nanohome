@@ -20,7 +20,7 @@ var standby_saveBtnPrefix = "standbySaveBtn_";
 ===============================================================
 */
 
-// Get standby info - OnLoad per device
+// Get standby and device infos
 function getStandby(description) {
 	let deviceTopic = "nanohome/devices/" + description; 
 	let standbyTopic = "nanohome/standby/" + description; 
@@ -37,23 +37,32 @@ function getStandby(description) {
 
 // Save standby values
 function saveStandby(description) {
+	let nanohomeTopics = getNanohomeTopics(description);
 	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
-	let standbyTopic = "nanohome/standby/" + description;
+	let standbyDelay = document.getElementById(standby_delayPrefix + description).value;
 
-	if ( /^\d+$/.test(standbyThreshold) ) {
-		let newJsonElement = generateStandbyJson(description);
-		mqttSubscribe(standbyTopic, longsubscribe);
-		mqttPublish(standbyTopic, JSON.stringify(newJsonElement), true);
-	} else {
-		alert("Ungültiger Wert");
+	// TODO: Stop processing if entered values are non-digit
+	if ( !/^\d+$/.test(standbyThreshold) ) {
+		alert("Invalid threshold value");
+		return false;
 	}
+
+	if ( !/^\d+$/.test(standbyDelay) && standbyDelay != "" ) {
+		alert("Invalid delay value");
+		return false;
+	}
+
+	// Create config and publish if values are digit digits
+	let newJsonElement = generateStandbyJson(description);
+	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
+	mqttPublish(nanohomeTopics.standby, JSON.stringify(newJsonElement), true);
 }
 
 // Clear standby values
 function removeStandby(description) {
-	let standbytopic = "nanohome/standby/" + description;
+	let nanohomeTopics = getNanohomeTopics(description);
 
-	mqttPublish(standbytopic, "", true);
+	mqttPublish(nanohomeTopics.standby, "", true);
 	clearPanels(description);
 }
 
@@ -69,7 +78,7 @@ function onMessageArrived(message) {
 	let topic = message.destinationName;
 	let topicSplit = topic.split("/");
 
-	if ( topicSplit[1] == "devices" ) { populateDeviceJsonStore(payload); }
+	if ( topicSplit[1] == "devices" ) { saveToDeviceStore(payload); }
 	if ( topicSplit[1] == "standby" ) {	populatePanels(payload);	}
 }
 
@@ -107,14 +116,14 @@ function populatePanels(payload) {
 }
 
 // Save device details to jsonStore - [json payload]
-function populateDeviceJsonStore(payload) {
+function saveToDeviceStore(payload) {
 	let jsonData = JSON.parse(payload);
 	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
 
 	// Stop processing if datastore is hidden
     if (elementHiddenOrMissing(jsonStore)) { return; }
 
-	// Save standby config to devices ddatastore
+	// Save standby config to devices datastore
 	jsonStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
 
 	console.log("json for " + jsonData.description + " populated to " + jsonStore.id);

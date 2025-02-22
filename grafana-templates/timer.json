@@ -80,7 +80,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<select class=\"listBox\"\n        id=\"timerList_${Description}\"\n        size=\"6\"\n        onchange='timerSelected(\"${Description}\")' />\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimerInfo(\"${Description}\"); \n     }\n  }, 300);\n</script>",
+          "content": "<select class=\"listBox\"\n        id=\"timerList_${Description}\"\n        size=\"6\"\n        onchange='timerSelected(\"${Description}\")' />\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimer(\"${Description}\"); \n     }\n  }, 300);\n</script>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",

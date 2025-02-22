@@ -23,18 +23,10 @@ function getJsonIndex(payload) {
 	return jsonIndex;
 }
 
-/*
-// Check if html element is defined not hidden or missing
-function elementHiddenOrMissing(element) {
-	return typeof element === "undefined" || element === null;
-}
-*/
-
 // Check if html element is hidden or missing
 function elementHiddenOrMissing(...elements) {
 	return elements.some(element => element === undefined || element === null);
 }
-
 
 // Check if variable is empty
 function checkEmpty(variable) {

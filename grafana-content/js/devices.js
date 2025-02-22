@@ -133,10 +133,8 @@ function removeComponent(device) {
 
 // Decide what to do with new mqtt mesages
 function onMessageArrived(message) {
-
 	let payload = message.payloadString;
-	let topic = message.destinationName;
-	let topicSplit = topic.split("/");
+	let topicSplit = message.destinationName.split("/");
 
 	//================================
 	// Topic: nanohome/+/+
@@ -238,7 +236,7 @@ function populateComponentElement(device, component) {
 		}
 	}
 
-	// Add it to list if not
+	// Add component to list if it does not already exist
 	if (optionExists == false) {
 		componentSelect.options[componentSelect.options.length] = new Option(component, component);
 	}
@@ -306,14 +304,12 @@ function populateNetworkElement(payload) {
 	let statusText = "Offline";
 
 	// Stop processing if ip adress is missing from json
-    if ( checkEmpty(ipaddress) ) { return false; }
+    if ( elementHiddenOrMissing(ipaddress) ) { return false; }
 
 	htmlElements.status.classList.remove('statusfalse');
-	console.log(statusData.device + ' IP: ' + ipaddress);
 
 	// Populate ip address or update notification
 	if ( elementHiddenOrMissing(update) ) {
-
 		htmlElements.status.innerText = ipaddress;
 		htmlElements.status.classList.add('statusgreen');
 	} else {
