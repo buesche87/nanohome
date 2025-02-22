@@ -120,7 +120,7 @@ function onMessageArrived(message) {
 	} else if ( topicSplit[1] == "timer" ) {
 		console.log('Timer config received:');
 		console.log(JSON.parse(payload));
-		saveToStore(payload, description, "timer");
+		saveToStore(JSON.parse(payload), description, "timer");
 		populateTimerList(JSON.parse(payload), description);
 		setTimerStatus(JSON.parse(payload), description);
 	} 

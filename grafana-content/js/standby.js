@@ -96,8 +96,7 @@ function onMessageArrived(message) {
 */
 
 // Populate standby settings with content from mqtt message - [json payload]
-function populatePanels(payload) {
-	let jsonData = JSON.parse(payload);
+function populatePanels(jsonData) {
 	let standbyStatus = document.getElementById(standby_statusPrefix + jsonData.description);
 	let standbyThreshold = document.getElementById(standby_thresholdPrefix + jsonData.description);
 	let standbyWait = document.getElementById(standby_delayPrefix + jsonData.description);
@@ -123,8 +122,7 @@ function populatePanels(payload) {
 }
 
 // Save device details to jsonStore - [json payload]
-function saveToDeviceStore(payload) {
-	let jsonData = JSON.parse(payload);
+function saveToDeviceStore(jsonData) {
 	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
 
 	// Stop processing if datastore is hidden
