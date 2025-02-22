@@ -116,13 +116,13 @@ function onMessageArrived(message) {
 	if ( topicSplit[1] == "devices" ) {
 		console.log('Device config received:');
 		console.log(JSON.parse(payload));
-		saveToStore(payload, description, "devices");
+		saveToStore(JSON.parse(payload), description, "devices");
 	} else if ( topicSplit[1] == "timer" ) {
 		console.log('Timer config received:');
 		console.log(JSON.parse(payload));
 		saveToStore(payload, description, "timer");
-		populateTimerList(payload, topicSplit[2]);
-		setTimerStatus(payload, topicSplit[2]);
+		populateTimerList(JSON.parse(payload), description);
+		setTimerStatus(JSON.parse(payload), description);
 	} 
 }
 
