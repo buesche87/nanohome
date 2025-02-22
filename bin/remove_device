@@ -7,12 +7,9 @@
 # - Delete its retained mqtt messages
 # - Remove crontab entries
 #/////////////////////////////////////////////////////////////////////////////////////
-
-# Parameter & Variables
 DEVICE="$1"
-COMPONENT="$2"
-DESCRIPTION="$3"
-LEGACY="$4"
+
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -28,33 +25,34 @@ if [ -n "${DEVICE}" ]; then
 fi
 
 # Prepare mqtt topics to be cleared
-DEVICETOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_DEVICES}" )
-HOMETOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_HOME}" )
-STANDBYTOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_STANDBY}" )
-TIMERTOPIC=$( sed -e "s+/+$DEVICE+1" <<< "${MQTT_TOPIC_TIMER}" )
+DEVICETOPIC="${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}"
+TIMERTOPIC="${MQTT_TOPIC_TIMER}/${DESCRIPTION}"
 
 if [ "${LEGACY}" == "true" ]; then
-	COMPONENTNAME=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
-	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
-
-	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_CONNECTED_LEGACY}" )
-	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_DESCRIPTION_LEGACY}" )
-	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_OUTPUT_LEGACY}" )
+	SHELLYTOPIC="shellies/${DEVICE}/+/+/+"
 else
-	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_CONNECTED}" )
-	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_DESCRIPTION}" )
-	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_OUTPUT}" )
+	SHELLYTOPIC="${DEVICE}/status/+/+"
 fi
 
 # Clean mqtt topics
-mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m ""
-mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DESCRIPTIONTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DEVICETOPIC}" -m ""
-mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${OUTPUTTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${STANDBYTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${TIMERTOPIC}" -m ""
+mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${SHELLYTOPIC}" -m ""
 
 # Remove device from crontab file
 sed -i "/${DEVICE}/d" "${NANOHOME_CRONTABS}"
 
+# Kill running services for legacy devices
+if [ "${LEGACY}" == "true" ]; then
+	ENERGYPID=$( ps | grep "${DEVICE}" | grep "energy" | grep -v "grep" | awk '{print $1}' )
+	POWERPID=$( ps | grep "${DEVICE}" | grep "power" | grep -v "grep" | awk '{print $1}' )
+	TEMPPID=$( ps | grep "${DEVICE}" | grep "temperature" | grep -v "grep" | awk '{print $1}' )
+	[[ -n "${ENERGYPID}" ]] && kill -9 "${ENERGYPID}"
+	[[ -n "${POWERPID}" ]] && kill -9 "${POWERPID}"
+	[[ -n "${TEMPPID}" ]] && kill -9 "${TEMPPID}"
+fi
+
 # Log
+[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Device \"${DEVICE}\" removed" >> /proc/1/fd/1

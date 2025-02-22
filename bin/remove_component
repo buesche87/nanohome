@@ -7,10 +7,9 @@
 # - Delete its retained mqtt messages
 # - Remove crontab entries
 #/////////////////////////////////////////////////////////////////////////////////////
-
-# Parameter & Variables
 DESCRIPTION="$1"
 
+# MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
 	-u "${MQTT_USER}"
@@ -20,8 +19,8 @@ MQTT_CONNECTION_STRING=(
 # Load component config from "nanohome/devices/"
 PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-        --retained-only --quiet -C 1 -W 1 \
-        -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+	--retained-only --quiet -C 1 -W 1 \
+    -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
 )
 
 # Exit if no config found
@@ -34,13 +33,10 @@ fi
 DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_CONFIG_JSON}" )
 COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG_JSON}" )
 DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG_JSON}" )
-ICON=$( jq -r '.icon' <<< "${PUBLISHED_CONFIG_JSON}" )
 LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
-DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
 
 # Clear Measurement
 if [ -n "${DESCRIPTION}" ]; then
-
 	influx delete --bucket "${INFLUX_BUCKET_MEASUREMENTS}" \
 	  --start '1970-01-01T00:00:00Z' \
 	  --stop "$(date --utc +"%Y-%m-%dT%H:%M:%SZ")" \
@@ -58,13 +54,16 @@ if [ "${LEGACY}" == "true" ]; then
 	COMPONENTNAME=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
 	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
 
-	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_CONNECTED_LEGACY}" )
-	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_DESCRIPTION_LEGACY}" )
-	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENTNAME+1" -e "s+/+$COMPONENTINDEX+1" <<< "${MQTT_TOPIC_OUTPUT_LEGACY}" )
+	CONNECTEDTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/connected"
+	DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/description"
+	OUTPUTTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/output"
+	ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/energy"
+	POWERTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/power"
+	DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/temperature"
 else
-	CONNECTEDTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_CONNECTED}" )
-	DESCRIPTIONTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_DESCRIPTION}" )
-	OUTPUTTOPIC=$( sed -e "s+/+$DEVICE+1" -e "s+/+$COMPONENT+1" <<< "${MQTT_TOPIC_OUTPUT}" )
+	CONNECTEDTOPIC="${DEVICEID}/status/${COMPONENT}/connected"
+	DESCRIPTIONTOPIC="${DEVICEID}/status/${COMPONENT}/description"
+	OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
 fi
 
 # Clean mqtt topics
@@ -84,19 +83,13 @@ fi
 
 # Kill running services for legacy devices
 if [ "${LEGACY}" == "true" ]; then
-	ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/energy"
-	POWERTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/power"
-	DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/temperature"
-
-	# get pid of running measurements services and kill them
 	ENERGYPID=$(ps | grep "${ENERGYTOPIC}" | grep -v "grep" | awk '{print $1}')
-	[[ -n "$ENERGYPID" ]] && kill -9 "$ENERGYPID"
-
 	POWERPID=$(ps | grep "${POWERTOPIC}" | grep -v "grep" | awk '{print $1}')
-	[[ -n "$POWERPID" ]] && kill -9 "$POWERPID"
-
 	TEMPPID=$(ps | grep "${DEVICETEMPTOPIC}" | grep -v "grep" | awk '{print $1}')
-	[[ -n "$TEMPPID" ]] && kill -9 "$TEMPPID"
+	[[ -n "${ENERGYPID}" ]] && kill -9 "${ENERGYPID}"
+	[[ -n "${POWERPID}" ]] && kill -9 "${POWERPID}"
+	[[ -n "${TEMPPID}" ]] && kill -9 "${TEMPPID}"
 fi
 
 # Log
+[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Component \"${DESCRIPTION}\" removed" >> /proc/1/fd/1

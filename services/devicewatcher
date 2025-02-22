@@ -35,7 +35,7 @@ MQTT_RETAINED_OPTIONS=(
 # Infinitely subscribe to "+/status/+"
 #===============================================================
 
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "${MQTT_TOPIC_STATUS}" |
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "+/status/+" |
 while read -r COMPONENTSTATUS; do
 
 	# Extract payload and topic from json formatted message
@@ -159,8 +159,8 @@ while read -r COMPONENTSTATUS; do
 
 	# InfluxDB: Write measurements into the 'Measurements' bucket
 	if [[ "${MEASUREMENT_PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
-
 		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
+
 		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${MEASUREMENT_PAYLOAD}"
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Measurement saved - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1

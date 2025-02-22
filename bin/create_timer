@@ -78,8 +78,6 @@ jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 	# If timerOn set create a cron entry to switch on component
 	if [[ -n "${TIMERON}" ]]; then
 		CRONENTRY_ON="${CRONENTRY}"
-
-		# Parse hour and minute from time string
 		HOUR="${TIMERON:0:2}"
 		MINUTE="${TIMERON:3:5}"
 
@@ -103,10 +101,7 @@ jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 
 	# If timerOff set create a cron entry to switch off component
 	if [[ -n "${TIMEROFF}" ]]; then
-	
 		CRONENTRY_OFF="${CRONENTRY}"
-
-		# Parse hour and minute from time string
 		HOUR="${TIMEROFF:0:2}"
 		MINUTE="${TIMEROFF:3:5}"
 

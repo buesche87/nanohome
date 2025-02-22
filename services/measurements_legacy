@@ -58,7 +58,7 @@ while /bin/true; do
 	CONNECTED_COMPONENTS=$(
 		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 		--retained-only --nodelay --quiet -F "%j" -W 2 \
-		-t "${MQTT_TOPIC_CONNECTED_LEGACY}"
+		-t "shellies/+/+/+/connected"
 	)
 
 	CONNECTED_COMPONENTS_ARRAY=$(

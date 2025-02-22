@@ -9,10 +9,7 @@
 # - Get the current home dashboard and merge the new panel 
 # - Upload the updated dashboard
 #/////////////////////////////////////////////////////////////////////////////////////
-
-# Parameter & Variables
 DESCRIPTION=$1
-UNIQUE="$(date +%s)"
 
 # MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
@@ -21,20 +18,11 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# MQTT retained message subscription options
-MQTT_RETAINED_OPTIONS=(
-	--retained-only
-	--nodelay
-	--quiet
-	-C 1
-	-W 1
-)
-
 # Get dashboard configs from "nanohome/devices/$1"
 PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-        --retained-only --quiet -C 1 -W 1 \
-        -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+    --retained-only --nodelay --quiet -C 1 -W 2 \
+    -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
 )
 
 # Exit if no config found
@@ -49,7 +37,6 @@ COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG_JSON}" )
 DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG_JSON}" )
 ICON=$( jq -r '.icon' <<< "${PUBLISHED_CONFIG_JSON}" )
 LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
-
 DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
 
 # Define "case" search string
@@ -90,7 +77,8 @@ PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DESCRIPTION_/${DESCRIPTION}}
 PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_ICON_/${ICON}}
 
 # Replace attributes in json template
-PANEL_TEMPLATE_JSON=${PANEL_TEMPLATE_JSON//9490/${UNIQUE}}
+UNIQUEID="$(date +%s)"
+PANEL_TEMPLATE_JSON=${PANEL_TEMPLATE_JSON//9490/${UNIQUEID}}
 
 # Merge html into json
 PANEL_JSON=$(
@@ -98,6 +86,7 @@ PANEL_JSON=$(
     '.content = $html' <<< "$PANEL_TEMPLATE_JSON"
 )
 
+# Exit if there was an error
 if [[ -z "${PANEL_JSON}" ]]; then
     echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     [[ $LOG_DEBUG ]] && jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
@@ -109,10 +98,10 @@ fi
 # Download home dashboard from grafana
 DASHBOARD_CURRENT_JSON=$(
     curl -s \
-        -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
-        -H "Content-Type: application/json" \
-        -X GET "${GRAFANA_HOST}/api/dashboards/uid/${GRAFANA_DASHBOARD_UID_HOME}" \
-        -- json
+    -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -X GET "${GRAFANA_HOST}/api/dashboards/uid/${GRAFANA_DASHBOARD_UID_HOME}" \
+    -- json
 )
 
 # Extract dashboard content
@@ -120,6 +109,7 @@ DASHBOARD_CURRENT=$(
     jq '.dashboard' <<< "${DASHBOARD_CURRENT_JSON}"
 )
 
+# Exit if there was an error
 if [[ -z "${DASHBOARD_CURRENT}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\"" >> /proc/1/fd/1
     exit 1
@@ -144,10 +134,10 @@ DASHBOARD_DATA='{
 # Merge dashboard and metadata
 DASHBOARD_NEW=$(
 	jq --argjson dashboard "${DASHBOARD_PREPARED}" \
-	'.dashboard = $dashboard' \
-	<<< "${DASHBOARD_DATA}"
+	'.dashboard = $dashboard' <<< "${DASHBOARD_DATA}"
 )
 
+# Exit if there was an error
 if [[ -z "${DASHBOARD_NEW}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
     exit 1
@@ -162,6 +152,7 @@ curl --insecure \
     -d "${DASHBOARD_NEW}" \
     -X POST "${GRAFANA_HOST}/api/dashboards/db"
 
+# Exit if there was an error
 if [[ $? -eq 0 ]]; then
 	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
 	return 0

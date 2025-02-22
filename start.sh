@@ -11,20 +11,7 @@ export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
 export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="clear_measurement,create_panel,create_standbymgr,create_timer,remove_component"
-
-# MQTT topics shelly specific
-export MQTT_TOPIC_STATUS="+/status/+"
-export MQTT_TOPIC_ONLINE="+/online"
-export MQTT_TOPIC_ONLINE_LEGACY="shellies/+/+/+"
-
-# MQTT topics for device identification in nanohome
-export MQTT_TOPIC_CONNECTED="+/status/+/connected"
-export MQTT_TOPIC_CONNECTED_LEGACY="shellies/+/+/+/connected"
-export MQTT_TOPIC_OUTPUT="+/status/+/output"
-export MQTT_TOPIC_OUTPUT_LEGACY="shellies/+/+/+/output"
-export MQTT_TOPIC_DESCRIPTION="+/status/+/description"
-export MQTT_TOPIC_DESCRIPTION_LEGACY="shellies/+/+/+/description"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="clear_measurement,create_panel,create_standbymgr,create_timer,remove_component,remove_device"
 
 # MQTT topics for nanohome
 export MQTT_TOPIC_DEVICES="nanohome/devices"
@@ -36,24 +23,6 @@ export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 # InfluxDB settings
 export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
-export INFLUX_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
-
-# Grafana general settings
-export GRAFANA_DATASOURCE_DEVICES="Devices"
-export GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
-export GRAFANA_DASHFOLDER_NAME="nanohome"
-
-# Grafana dashboard template settings
-export GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
-export GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
-export GRAFANA_DASHBOARD_UID_DEVICES="fe47pva0wy8lcb"
-export GRAFANA_DASHBOARD_FILE_DEVICES="${NANOHOME_ROOTPATH}/grafana-templates/devices.json"
-export GRAFANA_DASHBOARD_UID_TIMER="ae489b6q64nwgf"
-export GRAFANA_DASHBOARD_FILE_TIMER="${NANOHOME_ROOTPATH}/grafana-templates/timer.json"
-export GRAFANA_DASHBOARD_UID_STANDBY="adjak60hekvswd"
-export GRAFANA_DASHBOARD_FILE_STANDBY="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
-export GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
-export GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 
 # Grafana panel template settings
 export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
@@ -64,14 +33,45 @@ export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-te
 export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
 #===============================================================
-# Script logging      
+# Script Variables        
 #===============================================================
 
-export LOG_BLU="\033[1;36m"
-export LOG_GRN="\033[1;32m"
-export LOG_YLW="\033[1;93m"
-export LOG_RED="\033[1;31m"
-export LOG_NOC="\033[0m"
+# InfluxDB settings
+INFLUX_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
+
+# Grafana general settings
+GRAFANA_DATASOURCE_DEVICES="Devices"
+GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
+GRAFANA_DASHFOLDER_NAME="nanohome"
+
+# Grafana dashboard template settings
+GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
+GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
+GRAFANA_DASHBOARD_UID_DEVICES="fe47pva0wy8lcb"
+GRAFANA_DASHBOARD_FILE_DEVICES="${NANOHOME_ROOTPATH}/grafana-templates/devices.json"
+GRAFANA_DASHBOARD_UID_TIMER="ae489b6q64nwgf"
+GRAFANA_DASHBOARD_FILE_TIMER="${NANOHOME_ROOTPATH}/grafana-templates/timer.json"
+GRAFANA_DASHBOARD_UID_STANDBY="adjak60hekvswd"
+GRAFANA_DASHBOARD_FILE_STANDBY="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
+GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
+GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
+
+# Mosquitto
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+#===============================================================
+# Logging      
+#===============================================================
+
+LOG_BLU="\033[1;36m"
+LOG_GRN="\033[1;32m"
+LOG_YLW="\033[1;93m"
+LOG_RED="\033[1;31m"
+LOG_NOC="\033[0m"
 
 export LOG_INFO="[${LOG_BLU}Verbose${LOG_NOC}]"
 export LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
@@ -91,8 +91,7 @@ influxconfig_search() {
 
 	local result=$(
 		jq --arg name "${INFLUX_CONFIG}" \
-		'. | has($name)' \
-		<<< "${answer}"
+		'. | has($name)' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -157,20 +156,17 @@ influxbucket_search() {
 	local bucket=$1
 
 	local answer=$(
-		influx bucket list \
-		--json
+		influx bucket list --json
 	)
 
 	local result=$(
 		jq -e --arg name "${bucket}" \
-		'.[] | select(.name == $name) | .name == $name' \
-		<<< "${answer}"
+		'.[] | select(.name == $name) | .name == $name' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg name "${bucket}" \
-		'.[] | select(.name == $name)' \
-		<<< ${answer}
+		'.[] | select(.name == $name)' <<< ${answer}
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -184,7 +180,6 @@ influxbucket_search() {
 }
 
 influxbucket_create() {
-
 	local bucket=$1
 
 	local answer=$(
@@ -197,14 +192,12 @@ influxbucket_create() {
 
 	local result=$(
 		jq -e --arg name "${bucket}" \
-		'. | select(.name == $name) | .name == $name' \
-		<<< "${answer}"
+		'. | select(.name == $name) | .name == $name' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg name "${bucket}" \
-		'select(.name == $name)' \
-		<<< ${answer}
+		'select(.name == $name)' <<< ${answer}
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -252,14 +245,12 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 influxauthtoken_search() {
 
 	local answer=$(
-		influx auth list \
-		--json
+		influx auth list --json
 	)
 
 	local result=$(
 		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" \
-		'[.[] | select(.description == $description)]' \
-		<<< "${answer}"
+		'[.[] | select(.description == $description)]' <<< "${answer}"
 	)
 
 	jq <<< "${result}"
@@ -278,8 +269,7 @@ influxauthtoken_create() {
 
 	local result=$(
 		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" \
-		'.description == $description' \
-		<<< "${answer}"
+		'.description == $description' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -293,19 +283,16 @@ influxauthtoken_create() {
 }
 
 influxauthtoken_validate() {
-
 	local influxauthtoken_found=$1
 
 	local result=$(
 		jq -e \
 		--arg val1 "${INFLUX_BUCKET_DEVICES_ID}" \
 		--arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
-		'[.[].permissions[]] | contains([$val1, $val2])' \
-		<<< "${influxauthtoken_found}"
+		'[.[].permissions[]] | contains([$val1, $val2])' <<< "${influxauthtoken_found}"
 	)
 
-	if ( $result )
-	then
+	if ( $result );	then
 		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" has correct permissions" >> /proc/1/fd/1
 		return 0
 	else
@@ -373,8 +360,7 @@ grafanaserviceaccount_json='{
 grafanaapibasicauth_test() {
 
 	local answer=$(
-		curl "${grafanaapiheaders_basicauth[@]}" \
-		--progress-bar \
+		curl "${grafanaapiheaders_basicauth[@]}" --progress-bar \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
 	)
 
@@ -400,14 +386,12 @@ grafanaserviceaccount_find() {
 
 	local result=$(
 		jq -e --arg name "${GRAFANA_SERVICEACCOUNT}" \
-		'.serviceAccounts[].name == $name' \
-		<<< "${answer}"
+		'.serviceAccounts[].name == $name' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg title "${foldername}" \
-		'.serviceAccounts[] | {id, name, login, role}' \
-		<<< "${answer}"
+		'.serviceAccounts[] | {id, name, login, role}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -429,14 +413,12 @@ grafanaserviceaccount_create() {
 
 	local result=$(
 		jq -e --arg name "${GRAFANA_SERVICEACCOUNT}" \
-		'.name == $name' \
-		<<< "${answer}"
+		'.name == $name' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg title "${foldername}" \
-		'. | {id, name, login, role}' \
-		<<< "${answer}"
+		'. | {id, name, login, role}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -450,7 +432,6 @@ grafanaserviceaccount_create() {
 }
 
 grafanaserviceaccounttoken_find() {
-
 	local said=$1
 
 	local answer=$(
@@ -460,8 +441,7 @@ grafanaserviceaccounttoken_find() {
 
 	local result=$(
 		jq -e --arg name "${GRAFANA_SERVICEACCOUNT}" \
-		'.[].name == $name' \
-		<<< "${answer}"
+		'.[].name == $name' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -474,7 +454,6 @@ grafanaserviceaccounttoken_find() {
 }
 
 grafanaserviceaccounttoken_delete() {
-
 	local grafanaserviceaccount_id=$1
 	local grafanaserviceaccount_token_id=$2
 
@@ -497,7 +476,6 @@ grafanaserviceaccounttoken_delete() {
 }
 
 grafanaserviceaccounttoken_create() {
-
 	local grafanaserviceaccount_id=$1
 
 	local answer=$(
@@ -597,8 +575,7 @@ grafanaapiheaders_token=(
 grafanaapiauthtoken_test() {
 
 	local answer=$(
-		curl "${grafanaapiheaders_token[@]}" \
-		--progress-bar \
+		curl "${grafanaapiheaders_token[@]}" --progress-bar \
 		-X GET "http://${GRAFANA_SERVICE}/api/org"
 	)
 
@@ -624,8 +601,8 @@ grafanaapiauthtoken_test
 # - If datasources do not exist create them
 
 grafanadatasource_search() {
-
 	local dsname=$1
+
 	local answer=$(
 		curl -s "${grafanaapiheaders_token[@]}" \
 		-X GET "${GRAFANA_HOST}/api/datasources/name/${dsname}"
@@ -633,14 +610,12 @@ grafanadatasource_search() {
 
 	local result=$(
 		jq -e --arg name "${dsname}" \
-		'.name == $name' \
-		<<< "${answer}"
+		'.name == $name' <<< "${answer}"
 	)	
 
 	local output=$(
 		jq -e --arg name "${dsname}" \
-		'. | select (.name == $name) | {uid, name, type, url}' \
-		<<< "${answer}"
+		'. | select (.name == $name) | {uid, name, type, url}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -654,8 +629,8 @@ grafanadatasource_search() {
 }
 
 grafanadatasource_prepare() {
-
 	local bucket=$1
+
 	local result='{
 		"name":"'"${bucket}"'",
 		"type":"influxdb",
@@ -672,8 +647,8 @@ grafanadatasource_prepare() {
 }
 
 grafanadatasource_create() {
-
 	local dsjson=$1
+
 	local dsname=$(
 		jq -r .name <<< "${1}"
 	)
@@ -685,14 +660,12 @@ grafanadatasource_create() {
 
 	local result=$(
 		jq -e --arg name "${dsname}" \
-		'.name == $name' \
-		<<< "${answer}"
+		'.name == $name' <<< "${answer}"
 	)	
 
 	local output=$(
 		jq -e --arg name "${dsname}" \
-		'.datasource | {uid, name, type, url}' \
-		<<< "${answer}"
+		'.datasource | {uid, name, type, url}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -794,14 +767,12 @@ grafanadashfolder_search() {
 
 	local result=$(
 		jq -e --arg title "${foldername}" \
-		'.[] | select(.title == $title) | .title == $title' \
-		<<< "${answer}"
+		'.[] | select(.title == $title) | .title == $title' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg title "${foldername}" \
-		'.[] | select(.title == $title) | {uid, title, url}' \
-		<<< "${answer}"
+		'.[] | select(.title == $title) | {uid, title, url}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -824,14 +795,12 @@ grafanadashfolder_create() {
 
 	local result=$(
 		jq -e --arg title "${foldername}" \
-		'.title == $title' \
-		<<< "${answer}"
+		'.title == $title' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg title "${foldername}" \
-		'. | {uid, title, url}' \
-		<<< "${answer}"
+		'. | {uid, title, url}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -870,7 +839,6 @@ grafanadashboard_metadata='{
 }'
 
 grafanadashboard_find() {
-
 	local uid=$1
 
 	local answer=$(
@@ -880,14 +848,12 @@ grafanadashboard_find() {
 
 	local result=$(
 		jq -e --arg uid "${uid}" \
-		'.[].uid == $uid' \
-		<<< "${answer}"
+		'.[].uid == $uid' <<< "${answer}"
 	)
 
 	local output=$(
 		jq -e --arg title "${uid}" \
-		'.[] | {uid, title, url}' \
-		<<< "${answer}"
+		'.[] | {uid, title, url}' <<< "${answer}"
 	)
 
 	if [[ "${result}" == "true" ]]; then
@@ -901,7 +867,6 @@ grafanadashboard_find() {
 }
 
 grafanadashboard_prepare() {
-
 	local file=$1
 	local dsuid=$2
 
@@ -920,8 +885,7 @@ grafanadashboard_prepare() {
 
 	local output=$(
 		jq --argjson dashboard "${datasourcemodified}" \
-		'.dashboard = $dashboard' \
-		<<< "${grafanadashboard_metadata}"
+		'.dashboard = $dashboard' <<< "${grafanadashboard_metadata}"
 	)
 
 	if [[ -n "${output}" ]]; then
@@ -935,7 +899,6 @@ grafanadashboard_prepare() {
 }
 
 grafanadashboard_create() {
-
 	local jsondata=$1
 
 	local answer=$(
@@ -1087,7 +1050,6 @@ grafanadashboard_gethomepreference() {
 }
 
 grafanadashboard_sethomepreference() {
-
 	local id=$1
 
 	local answer=$(
@@ -1112,8 +1074,8 @@ grafanadashboard_sethomepreference() {
 
 grafanadashboard_home_id=$(
 	curl -s "${grafanaapiheaders_token[@]}" \
-	-X GET http://$GRAFANA_SERVICE/api/dashboards/uid/$GRAFANA_DASHBOARD_UID_HOME \
-	| jq -r '.dashboard.id'
+	-X GET http://$GRAFANA_SERVICE/api/dashboards/uid/$GRAFANA_DASHBOARD_UID_HOME |
+	jq -r '.dashboard.id'
 )
 
 grafanadashboard_gethomepreference || \
@@ -1123,12 +1085,6 @@ grafanadashboard_sethomepreference "${grafanadashboard_home_id}"
 # Mosquitto: Validate connection
 #===============================================================
 # - If connection to mosquitto fails output a warning
-
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--nodelay --quiet -C 1 -W 1 \
@@ -1161,10 +1117,6 @@ fi
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
 
 # Nanohome standbywatcher
-/bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
-
-# Nanohome timerwatcher
 /bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
 

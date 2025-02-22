@@ -2,13 +2,10 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 # nanohome - clear_measurement
 #
-# Clear a measurement from influx bucket "Measurement"
+# Clear a measurement from influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
-
-# Parameter & Variables
 MEASUREMENT="$1"
 
-# Delete measurement
 if [[ -n "${MEASUREMENT}" ]]; then
 
 	influx delete --bucket "${INFLUX_BUCKET_MEASUREMENTS}" \
