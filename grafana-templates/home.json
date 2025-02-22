@@ -50,7 +50,7 @@
           "content": "",
           "mode": "markdown"
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -155,7 +155,7 @@
           "content": "<head><link rel='stylesheet' type='text/css' href='../public/nanohome/css/home.css'></head>\r\n<div class=\"statusOut\" id=\"statusOutput\"></div>\r\n<script>\r\n\tfunction loadScript(url) {\r\n\t\treturn new Promise((resolve, reject) => {\r\n\r\n\t\t\tvar script = document.createElement(\"script\");\r\n\t\t\tscript.type = \"text/javascript\";\r\n\t\t\tscript.src = url;\r\n\r\n\t\t\tscript.onload = () => {\r\n\t\t\t\tconsole.log(\"successfully loaded: \" + url.replace('../public/nanohome/js/',''));\r\n\t\t\t\tresolve();\r\n\t\t\t};\r\n\t\t\tscript.onerror = () => reject(new Error(`Failed to load script: ${url}`));\r\n\r\n\t\t\tdocument.head.appendChild(script);\r\n\t\t});\r\n\t}\r\n\r\n\tasync function loadScriptsInOrder(scripts) {\r\n\t\ttry {\r\n\t\t\tfor (const url of scripts) {\r\n\t\t\t\tawait loadScript(url);\r\n\t\t\t}\r\n\t\t} catch (error) {\r\n\t\t\tconsole.error(\"An error occurred:\", error);\r\n\t\t}\r\n\t}\r\n\r\n\tloadScriptsInOrder([\r\n\t\t\"../public/nanohome/js/config.js\",\r\n\t\t\"../public/nanohome/js/common.js\",\r\n\t\t\"../public/nanohome/js/home.js\",\r\n\t\t\"../public/nanohome/js/mqtt.js\"\r\n\t]);\r\n\t\r\n\tsetTimeout(() => {\r\n\t\tif (checkMqttStatus()) {\r\n\t\t\tsubscribeToOutput();\r\n\t\t}\r\n\t}, 500);\r\n</script>",
           "mode": "html"
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -163,7 +163,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cecmndskz76kgd"
+          "uid": "aedgcbam4hekgb"
         },
         "description": "",
         "fieldConfig": {
@@ -230,13 +230,13 @@
           "textMode": "value",
           "wideLayout": true
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "targets": [
           {
             "alias": "Temperatur",
             "datasource": {
               "type": "influxdb",
-              "uid": "${DS_MEASUREMENTS}"
+              "uid": "aedgcbam4hekgb"
             },
             "groupBy": [
               {
@@ -283,7 +283,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cecmndskz76kgd"
+          "uid": "aedgcbam4hekgb"
         },
         "fieldConfig": {
           "defaults": {
@@ -349,13 +349,13 @@
           "textMode": "value",
           "wideLayout": true
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "targets": [
           {
             "alias": "Feuchte",
             "datasource": {
               "type": "influxdb",
-              "uid": "${DS_MEASUREMENTS}"
+              "uid": "aedgcbam4hekgb"
             },
             "groupBy": [
               {
@@ -402,7 +402,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cecmndskz76kgd"
+          "uid": "aedgcbam4hekgb"
         },
         "fieldConfig": {
           "defaults": {
@@ -467,13 +467,13 @@
           "text": {},
           "valueMode": "hidden"
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "targets": [
           {
             "alias": "Batterie",
             "datasource": {
               "type": "influxdb",
-              "uid": "${DS_MEASUREMENTS}"
+              "uid": "aedgcbam4hekgb"
             },
             "groupBy": [
               {
@@ -533,88 +533,10 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<a class=\"weatherwidget-io\" href=\"https://forecast7.com/de/47d098d27/emmenbrucke/\" data-label_1=\"EMMENBRÜCKE\" data-label_2=\"Wetter\" data-font=\"Open Sans\" data-icons=\"Climacons Animated\" data-theme=\"gray\" data-basecolor=\"#111217\" data-accent=\"rgba(67, 67, 67, 0.64)\" data-highcolor=\"#de792d\" data-suncolor=\"#de792d\" data-cloudfill=\"#5a5a5a\" >EMMENBRÜCKE Wetter</a>\r\n<script>\r\n!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');\r\n</script>",
+          "content": "<a class=\"weatherwidget-io\" href=\"https://forecast7.com/en/47d058d31/lucerne/\" data-label_1=\"Lucerne\" data-label_2=\"\" data-font=\"Open Sans\" data-icons=\"Climacons Animated\" data-theme=\"gray\" data-basecolor=\"#111217\" data-accent=\"rgba(67, 67, 67, 0.64)\" data-highcolor=\"#de792d\" data-suncolor=\"#de792d\" data-cloudfill=\"#5a5a5a\" >Lucerne Weather</a>\r\n<script>\r\n!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');\r\n</script>",
           "mode": "html"
         },
-        "pluginVersion": "11.4.0",
-        "title": "",
-        "transparent": true,
-        "type": "text"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 5,
-          "w": 8,
-          "x": 0,
-          "y": 8
-        },
-        "id": 1739373866,
-        "options": {
-          "code": {
-            "language": "plaintext",
-            "showLineNumbers": false,
-            "showMiniMap": false
-          },
-          "content": "<div \n    class=\"btnContainer btnHome\"\n    id=\"shelly1pm-E89F6D857029_0\"\n    onclick='sendCommandLegacy(\"shelly1pm-E89F6D857029\", \"0\", \"legacytest\", \"toggle\")'>\n    <div\n        class=\"btnImage\" \n        style=\"background-image: url('../public/nanohome/icons/computer.png');\">\n    </div>\n    <div\n        class=\"btnDescription\">\n        <span>legacytest</span>\n    </div>\n</div>",
-          "mode": "html"
-        },
-        "pluginVersion": "11.4.0",
-        "title": "",
-        "transparent": true,
-        "type": "text"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 5,
-          "w": 8,
-          "x": 8,
-          "y": 8
-        },
-        "id": 1739210730,
-        "options": {
-          "code": {
-            "language": "plaintext",
-            "showLineNumbers": false,
-            "showMiniMap": false
-          },
-          "content": "<div\n    class=\"btnContainer btnHome\"\n    id=\"shelly1pmmini-348518df1ea4_switch:0\"\n    onclick='sendCommand(\"shelly1pmmini-348518df1ea4\", \"switch:0\", \"plus test\", \"toggle\")'>\n    <div\n        class=\"btnImage\"\n        style=\"background-image: url('../public/nanohome/icons/onoff.png');\">\n    </div>\n    <div\n        class=\"btnDescription\">\n        <span>plus test</span>\n    </div>\n</div>",
-          "mode": "html"
-        },
-        "pluginVersion": "11.4.0",
-        "title": "",
-        "transparent": true,
-        "type": "text"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 5,
-          "w": 8,
-          "x": 16,
-          "y": 8
-        },
-        "id": 1739216378,
-        "options": {
-          "code": {
-            "language": "plaintext",
-            "showLineNumbers": false,
-            "showMiniMap": false
-          },
-          "content": "<div \n    class=\"btnContainer btnHome\"\n    id=\"shelly1pm-E89F6D857029_0\"\n    onclick='sendCommandLegacy(\"shelly1pm-E89F6D857029\", \"0\", \"legacy test\", \"toggle\")'>\n    <div\n        class=\"btnImage\" \n        style=\"background-image: url('../public/nanohome/icons/computer.png');\">\n    </div>\n    <div\n        class=\"btnDescription\">\n        <span>legacy test</span>\n    </div>\n</div>",
-          "mode": "html"
-        },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -628,7 +550,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 13
+          "y": 8
         },
         "id": 1683352665,
         "options": {
@@ -640,7 +562,59 @@
           "content": "",
           "mode": "markdown"
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 8,
+          "x": 0,
+          "y": 9
+        },
+        "id": 1739901676,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<div\n    class=\"btnContainer btnHome\"\n    id=\"shelly1pmmini-348518df1ea4_switch:0\"\n    onclick='sendCommand(\"shelly1pmmini-348518df1ea4\", \"switch:0\", \"plus\", \"toggle\")'>\n    <div\n        class=\"btnImage\"\n        style=\"background-image: url('../public/nanohome/icons/computer.png');\">\n    </div>\n    <div\n        class=\"btnDescription\">\n        <span>plus</span>\n    </div>\n</div>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.2",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 5,
+          "w": 8,
+          "x": 8,
+          "y": 9
+        },
+        "id": 1739902182,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "<div \n    class=\"btnContainer btnHome\"\n    id=\"shelly1pm-E89F6D857029_0\"\n    onclick='sendCommandLegacy(\"shelly1pm-E89F6D857029\", \"0\", \"legacy\", \"toggle\")'>\n    <div\n        class=\"btnImage\" \n        style=\"background-image: url('../public/nanohome/icons/frame.png');\">\n    </div>\n    <div\n        class=\"btnDescription\">\n        <span>legacy</span>\n    </div>\n</div>",
+          "mode": "html"
+        },
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"
@@ -666,7 +640,7 @@
           "content": "<div class=\"slider\" >\n    <span>SLIDER</span>\n</div>\n<div class=\"slider\">\n    <input\n        type=\"range\"\n        id=\"shellyplus2pm-08b61fcdf67c_cover:0\"\n        min=\"0\"\n        max=\"100\"\n        onchange='sendCommand(\"shellyplus2pm-08b61fcdf67c\", \"cover:0\", \"SLIDER\", \"pos,\" + this.value)'\n        oninput='updateHomeOutput(this.value)'/>\n    </div>\n</div>\n",
           "mode": "html"
         },
-        "pluginVersion": "11.4.0",
+        "pluginVersion": "11.5.2",
         "title": "",
         "transparent": true,
         "type": "text"

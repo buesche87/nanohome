@@ -1,7 +1,7 @@
 #!/bin/bash
-############################################################
+#===============================================================
 # Nanohome Environment         
-############################################################
+#===============================================================
 
 # Nanohome general
 export NANOHOME_ROOTPATH="/nanohome"
@@ -63,9 +63,9 @@ export GRAFANA_PANEL_TEMPLATE_COVER_HTML="${NANOHOME_ROOTPATH}/grafana-templates
 export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
-############################################################
+#===============================================================
 # Script logging      
-############################################################
+#===============================================================
 
 export LOG_BLU="\033[1;36m"
 export LOG_GRN="\033[1;32m"
@@ -78,9 +78,9 @@ export LOG_SUCC="[${LOG_GRN}Success${LOG_NOC}]"
 export LOG_WARN="[${LOG_YLW}Warning${LOG_NOC}]"
 export LOG_ERRO="[${LOG_RED}-Error-${LOG_NOC}]"
 
-############################################################
+#===============================================================
 # InfluxDB: Config
-############################################################
+#===============================================================
 # - If no influx cli configuration exists, create one
 
 influxconfig_search() {
@@ -147,9 +147,9 @@ fi
 echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /proc/1/fd/1
 [[ $LOG_START ]] && jq <<< "${influxconfig}" >> /proc/1/fd/1
 
-############################################################
+#===============================================================
 # InfluxDB: Buckets
-############################################################
+#===============================================================
 # - If buckets do not exist, create them
 
 influxbucket_search() {
@@ -242,9 +242,9 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 
 [[ $LOG_START ]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_measurements}" >> /proc/1/fd/1
 
-############################################################
+#===============================================================
 # InfluxDB: Auth token (for Grafana datasource)
-############################################################
+#===============================================================
 # - If no token with correct permissions exists, create one
 # - If one token found, validate permissions, exit if failed (manual deletion)
 # - If multiple tokens found, exit script (manual deletion)
@@ -350,9 +350,9 @@ influfdb_rotoken=$(
 
 [[ $LOG_START ]] && jq '.token = "<SECURETOKEN>"' <<< "${influxauthtoken}" >> /proc/1/fd/1
 
-############################################################
+#===============================================================
 # Grafana: Service account 
-############################################################
+#===============================================================
 # - If no access token specified in env file
 #   - Validate basic auth connection
 #   - Check if service account and token exist
@@ -582,9 +582,9 @@ else
 	exit 1
 fi
 
-############################################################
+#===============================================================
 # Grafana: Test API connection
-############################################################
+#===============================================================
 # - Test connection to "http://${GRAFANA_SERVICE}/api/org"
 # - With provided or created token
 
@@ -618,9 +618,9 @@ grafanaapiauthtoken_test() {
 
 grafanaapiauthtoken_test
 
-############################################################
+#===============================================================
 # Grafana: Datasources
-############################################################
+#===============================================================
 # - If datasources do not exist create them
 
 grafanadatasource_search() {
@@ -734,9 +734,9 @@ grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measur
 
 [[ $LOG_START ]] && jq <<< "${grafanadatasource_measurements}" >> /proc/1/fd/1
 
-############################################################
+#===============================================================
 # Grafana: Modify and copy public content
-############################################################
+#===============================================================
 # - If source folder grafana-content exists
 # - Modify mqtt credentials in config.js
 # - Move content to "${NANOHOME_ROOTPATH}/data/grafana"
@@ -744,7 +744,7 @@ grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measur
 grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
-grafanacontent_modify() {
+grafanacontent_setCredentials() {
 	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/config.js"
 	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/config.js"
 
@@ -773,15 +773,15 @@ grafanacontent_move() {
 if [[ -d "${grafanacontent_source}" ]]; then
 	echo -e "${LOG_INFO} Grafana: Creating content \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 
-	grafanacontent_modify
+	grafanacontent_setCredentials
 	grafanacontent_move
 else
 	echo -e "${LOG_INFO} Grafana: Content \"${grafanacontent_destination}\" already created" >> /proc/1/fd/1
 fi
 
-############################################################
+#===============================================================
 # Grafana: Dashboard folder
-############################################################
+#===============================================================
 # - If dashboard folder "nanohome" does not exist create it
 
 grafanadashfolder_search() {
@@ -856,9 +856,9 @@ export GRAFANA_FOLDER_UID=$(
 
 [[ $LOG_START ]] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
-############################################################
+#===============================================================
 # Grafana: Dashboards
-############################################################
+#===============================================================
 # - If dashbaord does not exist
 # - Load dashboard templates, prepare and upload them
 
@@ -973,6 +973,13 @@ if [[ -z "${grafanadashboard_home_exists}" ]]; then
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}" "${grafanadatasource_measurements_uid}"
 	)
 
+	# Set weather widget settings
+	if [[ -n "${WEATHER_URL}" ]]; then
+		grafanadashboard_home_json="${grafanadashboard_home_json//https:\/\/forecast7.com\/en\/47d058d31\/lucerne\//$WEATHER_URL}"
+		grafanadashboard_home_json="${grafanadashboard_home_json//Lucerne//$WEATHER_LOCATION}"
+		[[ $LOG_Debug ]] && echo "${LOG_INFO} Grafana: Wether widget settings set" >> /proc/1/fd/1
+	fi
+
 	grafanadashboard_home=$(
 		grafanadashboard_create "${grafanadashboard_home_json}"
 	)
@@ -1052,9 +1059,9 @@ if [[ -z "${grafanadashboard_measurements_exists}" ]]; then
 	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
 fi
 
-############################################################
+#===============================================================
 # Grafana: Home dashboard preference
-############################################################
+#===============================================================
 # - Set home dashboard preference in grafana settings
 
 grafanadashboard_gethomepreference() {
@@ -1112,8 +1119,9 @@ grafanadashboard_home_id=$(
 grafanadashboard_gethomepreference || \
 grafanadashboard_sethomepreference "${grafanadashboard_home_id}"
 
-# Mosquitto: 
-############################################################
+#===============================================================
+# Mosquitto: Validate connection
+#===============================================================
 # - If connection to mosquitto fails output a warning
 
 MQTT_CONNECTION_STRING=(
@@ -1132,8 +1140,9 @@ else
 	echo -e "${LOG_WARN} MQTT: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
 fi
 
+#===============================================================
 # Nanohome: Start services
-############################################################
+#===============================================================
 
 # Nanohome Shell
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
