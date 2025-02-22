@@ -40,7 +40,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cecmndskz76kgd"
+          "uid": "aedgcbam4hekgb"
         },
         "fieldConfig": {
           "defaults": {
@@ -168,7 +168,7 @@
             "alias": "$Devices",
             "datasource": {
               "type": "influxdb",
-              "uid": "aea74rleif1mof"
+              "uid": "aedgcbam4hekgb"
             },
             "groupBy": [
               {
@@ -215,7 +215,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cecmndskz76kgd"
+          "uid": "aedgcbam4hekgb"
         },
         "fieldConfig": {
           "defaults": {
@@ -381,7 +381,7 @@
             "alias": "$Devices",
             "datasource": {
               "type": "influxdb",
-              "uid": "${DS_MEASUREMENTS}"
+              "uid": "aedgcbam4hekgb"
             },
             "groupBy": [
               {
@@ -428,7 +428,7 @@
       {
         "datasource": {
           "type": "influxdb",
-          "uid": "cecmndskz76kgd"
+          "uid": "aedgcbam4hekgb"
         },
         "fieldConfig": {
           "defaults": {
@@ -556,7 +556,7 @@
             "alias": "$Devices",
             "datasource": {
               "type": "influxdb",
-              "uid": "${DS_MEASUREMENTS}"
+              "uid": "aedgcbam4hekgb"
             },
             "groupBy": [
               {
