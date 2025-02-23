@@ -31,7 +31,7 @@ hr.thight {
 	border-radius: var(--border-radius);
 	color: var(--text-color);
 	cursor: pointer;
-	padding: 10px;
+	padding: var(--padding);
 	text-align: left;
 	text-align-last: left;
 	font-family: Consolas,monaco,monospace;

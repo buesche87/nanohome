@@ -11,8 +11,11 @@ var devmgr_descriptionPrefix = "description_";
 var devmgr_exBtnDescriptionPrefix = "exBtnDescription_";
 var devmgr_exBtnIconFormPrefix = "exButtonForm_";
 var devmgr_exBtnIconOption = "exButtonImage-select";
+var devmgr_exSliderPrefix = "exSlider_";
 var devmgr_exSliderDescriptionPrefix = "exSliderDescription_";
-var devmgr_saveBtnPrfix = "savebtn_";
+var devmgr_saveBtnPrefix = "saveBtn_";
+var devmgr_clearMeasurementBtnPrefix = "clearMeasurementBtn_";
+var devmgr_removeComponentBtnPrefix = "removeComponentBtn_";
 var devmgr_statusPrefix = "status_";
 var devmgr_summaryPrefix = "summary_";
 
@@ -161,26 +164,27 @@ function onMessageArrived(message) {
 	// Topic: shelly/+/+/+
 	//================================
 	else if ( topicSplit[0].startsWith("shelly") ) {
-		let deviceid = topicSplit[0];
+		let device = topicSplit[0];
 		let component = topicSplit[2];
 
-		populateComponentElement(deviceid, component);
+		populateComponentElement(device, component);
+		addHtmlElementFunctions(device);
 
 		// Show example button or slider
 		if (component.includes("switch")) {
-			showExampleElement(deviceid, "btnContainer");
+			showExampleElement(device, "btnContainer");
 		} else if (component.includes("cover")) {
-			showExampleElement(deviceid, "sliderContainer");
+			showExampleElement(device, "sliderContainer");
 		}
 
 		// Populate connected state
 		if (topicSplit[3] == "connected") {
-			populateConnectionState(deviceid, component, payload);
+			populateConnectionState(device, component, payload);
 		}
 
 		// Populate description
 		if (topicSplit[3] == "description") {
-			populateDescription(deviceid, component, payload);
+			populateDescription(device, component, payload);
 		}
 	} 
 	
@@ -188,27 +192,28 @@ function onMessageArrived(message) {
 	// Topic: shellies/+/+/+/+
 	//================================
 	else if ( topicSplit[0] == "shellies" ) {
-		let deviceid = topicSplit[1]
+		let device = topicSplit[1]
 		let componentdev = topicSplit[2]
 		let componentidx = topicSplit[3]
 		let componentMerged = componentdev + ":" + componentidx;
 
-		populateComponentElement(deviceid, componentMerged);
-		setStatusLegacy(deviceid);
+		populateComponentElement(device, componentMerged);
+		addHtmlElementFunctions(device);
+		setStatusLegacy(device);
 
 		// Show example button
 		if (componentdev.includes("relay")) {
-			showExampleElement(deviceid, "btnContainer");
+			showExampleElement(device, "btnContainer");
 		}
 
 		// Populate connected state
 		if (topicSplit[4] == "connected") {
-			populateConnectionState(deviceid, componentMerged, payload);
+			populateConnectionState(device, componentMerged, payload);
 		}
 
 		// Populate description
 		if (topicSplit[4] == "description") {
-			populateDescription(deviceid, componentMerged, payload);
+			populateDescription(device, componentMerged, payload);
 		}
 	}
 }
@@ -384,21 +389,24 @@ function generateComponentConfig(componentDetails) {
 
 /*
 ===============================================================
-	Helper Functions
+	HTML Element Functions
 ===============================================================
 */
 
 // Get current devices html elements - [string input]
 function getHtmlElements(device) {
 	return {
-		description:         document.getElementById(devmgr_descriptionPrefix + device),
-		component:           document.getElementById(devmgr_componentPrefix + device),
-		connected:           document.getElementById(devmgr_connectedPrefix + device),
-		status:              document.getElementById(devmgr_statusPrefix + device),
-		exBtnIconForm:       document.getElementById(devmgr_exBtnIconFormPrefix + device),
-		exBtnDescription:    document.getElementById(devmgr_exBtnDescriptionPrefix + device),
-		exSliderDescription: document.getElementById(devmgr_exSliderDescriptionPrefix + device),
-		saveButton:          document.getElementById(devmgr_saveBtnPrfix + device)
+		description:			document.getElementById(devmgr_descriptionPrefix + device),
+		component:				document.getElementById(devmgr_componentPrefix + device),
+		connected:				document.getElementById(devmgr_connectedPrefix + device),
+		status:					document.getElementById(devmgr_statusPrefix + device),
+		exBtnIconForm:			document.getElementById(devmgr_exBtnIconFormPrefix + device),
+		exBtnDescription:		document.getElementById(devmgr_exBtnDescriptionPrefix + device),
+		exSlider:				document.getElementById(devmgr_exSliderDescriptionPrefix + device),
+		exSliderDescription:	document.getElementById(devmgr_exSliderPrefix + device),
+		saveButton:				document.getElementById(devmgr_saveBtnPrefix + device),
+		clearMeasurementBtn:	document.getElementById(devmgr_clearMeasurementBtnPrefix + device),
+		removeComponentBtn:		document.getElementById(devmgr_removeComponentBtnPrefix + device)
 	}
 }
 
@@ -433,6 +441,47 @@ function getElementValues(device) {
 		legacy:              legacy
 	}
 }
+
+// Add functions to html elements
+function addHtmlElementFunctions(device) {
+	let htmlElements = getHtmlElements(device);
+
+	// Stop processing if status elements is hidden
+	if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
+
+	htmlElements.connected.onclick = function() { connectComponent(device); };
+	htmlElements.status.onclick = function() { window.open("http://" + device, "Device", "width=800,height=600"); };
+
+	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) { 
+		htmlElements.exBtnDescription.addEventListener("onclick", function() {
+			createPanel(device);
+		});
+	}
+
+	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) {
+		htmlElements.exSlider.addEventListener("onclick", function() {
+			createPanel(device);
+		});
+	}
+
+	htmlElements.saveButton.addEventListener("onclick", function() {
+		saveComponent(device);
+	});
+
+	htmlElements.clearMeasurementBtn.addEventListener("onclick", function() {
+		clearMeasurement(device);
+	});
+
+	htmlElements.removeComponentBtn.addEventListener("onclick", function() {
+		removeComponent(device);
+	});
+}
+
+/*
+===============================================================
+	Helper Functions
+===============================================================
+*/
 
 // Show example element - [string input]
 function showExampleElement(device, element) {

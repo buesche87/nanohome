@@ -9,10 +9,11 @@ var standby_deviceDataJsonStore = "deviceDataJsonStore"; // HTML element
 var standby_deviceDataAttribute = "deviceDataAttribute"; // Attribute name
 
 // HTML element prefixes
-var standby_statusPrefix = "standbyStatus_";
 var standby_thresholdPrefix = "standbyThreshold_";
 var standby_delayPrefix = "standbyDelay_";
+var standby_statusPrefix = "standbyStatus_";
 var standby_saveBtnPrefix = "standbySaveBtn_";
+var standby_removeBtnPrefix = "standbyRemoveBtn_";
 
 /*
 ===============================================================
@@ -75,13 +76,14 @@ function removeStandby(description) {
 // Decide what to do with arriving mqtt mesages
 function onMessageArrived(message) {
 	let payload = message.payloadString;
-	let topic = message.destinationName;
-	let topicSplit = topic.split("/");
+	let topicSplit = message.destinationName.split("/");
+	let description = topicSplit[2];
 
 	if ( topicSplit[1] == "devices" ) { 
 		console.log('Device config received:');
 		console.log(JSON.parse(payload));
 		saveToDeviceStore(JSON.parse(payload)); 
+		addHtmlElementFunctions(description);
 	} else if ( topicSplit[1] == "standby" ) {	
 		console.log('Standby config received:');
 		console.log(JSON.parse(payload));
@@ -188,4 +190,65 @@ function validateStandbyInput(description, inputField) {
 	if (! isValid) { inputField.value = "";	}
 	if ( inputField.value !== "") { saveButton.disabled = false; }
 	else { saveButton.disabled = true; }
+}
+
+/*
+===============================================================
+	HTML Element Functions
+===============================================================
+*/
+
+// Get current devices html elements
+function getHtmlElements(description) {
+	return {
+		standbyThreshold:	document.getElementById(standby_thresholdPrefix + description),
+		standbyDelay:		document.getElementById(standby_delayPrefix + description),
+		standbyStatus:		document.getElementById(standby_statusPrefix + description),
+		saveBtn:			document.getElementById(standby_saveBtnPrefix + description),
+		removeBtn:			document.getElementById(standby_removeBtnPrefix + description)
+	};
+}
+
+// Add functions to html elements
+function addHtmlElementFunctions(description) {
+	let htmlElements = getHtmlElements(description);
+
+	// Stop processing if status elements is hidden
+	if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; };
+
+	htmlElements.standbyThreshold.addEventListener("focusout", function() {
+		validateStandbyInput(description);
+	});
+
+	htmlElements.standbyThreshold.addEventListener("onfocus", function() {
+		htmlElements.standbyThreshold.value="";
+	});
+
+	htmlElements.standbyDelay.addEventListener("onfocus", function() {
+		htmlElements.standbyDelay.value="";
+	});
+
+	htmlElements.saveBtn.addEventListener("onclick", function() {
+		saveStandby(description);
+	});
+
+	htmlElements.removeBtn.addEventListener("onclick", function() {
+		removeStandby(description);
+	});
+
+	htmlElements.standbyThreshold.addEventListener("keypress", function(event) {
+		if (event.key >= "0" && event.key <= "9") {
+		  return true;
+		} else {
+		  event.preventDefault();
+		}
+	});
+
+	htmlElements.standbyDelay.addEventListener("keypress", function(event) {
+		if (event.key >= "0" && event.key <= "9") {
+		  return true;
+		} else {
+		  event.preventDefault();
+		}
+	});
 }

@@ -255,7 +255,7 @@ function timerSelected(description) {
 
 /*
 ===============================================================
-	Helper Functions
+	HTML Element Functions
 ===============================================================
 */
 
@@ -270,8 +270,42 @@ function getHtmlElements(description) {
 		timerStatus:	document.getElementById(timerStatusPrefix + description),
 		saveButton:		document.getElementById(saveButtonPrefix + description),
 		removeButton:	document.getElementById(removeButtonPrefix + description)
-	}
+	};
 }
+
+// Add functions to html elements
+function addHtmlElementFunctions(description) {
+	let htmlElements = getHtmlElements(description);
+
+	// Stop processing if status elements is hidden
+	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; };
+
+	htmlElements.timerList.addEventListener("onchange", function() {
+		timerSelected(description);
+	});
+
+	htmlElements.timerOn.addEventListener("onchange", function() {
+		timerInput(description);
+	});
+
+	htmlElements.timerOff.addEventListener("onchange", function() {
+		timerInput(description);
+	});
+
+	htmlElements.saveButton.addEventListener("onclick", function() {
+		saveTimer(description);
+	});
+
+	htmlElements.removeButton.addEventListener("onclick", function() {
+		removeTimer(description);
+	});
+}
+
+/*
+===============================================================
+	Helper Functions
+===============================================================
+*/
 
 // Manage timer input
 function timerInput(description) {
@@ -282,22 +316,4 @@ function timerInput(description) {
 	} else {
 		htmlElements.saveButton.disabled = true;
 	}
-}
-
-/*
-===============================================================
-	Element actions
-===============================================================
-*/
-
-// Add functions to html elements
-function addHtmlElementFunctions(description) {
-	let htmlElements = getHtmlElements(description);
-
-	// Stop processing if status elements is hidden
-	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
-
-	// Add save and remove function
-	htmlElements.saveButton.onclick = function() { saveTimer(description); };
-	htmlElements.removeButton.onclick = function() { removeTimer(description); };
 }

@@ -80,7 +80,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"[W]\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocusout='validateStandbyInput(\"${Description}\", this)' \n          onfocus='this.value = \"\"' \n          autocomplete=\"off\" />\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"[s]\"\n          onkeypress='return event.charCode >= 48 && event.charCode <= 57'\n          onfocus='this.value = \"\"'\n          autocomplete=\"off\" />\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
+          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"[W]\"\n          autocomplete=\"off\"/>\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"[s]\"\n          autocomplete=\"off\" />\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
@@ -106,7 +106,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\"\r\n            onclick='saveStandby(\"${Description}\")'>\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\"\r\n            onclick='removeStandby(\"${Description}\")'>\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
+          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\">\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\">\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
