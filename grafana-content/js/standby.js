@@ -12,7 +12,8 @@ var standbyThresholdPrefix = "standbyThreshold_";
 var standbyDelayPrefix = "standbyDelay_";
 var statusPrefix = "standbyStatus_";
 var saveBtnPrefix = "standbySaveBtn_";
-var removeBtnPrefix = "standbyRemoveBtn_";
+// var removeBtnPrefix = "standbyRemoveBtn_";
+var clearBtnPrefix = "clearStandbyBtn_";
 
 /*
 ===============================================================
@@ -24,56 +25,8 @@ var removeBtnPrefix = "standbyRemoveBtn_";
 function getStandby(description) {
 	let nanohomeTopics = getNanohomeTopics(description);
 
-	mqttSubscribe(nanohomeTopics.device, longsubscribe);
-	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
-}
-
-/*
-===============================================================
-	MQTT Publish
-===============================================================
-*/
-
-// Save standby values
-function saveStandby(description) {
-	let htmlElements = getHtmlElements(description);
-	let nanohomeTopics = getNanohomeTopics(description);
-
-	// Stop processing if entered values are non-digit
-	if ( !checkDigit(htmlElements.standbyThreshold.value) ) {
-		alert("Invalid threshold value");
-		return false;
-	}
-
-	// Stop processing if entered values are non-digit and not empty
-	if ( !checkDigit(htmlElements.standbyDelay.value) && htmlElements.standbyDelay.value != "" ) {
-		alert("Invalid delay value");
-		return false;
-	}
-
-	// Create a standby config
-	let newStandbyConfig = generateStandbyConfig(description);
-
-	// Publish config to nanohome/standby/#
-	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
-	mqttPublish(nanohomeTopics.standby, JSON.stringify(newStandbyConfig), true);
-
-	// Disable save button
-	htmlElements.saveButton.disabled = true;
-}
-
-// Clear standby values
-function removeStandby(description) {
-	let nanohomeTopics = getNanohomeTopics(description);
-
-	// Publish nothing to nanohome/standby/#
-	mqttPublish(nanohomeTopics.standby, "", true);
-
-	// Clear html elements
-	clearPanels(description);
-
-	// Disable remove button
-	htmlElements.removeButton.disabled = true;
+	mqttSubscribe(nanohomeTopics.deviceConfig, fastsubscribe);
+	mqttSubscribe(nanohomeTopics.standbyConfig, fastsubscribe);
 }
 
 /*
@@ -88,15 +41,20 @@ function onMessageArrived(message) {
 	let topicSplit = message.destinationName.split("/");
 	let description = topicSplit[2];
 
+	// Device config: Add functions to html element and save
 	if ( topicSplit[1] == "devices" ) { 
+		addHtmlElementFunctions(description);
+		saveToStore(JSON.parse(payload));
+
 		console.log('Device config received:');
 		console.log(JSON.parse(payload));
-		saveToStore(JSON.parse(payload)); 
-		addHtmlElementFunctions(description);
+	
+	// Standby Config: Populate incoming values 
 	} else if ( topicSplit[1] == "standby" ) {	
+		populatePanels(JSON.parse(payload));
+
 		console.log('Standby config received:');
 		console.log(JSON.parse(payload));
-		populatePanels(JSON.parse(payload));
 	}
 }
 
@@ -106,29 +64,7 @@ function onMessageArrived(message) {
 ===============================================================
 */
 
-// Populate standby settings with content from mqtt message - [json payload]
-function populatePanels(timerConfig) {
-	let htmlElements = getHtmlElements(timerConfig.description);
-
-	// Stop processing if status element is hidden
-    if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }	
-
-	// If threshold and delay values are a digit, populate it
-	if ( checkDigit(timerConfig.threshold) ) { htmlElements.standbyThreshold.value = timerConfig.threshold; }
-	if ( checkDigit(timerConfig.delay) ) { htmlElements.standbyDelay.value = timerConfig.delay;	}
-
-	// If threshold is set bigger than 0 set status element active
-	if ( timerConfig.threshold > 0 ) {
-		setStandbyStatus(htmlElements, "active");
-	} else {
-		setStandbyStatus(htmlElements, "inactive");
-	}
-
-	// Enable remove button
-	htmlElements.removeButton.disabled = false;
-}
-
-// Save device details to datastore - [json payload]
+// Save device config to datastore - [json payload]
 function saveToStore(configJson) {
 	let htmlElements = getHtmlElements(configJson.description);
 	let dataStore = htmlElements.standbyStatus;
@@ -139,6 +75,69 @@ function saveToStore(configJson) {
 	// Save standby config to devices datastore
 	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(configJson));
 }
+
+// Populate standby settings - [json payload]
+function populatePanels(timerConfig) {
+	let htmlElements = getHtmlElements(timerConfig.description);
+
+	// Stop processing if status element is hidden
+    if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }	
+
+	// If threshold and delay values are digits, populate them
+	if ( checkDigit(timerConfig.threshold) ) { 
+		htmlElements.standbyThreshold.value = timerConfig.threshold; 
+
+		// If threshold is bigger than 0 activate standby
+		if ( timerConfig.threshold > 0 ) {
+			setStandbyStatus(htmlElements, "active");
+			htmlElements.clearButton.disabled = false;
+		} else {
+			setStandbyStatus(htmlElements, "inactive");
+			htmlElements.clearButton.disabled = true;
+		}
+
+		// Populate delay
+		if ( checkDigit(timerConfig.delay) ) { 
+			htmlElements.standbyDelay.value = timerConfig.delay;
+		}
+	}
+}
+
+/*
+===============================================================
+	MQTT Publish
+===============================================================
+*/
+
+// Save standby manager values
+function saveStandby(description) {
+	let nanohomeTopics = getNanohomeTopics(description);
+
+	// Create a standby config
+	let newStandbyConfig = generateStandbyConfig(description);
+
+	// Publish config to "nanohome/standby/*"
+	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
+	mqttPublish(nanohomeTopics.standby, JSON.stringify(newStandbyConfig), true);
+}
+
+// Clear standby manager values
+function clearStandby(description) {
+	let htmlElements = getHtmlElements(description);
+	let nanohomeTopics = getNanohomeTopics(description);
+
+	// Publish nothing to nanohome/standby/#
+	mqttPublish(nanohomeTopics.standby, "", true);
+
+	// Clear html elements
+	setStandbyStatus(htmlElements, "inactive");
+	htmlElements.standbyThreshold.value = "";
+	htmlElements.standbyDelay.value = "";
+
+	// Disable remove button
+	htmlElements.clearButton.disabled = true;
+}
+
 
 /*
 ===============================================================
@@ -181,7 +180,7 @@ function getHtmlElements(description) {
 		standbyDelay:		document.getElementById(standbyDelayPrefix + description),
 		standbyStatus:		document.getElementById(statusPrefix + description),
 		saveButton:			document.getElementById(saveBtnPrefix + description),
-		removeButton:		document.getElementById(removeBtnPrefix + description)
+		clearButton:		document.getElementById(clearBtnPrefix + description)
 	};
 }
 
@@ -192,35 +191,48 @@ function addHtmlElementFunctions(description) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }
 
-	// Threshold element
+	// Focus: Save current value and clear input field
+	//---------------------------------------------------------
 	htmlElements.standbyThreshold.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
 	});
 
-	htmlElements.standbyThreshold.addEventListener("focusout", function() { 
-		if (this.value === "") {
-			this.value = this.getAttribute("previous-value") || "";
-		}
-	});
-
-	htmlElements.standbyThreshold.addEventListener("keypress", function(event) {
-		if ( event.key >= "0" && event.key <= "9" ) {
-		  return true;
-		} else {
-		  event.preventDefault();
-		}
-	});
-
-	// Delay element
 	htmlElements.standbyDelay.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
 	});
 
+	// Focusout: Save new values or revert
+	//---------------------------------------------------------
 	htmlElements.standbyThreshold.addEventListener("focusout", function() { 
-		if (this.value === "") {
+		if ( checkDigit(this.value) ) {
+			saveStandby(description);
+		} else {
 			this.value = this.getAttribute("previous-value") || "";
+		}
+	});
+
+	htmlElements.standbyDelay.addEventListener("focusout", function() { 
+		if ( checkDigit(this.value) && htmlElements.standbyThreshold.value !== "" ) {
+			saveStandby(description);
+		} else {
+			this.value = this.getAttribute("previous-value") || "";
+		}
+	});
+
+	// Click: Disable and clear standby
+	htmlElements.clearButton.addEventListener("click", function() { 
+		clearStandby(description);
+	});
+
+	// KeyPress: Suppress non-digit
+	//---------------------------------------------------------
+	htmlElements.standbyThreshold.addEventListener("keypress", function(event) {
+		if ( event.key >= "0" && event.key <= "9" ) {
+		  return true;
+		} else {
+		  event.preventDefault();
 		}
 	});
 
@@ -231,18 +243,9 @@ function addHtmlElementFunctions(description) {
 		  event.preventDefault();
 		}
 	});
-
-	// Save element
-	htmlElements.saveButton.addEventListener("click", function() { 
-		saveStandby(description);
-	});
-
-	// Remove element
-	htmlElements.removeButton.addEventListener("click", function() { 
-		removeStandby(description);
-	});
 }
 
+// Set standby status 
 function setStandbyStatus(htmlElements, value) {
 	if ( value === "active" ) {
 		htmlElements.standbyStatus.innerText = "Active";
@@ -253,14 +256,4 @@ function setStandbyStatus(htmlElements, value) {
 		htmlElements.standbyStatus.classList.remove('statusgreen');
 		htmlElements.standbyStatus.classList.add('statusfalse');
 	}
-}
-
-// Clear standby button
-function clearPanels(description) {
-	let htmlElements = getHtmlElements(description);
-
-	htmlElements.standbyThreshold.value = "";
-	htmlElements.standbyDelay.value = "";
-
-	setStandbyStatus(htmlElements, "inactive");
 }

@@ -15,9 +15,10 @@ var reconnectTimeout = 2000;
 var cleansession = true;
 var path = "";
 var mqttClient = "nanohome_dasboard";
-var fastsubscribe = 250;
-var normalsubscribe = 500;
-var longsubscribe = 1000;
+var qos = 2;
+var fastsubscribe = 50;
+var normalsubscribe = 100;
+var longsubscribe = 200;
 var mqttConnected = false;
 
 /*
@@ -46,8 +47,11 @@ var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 function getNanohomeTopics(description) {
 	return {
 		device:  "nanohome/devices/" + description,
+		deviceConfig:  "nanohome/devices/" + description,
 		standby: "nanohome/standby/" + description,
-		timer:   "nanohome/timer/" + description
+		standbyConfig: "nanohome/standby/" + description,
+		timer:   "nanohome/timer/" + description,
+		timerConfig:   "nanohome/timer/" + description,
 	}
 }
 

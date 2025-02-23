@@ -55,6 +55,7 @@ function mqttPublish(topic, payload, retained) {
     } else {
         var message = new Paho.MQTT.Message(payload);
         message.destinationName = topic;
+        message.qos = 2;
         message.retained = retained;
         mqtt.send(message);
     }
