@@ -37,8 +37,8 @@ var cmdOutputTopic = "nanohome/shell/output";
 
 var legacyKeywords = ["relay"];
 var deviceTopicAll = "nanohome/devices/+";
-var outputTopicAll = "+/status/+/output";
-var outputTopicAllLegacy = "shellies/+/+/+/output";
+var outputTopicAll = "+/status/+";
+var outputTopicAllLegacy = "shellies/+/relay/+";
 var connectedTopicAll = "+/status/+/connected";
 var connectedTopicAllLegacy = "shellies/+/+/+/connected";
 var descriptionTopicAll = "+/status/+/description";
