@@ -16,8 +16,14 @@ var command;
 
 // Infinitely subscribe to all devices output topic
 function subscribeToOutput() {
-	mqtt.subscribe(outputTopicAll, { qos: 2 });
-	mqtt.subscribe(outputTopicAllLegacy, { qos: 2 });
+
+	// Initial subscribe to output topic
+	mqttSubscribe("+/status/+/output", fastsubscribe);
+	mqttSubscribe("shellies/+/+/+/output", fastsubscribe);
+
+	// Infinitely subscribe to status topic
+	mqtt.subscribe("+/status/+", { qos: 2 });
+	mqtt.subscribe("shellies/+/relay/+", { qos: 2 });
 }
 
 /*
@@ -70,20 +76,22 @@ function onMessageArrived(message) {
 	if ( topicSplit[0].startsWith("shelly") ) {
 		let device = topicSplit[0];
 		let component = topicSplit[2];
-		let statusData = JSON.parse(payload);
-		let switchOutput = statusData?.output;
-		let coverPosition = statusData?.target_pos;
 
-		if ( !elementHiddenOrMissing(coverPosition) ) {
-			setElementStatus(device, component, coverPosition);
-		} else if ( !elementHiddenOrMissing(switchOutput) ) {
-			setElementStatus(device, component, switchOutput);
+		if ( topicSplit[3] === "output" ) {
+			setElementStatus(device, component, payload);
+		} else {
+			let statusData = JSON.parse(payload);
+			let switchOutput = statusData?.output;
+			let coverPosition = statusData?.target_pos;
+	
+			if ( !elementHiddenOrMissing(coverPosition) ) {
+				setElementStatus(device, component, coverPosition);
+			} else if ( !elementHiddenOrMissing(switchOutput) ) {
+				setElementStatus(device, component, switchOutput);
+			}
 		}
 	} 
-	
-	// TODO: subscribe to shellies/+/relay/+
-	// filter components 
-	
+
 	// Shelly legacy devices
 	else if ( topicSplit[0] == "shellies" ) {
 		let device = topicSplit[1];
