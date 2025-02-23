@@ -255,21 +255,36 @@ function addHtmlElementFunctions(description) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
 
-	htmlElements.timerList.onchange = function() { copySelectedTimer(description); };
-	htmlElements.timerList.focusout = function() { htmlElements.removeButton.disabled = true; };
-	htmlElements.timerOn.onchange = function() { validateTimerInput(description); };
-	htmlElements.timerOff.onchange = function() { validateTimerInput(description);	};
+	// Timer list elements
+	htmlElements.timerList.addEventListener("focus", function() { 
+		copySelectedTimer(description);
+	});
 
-	htmlElements.saveButton.onclick = function() { 
+	htmlElements.timerList.addEventListener("change", function() { 
+		htmlElements.removeButton.disabled = true;
+	});
+
+	// On/Off elements
+	htmlElements.timerOn.addEventListener("change", function() { 
+		validateTimerInput(description);
+	});
+
+	htmlElements.timerOff.addEventListener("change", function() { 
+		validateTimerInput(description);
+	});
+
+	// Save element
+	htmlElements.saveButton.addEventListener("click", function() { 
 		saveTimer(description);
 		htmlElements.saveButton.disabled = true;
-	};
+	});
 
-	htmlElements.removeButton.onclick = function() { 
+	// Remove element
+	htmlElements.removeButton.addEventListener("click", function() { 
 		removeTimer(description);
 		htmlElements.removeButton.disabled = true;
 		htmlElements.saveButton.disabled = false;
-	};
+	});
 }
 
 // Copy value from selected timer entry to timer details

@@ -199,41 +199,17 @@ function addHtmlElementFunctions(description) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }
 
-	/*
-	htmlElements.standbyThreshold.onfocus = function() { 
-		htmlElements.standbyThreshold.value=""; 
-	};
-	*/
-
+	// Threshold element
 	htmlElements.standbyThreshold.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
 	});
 
-	/*
-	htmlElements.standbyThreshold.focusout = function() { 
-		validateStandbyInput(description); 
-	};
-	*/
-
 	htmlElements.standbyThreshold.addEventListener("focusout", function() { 
-		validateStandbyInput(description);
 		if (this.value === "") {
 			this.value = this.getAttribute("previous-value") || "";
 		}
 	});
-
-	htmlElements.standbyDelay.onfocus = function() { 
-		htmlElements.standbyDelay.value = "";
-	};
-
-	htmlElements.saveButton.onclick = function() { 
-		saveStandby(description); 
-	};
-
-	htmlElements.removeButton.onclick = function() { 
-		removeStandby(description); 
-	};
 
 	htmlElements.standbyThreshold.addEventListener("keypress", function(event) {
 		if ( event.key >= "0" && event.key <= "9" ) {
@@ -243,12 +219,34 @@ function addHtmlElementFunctions(description) {
 		}
 	});
 
+	// Delay element
+	htmlElements.standbyDelay.addEventListener("focus", function() { 
+		this.setAttribute("previous-value", this.value);
+		this.value = "";
+	});
+
+	htmlElements.standbyThreshold.addEventListener("focusout", function() { 
+		if (this.value === "") {
+			this.value = this.getAttribute("previous-value") || "";
+		}
+	});
+
 	htmlElements.standbyDelay.addEventListener("keypress", function(event) {
 		if ( event.key >= "0" && event.key <= "9" ) {
 		  return true;
 		} else {
 		  event.preventDefault();
 		}
+	});
+
+	// Save element
+	htmlElements.saveButton.addEventListener("click", function() { 
+		saveStandby(description);
+	});
+
+	// Remove element
+	htmlElements.removeButton.addEventListener("click", function() { 
+		removeStandby(description);
 	});
 }
 

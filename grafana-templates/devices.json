@@ -132,7 +132,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "\t<div class=\"statusDiv\">\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tid=\"saveBtn_${Device}\">\r\n\t\t\t\tSave\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tstyle=\"color: orange\"\r\n\t\t\t\t\t\t\tid=\"clearMeasurementBtn_${Device}\">\r\n\t\t\t\tClear Measurements\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\t\t\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tstyle=\"color: red\"\r\n\t\t\t\t\t\t\tid=\"removeComponentBtn_${Device}\">\r\n\t\t\t\tRemove Component\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t</div>",
+          "content": "\t<div class=\"statusDiv\">\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tid=\"saveBtn_${Device}\"\r\n\t\t\t\t\t\t\tdisabled>\r\n\t\t\t\tSave\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tstyle=\"color: orange\"\r\n\t\t\t\t\t\t\tid=\"clearMeasurementBtn_${Device}\">\r\n\t\t\t\tClear Measurements\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t\t<div class=\"statusRow\">\t\t\r\n\t\t\t<button\tclass=\"statusElement\"\r\n\t\t\t\t\t\t\tstyle=\"color: red\"\r\n\t\t\t\t\t\t\tid=\"removeComponentBtn_${Device}\">\r\n\t\t\t\tRemove Component\r\n\t\t\t</button>\r\n\t\t</div>\r\n\t</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",

@@ -445,19 +445,48 @@ function addHtmlElementFunctions(device) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
-	htmlElements.component.onclick = function() { getDeviceStatus(device); };
-	htmlElements.connected.onclick = function() { connectComponent(device); };
-	htmlElements.status.onclick = function() { window.open("http://" + device, "Device", "width=800,height=600"); };
-	htmlElements.saveButton.onclick = function() { saveComponent(device); };
-	htmlElements.clearMeasurementBtn.onclick = function() { clearMeasurement(device); };
-	htmlElements.removeComponentBtn.onclick = function() { removeComponent(device); };
+	// Component element
+	htmlElements.component.addEventListener("click", function() { 
+		getDeviceStatus(device);
+	});
 
+	// Connected element
+	htmlElements.connected.addEventListener("click", function() { 
+		connectComponent(device);
+	});
+
+	// Status element
+	htmlElements.status.addEventListener("click", function() { 
+		window.open("http://" + device, "Device", "width=800,height=600");
+	});
+
+	// Save element
+	htmlElements.status.addEventListener("click", function() { 
+		saveComponent(device);
+	});
+
+	// Clear measurement element
+	htmlElements.clearMeasurementBtn.addEventListener("click", function() { 
+		clearMeasurement(device);
+	});
+
+	// Remove component element
+	htmlElements.removeComponentBtn.addEventListener("click", function() { 
+		removeComponent(device);
+	});
+
+	// Example button
 	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) { 
-		htmlElements.exBtnDescription.onclick = function() { createPanel(device); };
+		htmlElements.exBtnDescription.addEventListener("click", function() { 
+			createPanel(device);
+		});
 	}
 
-	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) {
-		htmlElements.exSliderDescription.onclick = function() { createPanel(device); };
+	// Example slider
+	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) { 
+		htmlElements.exSliderDescription.addEventListener("click", function() { 
+			createPanel(device);
+		});
 	}
 }
 
