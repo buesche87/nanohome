@@ -137,7 +137,7 @@ function populatePanels(timerConfig) {
 
 // Save device details to datastore - [json payload]
 function saveToStore(configJson) {
-	let htmlElements = getHtmlElements(description);
+	let htmlElements = getHtmlElements(configJson.description);
 	let dataStore = htmlElements.standbyStatus;
 
 	// Stop processing if datastore is hidden
@@ -226,8 +226,30 @@ function addHtmlElementFunctions(description) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }
 
-	htmlElements.standbyThreshold.focusout = function() { validateStandbyInput(description); };
-	htmlElements.standbyThreshold.onfocus = function() { htmlElements.standbyThreshold.value=""; };
+	/*
+	htmlElements.standbyThreshold.onfocus = function() { 
+		htmlElements.standbyThreshold.value=""; 
+	};
+	*/
+
+	htmlElements.standbyThreshold.addEventListener("focus", function() { 
+		this.setAttribute("previous-value", this.value);
+		this.value = "";
+	});
+
+	/*
+	htmlElements.standbyThreshold.focusout = function() { 
+		validateStandbyInput(description); 
+	};
+	*/
+
+	htmlElements.standbyThreshold.addEventListener("focusout", function() { 
+		validateStandbyInput(description);
+		if (this.value === "") {
+			this.value = this.getAttribute("previous-value") || "";
+		}
+	});
+
 	htmlElements.standbyDelay.onfocus = function() { htmlElements.standbyDelay.value=""; };
 	htmlElements.saveBtn.onclick = function() { saveStandby(description); };
 	htmlElements.removeBtn.onclick = function() { removeStandby(description); };

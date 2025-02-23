@@ -4,12 +4,6 @@
 ===============================================================
 */
 
-// TODO
-// - OnMessageArrive > funktionen auf buttons setzen statt im panel hinterlegen
-// - ListBox onfocusout > disable remove
-// - Nach remove > enable save
-// - 
-
 // Json datastore
 var deviceDataAttribute = "deviceData";
 var timerDataAttribute = "timerData";
@@ -57,7 +51,7 @@ function saveTimer(description) {
 	let jsonIndex = !elementHiddenOrMissing(existingTimerConfig) ? getJsonIndex(existingTimerConfig) : (existingTimerConfig = [], 1);
 
 	// Create the entry and add it to the config
-	let newTimerConfig = generateTimerJson(description, jsonIndex);
+	let newTimerConfig = generateTimerConfig(description, jsonIndex);
 	existingTimerConfig.push(newTimerConfig);
 
 	// Save the modified config to datastore and publish it to "nanohome/timer/#"
@@ -70,9 +64,6 @@ function saveTimer(description) {
 
 	// Run "create_timer" through nanohome shell to enable the timer
 	mqttPublish(cmdInputTopic, "create_timer", false);
-
-	// Disable save button
-	htmlElements.saveButton.disabled = true;
 }
 
 // Remove selected timer
@@ -107,11 +98,7 @@ function removeTimer(description) {
 	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingTimerConfig), true);
 
 	// Run "create_timer" through nanohome shell
-	 mqttPublish(cmdInputTopic, "create_timer", false);
-
-	// Disable remove button and enable save
-	htmlElements.removeButton.disabled = true;
-	htmlElements.saveButton.disabled = false;
+	mqttPublish(cmdInputTopic, "create_timer", false);
 }
 
 /*
@@ -147,7 +134,7 @@ function onMessageArrived(message) {
 */
 
 // Save config to datastore
-function saveToStore(configJson, description, store) {
+function saveToStore(config, description, store) {
 	let htmlElements = getHtmlElements(description);
 	let dataStore = htmlElements.timerStatus;
 
@@ -157,16 +144,16 @@ function saveToStore(configJson, description, store) {
 	// Save config to devices datastore
 	switch(store) {
 		case "devices":
-			dataStore.setAttribute(deviceDataAttribute, JSON.stringify(configJson));
+			dataStore.setAttribute(deviceDataAttribute, JSON.stringify(config));
 			break;
 		case "timer":
-			dataStore.setAttribute(timerDataAttribute, JSON.stringify(configJson));
+			dataStore.setAttribute(timerDataAttribute, JSON.stringify(config));
 			break;
 	}
 }
 
 // Populate the timer list
-function populateTimerList(timerJson, description) {
+function populateTimerList(timerConfig, description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if timer list element is hidden
@@ -176,7 +163,7 @@ function populateTimerList(timerJson, description) {
 	for ( a in htmlElements.timerList.options ) { htmlElements.timerList.options.remove(0); }
 
 	// Populate timer list
-	timerJson.forEach(function(entry) {
+	timerConfig.forEach(function(entry) {
 		var option = document.createElement("option");
 
 		// Set display text of entry
@@ -191,14 +178,14 @@ function populateTimerList(timerJson, description) {
 }
 
 // Set timer status active/inactive
-function setTimerStatus(timerJson, description) {
+function setTimerStatus(timerConfig, description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
 
 	// Set status element
-	if (!elementHiddenOrMissing(timerJson) && JSON.stringify(timerJson) != "[]") {
+	if ( !checkEmpty(timerConfig) && JSON.stringify(timerConfig) != "[]") {
 		htmlElements.timerStatus.innerText = "Active";
 		htmlElements.timerStatus.classList.remove('statusfalse');
 		htmlElements.timerStatus.classList.add('statusgreen');
@@ -216,7 +203,7 @@ function setTimerStatus(timerJson, description) {
 */
 
 // Generate a new timer json
-function generateTimerJson(description, index) {
+function generateTimerConfig(description, index) {
 	let htmlElements = getHtmlElements(description);
 
 	// Load config from datastore
@@ -239,18 +226,6 @@ function generateTimerJson(description, index) {
 		"timerOff": htmlElements.timerOff.value
 	};
 	return newElement;
-}
-
-// Copy value from selected timer entry to timer details
-function timerSelected(description) {
-	let htmlElements = getHtmlElements(description);
-	let selectedTimerConfig = htmlElements.timerList.value;
-	let selectedTimer = JSON.parse(selectedTimerConfig);
-
-	htmlElements.timerPeriod.value = selectedTimer.timerPeriodValue
-	htmlElements.timerOn.value = selectedTimer.timerOn
-	htmlElements.timerOff.value = selectedTimer.timerOff
-	htmlElements.removeButton.disabled = false;
 }
 
 /*
@@ -280,21 +255,36 @@ function addHtmlElementFunctions(description) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
 
-	htmlElements.timerList.onchange = function() { timerSelected(description); };
-	htmlElements.timerOn.onchange = function() { timerInput(description); };
-	htmlElements.timerOff.onchange = function() { timerInput(description); };
-	htmlElements.saveButton.onclick = function() { saveTimer(description); };
-	htmlElements.removeButton.onclick = function() { removeTimer(description); };
+	htmlElements.timerList.onchange = function() { copySelectedTimer(description); };
+	htmlElements.timerList.focusout = function() { htmlElements.removeButton.disabled = true; };
+	htmlElements.timerOn.onchange = function() { validateTimerInput(description); };
+	htmlElements.timerOff.onchange = function() { validateTimerInput(description);	};
+
+	htmlElements.saveButton.onclick = function() { 
+		saveTimer(description);
+		htmlElements.saveButton.disabled = true;
+	};
+
+	htmlElements.removeButton.onclick = function() { 
+		removeTimer(description);
+		htmlElements.removeButton.disabled = true;
+		htmlElements.saveButton.disabled = false;
+	};
 }
 
-/*
-===============================================================
-	Helper Functions
-===============================================================
-*/
+// Copy value from selected timer entry to timer details
+function copySelectedTimer(description) {
+	let htmlElements = getHtmlElements(description);
+	let selectedTimer = JSON.parse(htmlElements.timerList.value);
+
+	htmlElements.timerPeriod.value = selectedTimer.timerPeriodValue
+	htmlElements.timerOn.value = selectedTimer.timerOn
+	htmlElements.timerOff.value = selectedTimer.timerOff
+	htmlElements.removeButton.disabled = false;
+}
 
 // Manage timer input
-function timerInput(description) {
+function validateTimerInput(description) {
 	let htmlElements = getHtmlElements(description);
 
 	if ( htmlElements.timerOn.value !== "" || htmlElements.timerOff.value !== "" ) {
