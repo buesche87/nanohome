@@ -5,7 +5,7 @@
 
 # Nanohome general
 export NANOHOME_ROOTPATH="/nanohome"
-export NANOHOME_CRONTABS="/etc/crontabs/nanohome"
+export NANOHOME_CRONTABS="/etc/crontabs/root"
 
 # Nanohome services
 export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
@@ -1117,8 +1117,8 @@ fi
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standbywatcher started" >> /proc/1/fd/1
 
 # Create and fill crontab file
-touch "${NANOHOME_CRONTABS}"
-chmod 600 "${NANOHOME_CRONTABS}"
+echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"
+echo "" >> "${NANOHOME_CRONTABS}"
 /bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
 
