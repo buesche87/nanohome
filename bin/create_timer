@@ -35,8 +35,8 @@ elif [[ "${PUBLISHED_TIMER_CONFIGS}" == "[]" ]]; then
 fi
 
 # Crontab entry templates
-CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t _DEVICEID_/command/_COMPONENT_ -m _MESSAGE_"
-CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ root /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
+CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t _DEVICEID_/command/_COMPONENT_ -m _MESSAGE_"
+CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
 # Clear crontab file
 echo "" > "${NANOHOME_CRONTABS}"
