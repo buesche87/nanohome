@@ -80,7 +80,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<select class=\"listBox\"\n        id=\"timerList_${Description}\" \n        size=6/>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimer(\"${Description}\"); \n     }\n  }, 300);\n</script>",
+          "content": "<select class=\"listBox\"\n        id=\"timerList_${Description}\" \n        size=6/>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getTimer(\"${Description}\"); \n     }\n  }, 100);\n</script>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
@@ -158,7 +158,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div style=\"margin-top: -10px;\"><hr></div>",
+          "content": "<div style=\"margin-top: -10px;\"><hr class=\"thight\"></hr></div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",

@@ -132,7 +132,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div style=\"margin-top: -10px;\"><hr></div>",
+          "content": "<div style=\"margin-top: -10px;\"><hr class=\"thight\"></hr></div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
