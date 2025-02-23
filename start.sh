@@ -1118,7 +1118,6 @@ fi
 
 # Create and fill crontab file
 echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"
-echo "" >> "${NANOHOME_CRONTABS}"
 /bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
 

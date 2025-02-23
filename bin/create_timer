@@ -31,7 +31,7 @@ if [[ -z "${PUBLISHED_TIMER_CONFIGS}" ]]; then
 	exit 1
 elif [[ "${PUBLISHED_TIMER_CONFIGS}" == "[]" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No timer configured on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
-	sed '/# Nanohome Crontabs/,$d' "${NANOHOME_CRONTABS}"
+	sed -i '0,/# Nanohome Crontabs/!d' "${NANOHOME_CRONTABS}"
 	exit 0
 fi
 
@@ -40,7 +40,7 @@ CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ /usr/bin/mosquitto_pub ${M
 CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
 # Clear crontab file
-sed '/# Nanohome Crontabs/,$d' "${NANOHOME_CRONTABS}"
+sed -i '0,/# Nanohome Crontabs/!d' "${NANOHOME_CRONTABS}"
 
 # Create an array containing all configs retreived
 PUBLISHED_TIMER_ARRAY=$(
