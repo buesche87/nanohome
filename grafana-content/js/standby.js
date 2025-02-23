@@ -97,7 +97,7 @@ function populatePanels(timerConfig) {
 		}
 
 		// Populate delay
-		if ( checkDigit(timerConfig.delay) ) { 
+		if ( checkDigit(timerConfig.delay) && timerConfig.delay > 0  ) { 
 			htmlElements.standbyDelay.value = timerConfig.delay;
 		}
 	}
