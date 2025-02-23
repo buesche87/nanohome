@@ -70,7 +70,7 @@ function removeStandby(description) {
 	mqttPublish(nanohomeTopics.standby, "", true);
 
 	// Clear html elements
-	clearPanels(description);$
+	clearPanels(description);
 
 	// Disable remove button
 	htmlElements.removeButton.disabled = true;
@@ -119,13 +119,9 @@ function populatePanels(timerConfig) {
 
 	// If threshold is set bigger than 0 set status element active
 	if ( timerConfig.threshold > 0 ) {
-		htmlElements.standbyStatus.innerText = "Active";
-		htmlElements.standbyStatus.classList.remove('statusfalse');
-		htmlElements.standbyStatus.classList.add('statusgreen');
+		setStandbyStatus(htmlElements, "active");
 	} else {
-		htmlElements.standbyStatus.innerText = "Inactive";
-		htmlElements.standbyStatus.classList.remove('statusgreen');
-		htmlElements.standbyStatus.classList.add('statusfalse');
+		setStandbyStatus(htmlElements, "inactive");
 	}
 
 	// Enable remove button
@@ -247,6 +243,18 @@ function addHtmlElementFunctions(description) {
 	});
 }
 
+function setStandbyStatus(htmlElements, value) {
+	if ( value === "active" ) {
+		htmlElements.standbyStatus.innerText = "Active";
+		htmlElements.standbyStatus.classList.remove('statusfalse');
+		htmlElements.standbyStatus.classList.add('statusgreen');
+	} else {
+		htmlElements.standbyStatus.innerText = "Inactive";
+		htmlElements.standbyStatus.classList.remove('statusgreen');
+		htmlElements.standbyStatus.classList.add('statusfalse');
+	}
+}
+
 // Clear standby button
 function clearPanels(description) {
 	let htmlElements = getHtmlElements(description);
@@ -254,17 +262,5 @@ function clearPanels(description) {
 	htmlElements.standbyThreshold.value = "";
 	htmlElements.standbyDelay.value = "";
 
-	setStandbyStatus(description);
-}
-
-// Validate format of input
-function validateStandbyInput(description, inputField) {
-	let htmlElements = getHtmlElements(description);
-
-	if ( checkDigit(inputField.value) && inputField.value !== "" ) {
-		htmlElements.saveButton.disabled = false;
-	} else {
-		inputField.value = "";
-		htmlElements.saveButton.disabled = true;
-	}
+	setStandbyStatus(htmlElements, "inactive");
 }
