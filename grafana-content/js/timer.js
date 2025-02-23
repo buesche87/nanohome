@@ -123,6 +123,7 @@ function onMessageArrived(message) {
 		console.log('Device config received:');
 		console.log(JSON.parse(payload));
 		saveToStore(JSON.parse(payload), description, "devices");
+		addHtmlElementFunctions(description);
 	} else if ( topicSplit[1] == "timer" ) {
 		console.log('Timer config received:');
 		console.log(JSON.parse(payload));
@@ -283,7 +284,7 @@ function timerInput(description) {
 */
 
 // Add functions to html elements
-function addElementFunctions(description) {
+function addHtmlElementFunctions(description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if status elements is hidden
