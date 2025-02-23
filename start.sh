@@ -1102,27 +1102,27 @@ fi
 
 # Start device watcher
 /bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devicewatcher started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher started" >> /proc/1/fd/1
 
 # Start  device watcher legacy
 /bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome devicewatcher legacy started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher legacy started" >> /proc/1/fd/1
 
 # Start measurements for legacy devices
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome measurements legacy started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Measurements legacy started" >> /proc/1/fd/1
 
 # Start standby watcher
 /bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standbywatcher started" >> /proc/1/fd/1
 
 # Create crontab file
-/bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome standbywatcher started" >> /proc/1/fd/1
+/bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
 
 # Start nanohome Shell
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} nanohome shell started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Nanohome shell started" >> /proc/1/fd/1
 
 # Start crond
 crond -f &
