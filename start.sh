@@ -1116,7 +1116,9 @@ fi
 /bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standbywatcher started" >> /proc/1/fd/1
 
-# Create crontab file
+# Create and fill crontab file
+touch "${NANOHOME_CRONTABS}"
+chmod 600 "${NANOHOME_CRONTABS}"
 /bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
 

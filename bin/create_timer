@@ -128,5 +128,3 @@ jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 
 	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Timer for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
 done
-
-chmod 600 "${NANOHOME_CRONTABS}"
