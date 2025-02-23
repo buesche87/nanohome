@@ -4,16 +4,15 @@
 ===============================================================
 */
 
-// json datastore
-var standby_deviceDataJsonStore = "deviceDataJsonStore"; // HTML element
-var standby_deviceDataAttribute = "deviceDataAttribute"; // Attribute name
+// Json datastore
+var deviceDataAttribute = "deviceData"; // Attribute name
 
 // HTML element prefixes
-var standby_thresholdPrefix = "standbyThreshold_";
-var standby_delayPrefix = "standbyDelay_";
-var standby_statusPrefix = "standbyStatus_";
-var standby_saveBtnPrefix = "standbySaveBtn_";
-var standby_removeBtnPrefix = "standbyRemoveBtn_";
+var standbyThresholdPrefix = "standbyThreshold_";
+var standbyDelayPrefix = "standbyDelay_";
+var statusPrefix = "standbyStatus_";
+var saveBtnPrefix = "standbySaveBtn_";
+var removeBtnPrefix = "standbyRemoveBtn_";
 
 /*
 ===============================================================
@@ -23,11 +22,10 @@ var standby_removeBtnPrefix = "standbyRemoveBtn_";
 
 // Get standby and device infos
 function getStandby(description) {
-	let deviceTopic = "nanohome/devices/" + description; 
-	let standbyTopic = "nanohome/standby/" + description; 
+	let nanohomeTopics = getNanohomeTopics(description);
 
-	mqttSubscribe(deviceTopic, longsubscribe);
-	mqttSubscribe(standbyTopic, longsubscribe);
+	mqttSubscribe(nanohomeTopics.device, longsubscribe);
+	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
 }
 
 /*
@@ -38,33 +36,44 @@ function getStandby(description) {
 
 // Save standby values
 function saveStandby(description) {
+	let htmlElements = getHtmlElements(description);
 	let nanohomeTopics = getNanohomeTopics(description);
-	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
-	let standbyDelay = document.getElementById(standby_delayPrefix + description).value;
 
-	// TODO: Stop processing if entered values are non-digit
-	if ( !/^\d+$/.test(standbyThreshold) ) {
+	// Stop processing if entered values are non-digit
+	if ( !checkDigit(htmlElements.standbyThreshold.value) ) {
 		alert("Invalid threshold value");
 		return false;
 	}
 
-	if ( !/^\d+$/.test(standbyDelay) && standbyDelay != "" ) {
+	// Stop processing if entered values are non-digit and not empty
+	if ( !checkDigit(htmlElements.standbyDelay.value) && htmlElements.standbyDelay.value != "" ) {
 		alert("Invalid delay value");
 		return false;
 	}
 
-	// Create config and publish if values are digit digits
-	let newJsonElement = generateStandbyJson(description);
+	// Create a standby config
+	let newStandbyConfig = generateStandbyConfig(description);
+
+	// Publish config to nanohome/standby/#
 	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
-	mqttPublish(nanohomeTopics.standby, JSON.stringify(newJsonElement), true);
+	mqttPublish(nanohomeTopics.standby, JSON.stringify(newStandbyConfig), true);
+
+	// Disable save button
+	htmlElements.saveButton.disabled = true;
 }
 
 // Clear standby values
 function removeStandby(description) {
 	let nanohomeTopics = getNanohomeTopics(description);
 
+	// Publish nothing to nanohome/standby/#
 	mqttPublish(nanohomeTopics.standby, "", true);
-	clearPanels(description);
+
+	// Clear html elements
+	clearPanels(description);$
+
+	// Disable remove button
+	htmlElements.removeButton.disabled = true;
 }
 
 /*
@@ -82,7 +91,7 @@ function onMessageArrived(message) {
 	if ( topicSplit[1] == "devices" ) { 
 		console.log('Device config received:');
 		console.log(JSON.parse(payload));
-		saveToDeviceStore(JSON.parse(payload)); 
+		saveToStore(JSON.parse(payload)); 
 		addHtmlElementFunctions(description);
 	} else if ( topicSplit[1] == "standby" ) {	
 		console.log('Standby config received:');
@@ -98,43 +107,44 @@ function onMessageArrived(message) {
 */
 
 // Populate standby settings with content from mqtt message - [json payload]
-function populatePanels(jsonData) {
-	let standbyStatus = document.getElementById(standby_statusPrefix + jsonData.description);
-	let standbyThreshold = document.getElementById(standby_thresholdPrefix + jsonData.description);
-	let standbyWait = document.getElementById(standby_delayPrefix + jsonData.description);
+function populatePanels(timerConfig) {
+	let htmlElements = getHtmlElements(description);
+
+	// TODO: Check if it works
+	// let standbyStatus = document.getElementById(statusPrefix + jsonData.description);
+	// let standbyThreshold = document.getElementById(standbyThresholdPrefix + timerConfig.description);
+	// let standbyDelay = document.getElementById(standbyDelayPrefix + timerConfig.description);
 
 	// Stop processing if status element is hidden
-    if (elementHiddenOrMissing(standbyStatus)) { return; }	
+    if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }	
 
-	// If threshold and wait time values are a digit, populate it
-	if ( /^\d+$/.test(jsonData.threshold) ) { standbyThreshold.value = jsonData.threshold; }
-	if ( /^\d+$/.test(jsonData.wait) ) { standbyWait.value = jsonData.wait;	}
+	// If threshold and delay values are a digit, populate it
+	if ( checkDigit(timerConfig.threshold) ) { htmlElements.standbyThreshold.value = timerConfig.threshold; }
+	if ( checkDigit(timerConfig.delay) ) { htmlElements.standbyDelay.value = timerConfig.delay;	}
 
 	// If threshold is set bigger than 0 set status element active
-	if ( jsonData.threshold > 0 ) {
-		standbyStatus.innerText = "Active";
-		standbyStatus.classList.remove('statusfalse');
-		standbyStatus.classList.add('statusgreen');
+	if ( timerConfig.threshold > 0 ) {
+		htmlElements.standbyStatus.innerText = "Active";
+		htmlElements.standbyStatus.classList.remove('statusfalse');
+		htmlElements.standbyStatus.classList.add('statusgreen');
 	} else {
-		standbyStatus.innerText = "Inactive";
-		standbyStatus.classList.remove('statusgreen');
-		standbyStatus.classList.add('statusfalse');
+		htmlElements.standbyStatus.innerText = "Inactive";
+		htmlElements.standbyStatus.classList.remove('statusgreen');
+		htmlElements.standbyStatus.classList.add('statusfalse');
 	}
 
 }
 
-// Save device details to jsonStore - [json payload]
-function saveToDeviceStore(jsonData) {
-	let jsonStore = document.getElementById(standby_statusPrefix + jsonData.description);
+// Save device details to datastore - [json payload]
+function saveToStore(configJson) {
+	let htmlElements = getHtmlElements(description);
+	let dataStore = htmlElements.standbyStatus;
 
 	// Stop processing if datastore is hidden
-    if (elementHiddenOrMissing(jsonStore)) { return; }
+    if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
 	// Save standby config to devices datastore
-	jsonStore.setAttribute(standby_deviceDataAttribute, JSON.stringify(jsonData));
-
-	console.log("json for " + jsonData.description + " populated to " + jsonStore.id);
-	console.log(jsonData);
+	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(configJson));
 }
 
 /*
@@ -144,22 +154,21 @@ function saveToDeviceStore(jsonData) {
 */
 
 // Generate json for standby configuration
-function generateStandbyJson(description) {
-	let jsonStore = document.getElementById(standby_statusPrefix + description);
-	let jsonData = JSON.parse(jsonStore.getAttribute(standby_deviceDataAttribute));
-	let standbyThreshold = document.getElementById(standby_thresholdPrefix + description).value;
-	let standbyWait = document.getElementById(standby_delayPrefix + description).value;
+function generateStandbyConfig(description) {
+	let htmlElements = getHtmlElements(description);
+	let dataStore = htmlElements.standbyStatus;
+	let deviceConfig = JSON.parse(dataStore.getAttribute(deviceDataAttribute));
 
-	// Set optional wait time to 0 if it was not set
-	if (elementHiddenOrMissing(standbyWait)) { standbyWait = 0; }
+	// Set optional delay time to 0 if it was not set
+	if ( checkEmpty(htmlElements.standbyDelay.value) ) { htmlElements.standbyDelay.value = 0; }
 
 	let newElement = {
 		"description": description,
-		"deviceId": jsonData.deviceId,
-		"component": jsonData.component,
-		"legacy": jsonData.legacy,
-		"threshold": standbyThreshold,
-		"wait": standbyWait,
+		"deviceId": deviceConfig.deviceId,
+		"component": deviceConfig.component,
+		"legacy": deviceConfig.legacy,
+		"threshold": htmlElements.standbyThreshold.value,
+		"delay": htmlElements.standbyDelay.value,
 		"state": "off"
 	};
 
@@ -174,22 +183,23 @@ function generateStandbyJson(description) {
 
 // Clear standby button
 function clearPanels(description) {
-	var standbyPower = document.getElementById(standby_thresholdPrefix + description);
-	var standbyWait = document.getElementById(standby_delayPrefix + description);
-	
-	standbyPower.value = "";
-	standbyWait.value = "";
+	let htmlElements = getHtmlElements(description);
+
+	htmlElements.standbyThreshold.value = "";
+	htmlElements.standbyDelay.value = "";
 	setStandbyStatus(description);
 }
 
 // Validate format of input
 function validateStandbyInput(description, inputField) {
-	let saveButton = document.getElementById(standby_saveBtnPrefix + description);
-	let isValid = /^\d+$/.test(inputField.value)
-	
-	if (! isValid) { inputField.value = "";	}
-	if ( inputField.value !== "") { saveButton.disabled = false; }
-	else { saveButton.disabled = true; }
+	let htmlElements = getHtmlElements(description);
+
+	if ( checkDigit(inputField.value) && inputField.value !== "" ) {
+		htmlElements.saveBtn.disabled = false;
+	} else {
+		inputField.value = "";
+		htmlElements.saveBtn.disabled = true;
+	}
 }
 
 /*
@@ -201,11 +211,11 @@ function validateStandbyInput(description, inputField) {
 // Get current devices html elements
 function getHtmlElements(description) {
 	return {
-		standbyThreshold:	document.getElementById(standby_thresholdPrefix + description),
-		standbyDelay:		document.getElementById(standby_delayPrefix + description),
-		standbyStatus:		document.getElementById(standby_statusPrefix + description),
-		saveBtn:			document.getElementById(standby_saveBtnPrefix + description),
-		removeBtn:			document.getElementById(standby_removeBtnPrefix + description)
+		standbyThreshold:	document.getElementById(standbyThresholdPrefix + description),
+		standbyDelay:		document.getElementById(standbyDelayPrefix + description),
+		standbyStatus:		document.getElementById(statusPrefix + description),
+		saveButton:			document.getElementById(saveBtnPrefix + description),
+		removeButton:		document.getElementById(removeBtnPrefix + description)
 	};
 }
 
@@ -214,27 +224,13 @@ function addHtmlElementFunctions(description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if status elements is hidden
-	if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; };
+	if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }
 
-	htmlElements.standbyThreshold.addEventListener("focusout", function() {
-		validateStandbyInput(description);
-	});
-
-	htmlElements.standbyThreshold.addEventListener("onfocus", function() {
-		htmlElements.standbyThreshold.value="";
-	});
-
-	htmlElements.standbyDelay.addEventListener("onfocus", function() {
-		htmlElements.standbyDelay.value="";
-	});
-
-	htmlElements.saveBtn.addEventListener("onclick", function() {
-		saveStandby(description);
-	});
-
-	htmlElements.removeBtn.addEventListener("onclick", function() {
-		removeStandby(description);
-	});
+	htmlElements.standbyThreshold.focusout = function() { validateStandbyInput(description); };
+	htmlElements.standbyThreshold.onfocus = function() { htmlElements.standbyThreshold.value=""; };
+	htmlElements.standbyDelay.onfocus = function() { htmlElements.standbyDelay.value=""; };
+	htmlElements.saveBtn.onclick = function() { saveStandby(description); };
+	htmlElements.removeBtn.onclick = function() { removeStandby(description); };
 
 	htmlElements.standbyThreshold.addEventListener("keypress", function(event) {
 		if (event.key >= "0" && event.key <= "9") {

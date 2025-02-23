@@ -5,22 +5,18 @@
 */
 
 // HTML element prefixes
-var devmgr_componentPrefix = "component_";
-var devmgr_connectedPrefix = "connected_";
-var devmgr_descriptionPrefix = "description_";
-var devmgr_exBtnDescriptionPrefix = "exBtnDescription_";
-var devmgr_exBtnIconFormPrefix = "exButtonForm_";
-var devmgr_exBtnIconOption = "exButtonImage-select";
-var devmgr_exSliderPrefix = "exSlider_";
-var devmgr_exSliderDescriptionPrefix = "exSliderDescription_";
-var devmgr_saveBtnPrefix = "saveBtn_";
-var devmgr_clearMeasurementBtnPrefix = "clearMeasurementBtn_";
-var devmgr_removeComponentBtnPrefix = "removeComponentBtn_";
-var devmgr_statusPrefix = "status_";
-var devmgr_summaryPrefix = "summary_";
-
-// Site variables
-var devmgr_tempComponent = "";
+var statusPrefix = "status_";
+var componentPrefix = "component_";
+var connectedPrefix = "connected_";
+var descriptionPrefix = "description_";
+var exBtnDescriptionPrefix = "exBtnDescription_";
+var exBtnIconFormPrefix = "exButtonForm_";
+var exBtnIconOption = "exButtonImage-select";
+var exSliderPrefix = "exSlider_";
+var exSliderDescriptionPrefix = "exSliderDescription_";
+var saveBtnPrefix = "saveBtn_";
+var clearMeasurementBtnPrefix = "clearMeasurementBtn_";
+var removeComponentBtnPrefix = "removeComponentBtn_";
 
 /*
 ===============================================================
@@ -226,7 +222,7 @@ function onMessageArrived(message) {
 
 // Populate component dropdown - [string input]
 function populateComponentElement(device, component) {
-	let componentSelect = document.getElementById(devmgr_componentPrefix + device);
+	let componentSelect = document.getElementById(componentPrefix + device);
 	let optionExists = false;
 
 	// Stop processing if component element is hidden
@@ -358,7 +354,7 @@ function setExampleElementIcon(payload) {
     if ( elementHiddenOrMissing(htmlElements.exBtnIconForm) )  { return false; }
 
 	// Get available icons
-	let radioButtons = htmlElements.exBtnIconForm.elements[devmgr_exBtnIconOption];
+	let radioButtons = htmlElements.exBtnIconForm.elements[exBtnIconOption];
 	
 	// Set icon if available was found
 	for (let i = 0; i < radioButtons.length; i++) {
@@ -396,17 +392,17 @@ function generateComponentConfig(componentDetails) {
 // Get current devices html elements - [string input]
 function getHtmlElements(device) {
 	return {
-		description:			document.getElementById(devmgr_descriptionPrefix + device),
-		component:				document.getElementById(devmgr_componentPrefix + device),
-		connected:				document.getElementById(devmgr_connectedPrefix + device),
-		status:					document.getElementById(devmgr_statusPrefix + device),
-		exBtnIconForm:			document.getElementById(devmgr_exBtnIconFormPrefix + device),
-		exBtnDescription:		document.getElementById(devmgr_exBtnDescriptionPrefix + device),
-		exSlider:				document.getElementById(devmgr_exSliderDescriptionPrefix + device),
-		exSliderDescription:	document.getElementById(devmgr_exSliderPrefix + device),
-		saveButton:				document.getElementById(devmgr_saveBtnPrefix + device),
-		clearMeasurementBtn:	document.getElementById(devmgr_clearMeasurementBtnPrefix + device),
-		removeComponentBtn:		document.getElementById(devmgr_removeComponentBtnPrefix + device)
+		description:			document.getElementById(descriptionPrefix + device),
+		component:				document.getElementById(componentPrefix + device),
+		connected:				document.getElementById(connectedPrefix + device),
+		status:					document.getElementById(statusPrefix + device),
+		exBtnIconForm:			document.getElementById(exBtnIconFormPrefix + device),
+		exBtnDescription:		document.getElementById(exBtnDescriptionPrefix + device),
+		exSlider:				document.getElementById(exSliderDescriptionPrefix + device),
+		exSliderDescription:	document.getElementById(exSliderPrefix + device),
+		saveButton:				document.getElementById(saveBtnPrefix + device),
+		clearMeasurementBtn:	document.getElementById(clearMeasurementBtnPrefix + device),
+		removeComponentBtn:		document.getElementById(removeComponentBtnPrefix + device)
 	}
 }
 
@@ -420,7 +416,7 @@ function getElementValues(device) {
 	// Define icon value
 	let icon = "";
 	if ( !elementHiddenOrMissing(htmlElements.exBtnIconForm) ) {
-		icon = htmlElements.exBtnIconForm.elements[devmgr_exBtnIconOption].value;
+		icon = htmlElements.exBtnIconForm.elements[exBtnIconOption].value;
 	} 
 
 	// Define legacy status

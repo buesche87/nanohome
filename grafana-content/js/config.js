@@ -116,6 +116,11 @@ function checkEmpty(variable) {
     return variable?.toString().trim() === "";
 }
 
+// Check if variable contains numbers only
+function checkDigit(value) {
+	return /^\d+$/.test(value);
+}
+
 // Execute command with nanohome shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);
