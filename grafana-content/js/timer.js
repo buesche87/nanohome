@@ -258,7 +258,7 @@ function addHtmlElementFunctions(description) {
 	// Timer list elements
 	htmlElements.timerList.addEventListener("change", function() { 
 		copySelectedTimer(description);
-		htmlElements.removeButton.disabled = true;
+		htmlElements.removeButton.disabled = false;
 	});
 
 	// On/Off elements
@@ -292,7 +292,6 @@ function copySelectedTimer(description) {
 	htmlElements.timerPeriod.value = selectedTimer.timerPeriodValue
 	htmlElements.timerOn.value = selectedTimer.timerOn
 	htmlElements.timerOff.value = selectedTimer.timerOff
-	htmlElements.removeButton.disabled = false;
 }
 
 // Manage timer input
