@@ -445,6 +445,11 @@ function addHtmlElementFunctions(device) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
+	// Description element
+	htmlElements.description.addEventListener("change", function() { 
+		htmlElements.saveButton.disabled = false;
+	});
+
 	// Component element
 	htmlElements.component.addEventListener("click", function() { 
 		getDeviceStatus(device);
