@@ -119,6 +119,8 @@ function saveStandby(description) {
 	// Publish config to "nanohome/standby/*"
 	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
 	mqttPublish(nanohomeTopics.standby, JSON.stringify(newStandbyConfig), true);
+
+	console.log("Config saved");
 }
 
 // Clear standby manager values
@@ -136,6 +138,8 @@ function clearStandby(description) {
 
 	// Disable remove button
 	htmlElements.clearButton.disabled = true;
+
+	console.log("Config cleared");
 }
 
 
@@ -176,10 +180,9 @@ function generateStandbyConfig(description) {
 // Get current devices html elements
 function getHtmlElements(description) {
 	return {
+		standbyStatus:		document.getElementById(statusPrefix + description),
 		standbyThreshold:	document.getElementById(standbyThresholdPrefix + description),
 		standbyDelay:		document.getElementById(standbyDelayPrefix + description),
-		standbyStatus:		document.getElementById(statusPrefix + description),
-		saveButton:			document.getElementById(saveBtnPrefix + description),
 		clearButton:		document.getElementById(clearBtnPrefix + description)
 	};
 }
