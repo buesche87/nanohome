@@ -150,6 +150,6 @@ function updateHomeOutput(value) {
 	statusOutput.textContent = value + '% offen';
 
     setTimeout(() => {
-        statusOutput.textContent = ""; // Clears the content after 5 seconds
+        statusOutput.textContent = "";
     }, 5000);
 }

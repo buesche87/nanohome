@@ -65,6 +65,10 @@ function saveTimer(description) {
 	// Run "create_timer" through nanohome shell to enable the timer
 	mqttPublish(cmdInputTopic, "create_timer", false);
 
+	// Disable Save
+	htmlElements.saveButton.disabled = true;
+
+	// Log
 	console.log("Timer saved - new config:");
 	console.log(JSON.parse(existingTimerConfig));
 }
@@ -103,6 +107,11 @@ function removeTimer(description) {
 	// Run "create_timer" through nanohome shell
 	mqttPublish(cmdInputTopic, "create_timer", false);
 
+	// Disable Save and Remove
+	htmlElements.saveButton.disabled = true;
+	htmlElements.removeButton.disabled = true;
+
+	// Log
 	console.log("Timer removed - new config:");
 	console.log(JSON.parse(existingTimerConfig));
 }

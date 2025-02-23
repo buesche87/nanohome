@@ -320,18 +320,6 @@ function populateNetworkElement(payload) {
 	}
 }
 
-// Set status to legacy - [string input]
-function setStatusLegacy(device) {
-	let htmlElements = getHtmlElements(device);
-
-	// Stop processing if status panel is hidden
-    if ( elementHiddenOrMissing(htmlElements.status) ) { return false; }
-
-	htmlElements.status.innerText = "Legacy";
-	htmlElements.status.classList.remove('statusfalse');
-	htmlElements.status.classList.add('statusgreen')
-}
-
 // Set example panel description - [json input]
 function setExampleElementDescription(payload) {
 	let jsonData = JSON.parse(payload);
@@ -363,6 +351,18 @@ function setExampleElementIcon(payload) {
 			break;
 		}
 	}
+}
+
+// Set status to legacy - [string input]
+function setStatusLegacy(device) {
+	let htmlElements = getHtmlElements(device);
+
+	// Stop processing if status panel is hidden
+    if ( elementHiddenOrMissing(htmlElements.status) ) { return false; }
+
+	htmlElements.status.innerText = "Legacy";
+	htmlElements.status.classList.remove('statusfalse');
+	htmlElements.status.classList.add('statusgreen')
 }
 
 /*
@@ -494,12 +494,6 @@ function addHtmlElementFunctions(device) {
 		});
 	}
 }
-
-/*
-===============================================================
-	Helper Functions
-===============================================================
-*/
 
 // Show example element - [string input]
 function showExampleElement(device, element) {

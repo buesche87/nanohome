@@ -2,7 +2,8 @@
 FROM alpine:latest
 WORKDIR /nanohome
 LABEL maintainer="buesche"
-RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients 
+RUN apk add --no-cache bash curl wget sed jq tar mosquitto-clients tzdata
+ENV TZ=${TZ}
 RUN mkdir -p /nanohome/config
 RUN mkdir -p /nanohome/data
 RUN mkdir -p /nanohome/log
