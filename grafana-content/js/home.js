@@ -34,7 +34,7 @@ function sendCommand(device, component, description, command) {
 	// set global variable to identify mqtt message
 	home_outputComponent = component;
 
-	mqttSubscribe(statusTopic, 1000);
+	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
 
 	console.log('Command "' + command + '" sent for: ' + description);
@@ -48,7 +48,7 @@ function sendCommandLegacy(device, component, description, command) {
 	// set global variable to identify mqtt message
 	home_outputComponent = component;
 
-	mqttSubscribe(statusTopic, 1000);
+	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
 
 	console.log('Command "' + command + '" sent for: ' + description);
@@ -63,54 +63,33 @@ function sendCommandLegacy(device, component, description, command) {
 // TODO: status einfacher gestalten (trotzdem schneller wechsel)
 // Decide what to do with new mqtt mesages
 function onMessageArrived(message) {
-
 	let payload = message.payloadString;
-	let topic = message.destinationName;
-	let topicSplit = topic.split("/");
+	let topicSplit = message.destinationName.split("/");
 
 	// Shelly Plus devices
 	if ( topicSplit[0].startsWith("shelly") ) {
+		let device = topicSplit[0];
+		let component = topicSplit[2];
+		let statusData = JSON.parse(payload);
+		let switchOutput = statusData?.output;
+		let coverPosition = statusData?.target_pos;
 
-		let deviceid = topicSplit[0]
-		let component = topicSplit[2]
-
-		// set panel color active/passive
-		if ( topicSplit[3] == "output" ) {
-			setElementStatus(deviceid, component, payload);
-		} 
-
-		// Status topic (plus)
-		if (topicSplit[3] != "output" && home_outputComponent != "") {
-			statusData = JSON.parse(payload);
-			let output;
-
-			if (home_outputComponent.includes("switch")) {
-				output = statusData?.output;
-			} else if (home_outputComponent.includes("cover")) {
-				output = statusData?.target_pos;
-			}
-			
-			if (!elementHiddenOrMissing(output)) {
-				setElementStatus(deviceid, component, output);
-			}
+		if ( !elementHiddenOrMissing(coverPosition) ) {
+			setElementStatus(device, component, coverPosition);
+		} else if ( !elementHiddenOrMissing(switchOutput) ) {
+			setElementStatus(device, component, switchOutput);
 		}
 	} 
 	
+	// TODO: subscribe to shellies/+/relay/+
+	// filter components 
+	
 	// Shelly legacy devices
 	else if ( topicSplit[0] == "shellies" ) {
+		let device = topicSplit[1];
+		let componentidx = topicSplit[3];
 
-		let deviceid = topicSplit[1]
-		let componentidx = topicSplit[3]
-
-		// set panel color active/passive
-		if ( topicSplit[4] == "output" ) {
-			setElementStatus(deviceid, componentidx, payload);
-		} 	
-
-		// Status topic (legacy)
-		if (topicSplit[4] != "output" && home_outputComponent != "") {
-			setElementStatus(deviceid, componentidx, payload);
-		}
+		setElementStatus(device, componentidx, payload);
 	}
 }
 
