@@ -108,7 +108,7 @@ function onMessageArrived(message) {
 
 // Populate standby settings with content from mqtt message - [json payload]
 function populatePanels(timerConfig) {
-	let htmlElements = getHtmlElements(description);
+	let htmlElements = getHtmlElements(timerConfig.description);
 
 	// TODO: Check if it works
 	// let standbyStatus = document.getElementById(statusPrefix + jsonData.description);
