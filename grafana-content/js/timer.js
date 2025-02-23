@@ -70,6 +70,9 @@ function saveTimer(description) {
 
 	// Run "create_timer" through nanohome shell to enable the timer
 	mqttPublish(cmdInputTopic, "create_timer", false);
+
+	// Disable save button
+	htmlElements.saveButton.disabled = true;
 }
 
 // Remove selected timer
@@ -105,6 +108,10 @@ function removeTimer(description) {
 
 	// Run "create_timer" through nanohome shell
 	 mqttPublish(cmdInputTopic, "create_timer", false);
+
+	// Disable remove button and enable save
+	htmlElements.removeButton.disabled = true;
+	htmlElements.saveButton.disabled = false;
 }
 
 /*
