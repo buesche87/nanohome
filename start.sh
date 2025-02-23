@@ -1122,7 +1122,7 @@ fi
 
 # Start nanohome Shell
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Nanohome shell started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Shell started" >> /proc/1/fd/1
 
 # Start crond
 crond -f &

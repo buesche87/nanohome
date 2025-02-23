@@ -4,6 +4,12 @@
 ===============================================================
 */
 
+// TODO
+// - OnMessageArrive > funktionen auf buttons setzen statt im panel hinterlegen
+// - ListBox onfocusout > disable remove
+// - Nach remove > enable save
+// - 
+
 // mqtt message cache
 var deviceDataAttribute = "deviceDetails"; // HTML element
 var timerDataAttribute = "timerDetails"; // Attribute name
@@ -138,7 +144,7 @@ function saveToStore(jsonPayload, description, cache) {
 	let dataStore = htmlElements.timerStatus;;
 
 	// Stop processing datastore is hidden
-    if ( elementHiddenOrMissing(dataStore) ) { return false; }
+	if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
 	// Save config to devices datastore
 	switch(cache) {
@@ -181,7 +187,7 @@ function setTimerStatus(timerJson, description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if status elements is hidden
-    if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
+	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
 
 	// Set status element
 	if (!elementHiddenOrMissing(timerJson) && JSON.stringify(timerJson) != "[]") {
@@ -248,14 +254,14 @@ function timerSelected(description) {
 // Get current devices html elements
 function getHtmlElements(description) {
 	return {
-		timerList:    document.getElementById(timerListPrefix + description),
-		timerEntry:   document.getElementById(timerEntryPrefix + description),
-		timerPeriod:  document.getElementById(timerPeriodPrefix + description),
-		timerOn:      document.getElementById(timerOnPrefix + description),
-		timerOff:     document.getElementById(timerOffPrefix + description),
-		timerStatus:  document.getElementById(timerStatusPrefix + description),
-		saveButton:   document.getElementById(saveButtonPrefix + description),
-		removeButton: document.getElementById(removeButtonPrefix + description)
+		timerList:		document.getElementById(timerListPrefix + description),
+		timerEntry:		document.getElementById(timerEntryPrefix + description),
+		timerPeriod:	document.getElementById(timerPeriodPrefix + description),
+		timerOn:		document.getElementById(timerOnPrefix + description),
+		timerOff:		document.getElementById(timerOffPrefix + description),
+		timerStatus:	document.getElementById(timerStatusPrefix + description),
+		saveButton:		document.getElementById(saveButtonPrefix + description),
+		removeButton:	document.getElementById(removeButtonPrefix + description)
 	}
 }
 
@@ -268,4 +274,22 @@ function timerInput(description) {
 	} else {
 		htmlElements.saveButton.disabled = true;
 	}
+}
+
+/*
+===============================================================
+	Element actions
+===============================================================
+*/
+
+// Add functions to html elements
+function addElementFunctions(description) {
+	let htmlElements = getHtmlElements(description);
+
+	// Stop processing if status elements is hidden
+	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
+
+	// Add save and remove function
+	htmlElements.saveButton.onclick = saveTimer(description);
+	htmlElements.removeButton.onclick = removeTimer(description);
 }
