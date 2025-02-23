@@ -449,41 +449,20 @@ function addHtmlElementFunctions(device) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
-	htmlElements.component.addEventListener("onchange", function() {
-		getDeviceStatus(device);
-	});
-
-	htmlElements.connected.addEventListener("onclick", function() {
-		connectComponent(device);
-	});
-
-	htmlElements.status.addEventListener("onclick", function() {
-		window.open("http://" + device, "Device", "width=800,height=600");
-	});
+	htmlElements.component.onclick = function() { getDeviceStatus(device); };
+	htmlElements.connected.onclick = function() { connectComponent(device); };
+	htmlElements.status.onclick = function() { window.open("http://" + device, "Device", "width=800,height=600"); };
+	htmlElements.saveButton.onclick = function() { saveComponent(device); };
+	htmlElements.clearMeasurementBtn.onclick = function() { clearMeasurement(device); };
+	htmlElements.removeComponentBtn.onclick = function() { removeComponent(device); };
 
 	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) { 
-		htmlElements.exBtnDescription.addEventListener("onclick", function() {
-			createPanel(device);
-		});
+		htmlElements.exBtnDescription.onclick = function() { createPanel(device); };
 	}
 
 	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) {
-		htmlElements.exSlider.addEventListener("onclick", function() {
-			createPanel(device);
-		});
+		htmlElements.exSliderDescription.onclick = function() { createPanel(device); };
 	}
-
-	htmlElements.saveButton.addEventListener("onclick", function() {
-		saveComponent(device);
-	});
-
-	htmlElements.clearMeasurementBtn.addEventListener("onclick", function() {
-		clearMeasurement(device);
-	});
-
-	htmlElements.removeComponentBtn.addEventListener("onclick", function() {
-		removeComponent(device);
-	});
 }
 
 /*
