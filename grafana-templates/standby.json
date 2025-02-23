@@ -69,18 +69,18 @@
         },
         "gridPos": {
           "h": 2,
-          "w": 12,
+          "w": 4,
           "x": 0,
           "y": 3
         },
-        "id": 78,
+        "id": 79,
         "options": {
           "code": {
             "language": "plaintext",
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold</label>\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"[W]\"\n          autocomplete=\"off\"/>\n  </div>\n  <div class=\"detailGroup\">\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay</label>\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"[s]\"\n          autocomplete=\"off\" />\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
+          "content": "<div class=\"detailsDiv\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n</div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
@@ -95,18 +95,18 @@
         },
         "gridPos": {
           "h": 2,
-          "w": 12,
-          "x": 12,
+          "w": 14,
+          "x": 5,
           "y": 3
         },
-        "id": 70,
+        "id": 78,
         "options": {
           "code": {
             "language": "plaintext",
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div class=\"detailsDiv\">\r\n  <div class=\"detailGroup\">\r\n    <div class=\"detailEntry statusfalse\" \r\n         id=\"standbyStatus_${Description}\">\r\n     Inactive\r\n    </div>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\" \r\n            id=\"standbySaveBtn_${Description}\">\r\n      Save\r\n    </button>\r\n  </div>\r\n  <div class=\"detailGroup\">\r\n    <button class=\"detailEntry\"\r\n            id=\"standbyRemoveBtn_${Description}\">\r\n      Remove\r\n    </button>\r\n  </div>\r\n</div>",
+          "content": "<div class=\"detailsDiv\">\n  <div class=\"detailGroup\">\n    <input class=\"detailEntry\" \n          id=\"standbyThreshold_${Description}\"\n          placeholder=\"[W]\"\n          autocomplete=\"off\"/>\n    <label class=\"detailLabel\" for=\"standbyThreshold_${Description}\">Threshold</label>\n  </div>\n  <div class=\"detailGroup\">\n    <input class=\"detailEntry\" \n          id=\"standbyDelay_${Description}\"\n          placeholder=\"[s]\"\n          autocomplete=\"off\" />\n    <label class=\"detailLabel\" for=\"standbyDelay_${Description}\">Delay</label>\n  </div>\n  <div class=\"detailGroup\">\n      <button class=\"detailEntry\"\n              id=\"clearStandbyBtn_${Description}\"\n              disabled>\n        Clear\n      </button>\n  </div>\n</div>\n<script>\n  setTimeout(() => {\n     if (checkMqttStatus()) {\n       getStandby(\"${Description}\"); \n     }\n  }, 300);\n</script>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
