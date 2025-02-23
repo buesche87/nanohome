@@ -50,11 +50,14 @@ PUBLISHED_TIMER_ARRAY=$(
 jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 	while read -r TIMER; do
 
+	
+
 	# Extract payload and device details from topic
 	DEVICEID=$( jq -r .deviceId <<< "${TIMER}" )
 	COMPONENT=$( jq -r .component <<< "${TIMER}" )
 	DESCRIPTION=$( jq -r .description <<< "${TIMER}" )
 	TIMERPERIOD=$( jq -r .timerPeriodValue <<< "${TIMER}" )
+	TIMERPERIODTXT=$( jq -r .timerPeriodText <<< "${TIMER}" )
 	TIMERON=$( jq -r .timerOn <<< "${TIMER}" )
 	TIMEROFF=$( jq -r .timerOff <<< "${TIMER}" )
 	LEGACY=$( jq -r .legacy <<< "${TIMER}" )
@@ -96,7 +99,7 @@ jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 		echo "${CRONENTRY_ON}" >> "${NANOHOME_CRONTABS}"
 
 		# Log
-		[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Cron entry "on" for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Nanohome: Timer for \"${DESCRIPTION}\" - [On: ${TIMERPERIODTXT} - ${HOUR}:${MINUTE}]" >> /proc/1/fd/1
 	fi
 
 	# If timerOff set create a cron entry to switch off component
@@ -120,8 +123,10 @@ jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" | \
 		echo "${CRONENTRY_OFF}" >> "${NANOHOME_CRONTABS}"
 
 		# Log
-		[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Cron entry "off" for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
+		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Nanohome: Timer for \"${DESCRIPTION}\" - [Off: ${TIMERPERIODTXT} - ${HOUR}:${MINUTE}]" >> /proc/1/fd/1
 	fi
+
+	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Timer for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
 done
 
 chmod 600 "${NANOHOME_CRONTABS}"
