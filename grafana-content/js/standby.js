@@ -177,33 +177,6 @@ function generateStandbyConfig(description) {
 
 /*
 ===============================================================
-	Helper Functions
-===============================================================
-*/
-
-// Clear standby button
-function clearPanels(description) {
-	let htmlElements = getHtmlElements(description);
-
-	htmlElements.standbyThreshold.value = "";
-	htmlElements.standbyDelay.value = "";
-	setStandbyStatus(description);
-}
-
-// Validate format of input
-function validateStandbyInput(description, inputField) {
-	let htmlElements = getHtmlElements(description);
-
-	if ( checkDigit(inputField.value) && inputField.value !== "" ) {
-		htmlElements.saveBtn.disabled = false;
-	} else {
-		inputField.value = "";
-		htmlElements.saveBtn.disabled = true;
-	}
-}
-
-/*
-===============================================================
 	HTML Element Functions
 ===============================================================
 */
@@ -250,12 +223,20 @@ function addHtmlElementFunctions(description) {
 		}
 	});
 
-	htmlElements.standbyDelay.onfocus = function() { htmlElements.standbyDelay.value=""; };
-	htmlElements.saveBtn.onclick = function() { saveStandby(description); };
-	htmlElements.removeBtn.onclick = function() { removeStandby(description); };
+	htmlElements.standbyDelay.onfocus = function() { 
+		htmlElements.standbyDelay.value = "";
+	};
+
+	htmlElements.saveButton.onclick = function() { 
+		saveStandby(description); 
+	};
+
+	htmlElements.removeButton.onclick = function() { 
+		removeStandby(description); 
+	};
 
 	htmlElements.standbyThreshold.addEventListener("keypress", function(event) {
-		if (event.key >= "0" && event.key <= "9") {
+		if ( event.key >= "0" && event.key <= "9" ) {
 		  return true;
 		} else {
 		  event.preventDefault();
@@ -263,10 +244,32 @@ function addHtmlElementFunctions(description) {
 	});
 
 	htmlElements.standbyDelay.addEventListener("keypress", function(event) {
-		if (event.key >= "0" && event.key <= "9") {
+		if ( event.key >= "0" && event.key <= "9" ) {
 		  return true;
 		} else {
 		  event.preventDefault();
 		}
 	});
+}
+
+// Clear standby button
+function clearPanels(description) {
+	let htmlElements = getHtmlElements(description);
+
+	htmlElements.standbyThreshold.value = "";
+	htmlElements.standbyDelay.value = "";
+
+	setStandbyStatus(description);
+}
+
+// Validate format of input
+function validateStandbyInput(description, inputField) {
+	let htmlElements = getHtmlElements(description);
+
+	if ( checkDigit(inputField.value) && inputField.value !== "" ) {
+		htmlElements.saveButton.disabled = false;
+	} else {
+		inputField.value = "";
+		htmlElements.saveButton.disabled = true;
+	}
 }
