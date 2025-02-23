@@ -288,12 +288,9 @@ function addHtmlElementFunctions(description) {
 	let htmlElements = getHtmlElements(description);
 
 	// Stop processing if status elements is hidden
-	//if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
+	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
 
 	// Add save and remove function
-	document.getElementById(saveButtonPrefix + description).onclick = saveTimer(description);
-	document.getElementById(removeButtonPrefix + description).onclick = removeTimer(description);
-
-	//htmlElements.saveButton.onclick = saveTimer(description);
-	//htmlElements.removeButton.onclick = removeTimer(description);
+	htmlElements.saveButton.onclick = function() { saveTimer(description); };
+	htmlElements.removeButton.onclick = function() { removeTimer(description); };
 }
