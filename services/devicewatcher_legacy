@@ -94,7 +94,7 @@ while read -r DEVICESTATUS; do
 	# This value will be used on the home dashboard
 	OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 
-	OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
+	OUTPUTTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/output"
 
 	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
 		-t "${OUTPUTTOPIC}"	-m "${OUTPUTVALUE}"
