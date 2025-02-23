@@ -449,8 +449,17 @@ function addHtmlElementFunctions(device) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
-	htmlElements.connected.onclick = function() { connectComponent(device); };
-	htmlElements.status.onclick = function() { window.open("http://" + device, "Device", "width=800,height=600"); };
+	htmlElements.component.addEventListener("onchange", function() {
+		getDeviceStatus(device);
+	});
+
+	htmlElements.connected.addEventListener("onclick", function() {
+		connectComponent(device);
+	});
+
+	htmlElements.status.addEventListener("onclick", function() {
+		window.open("http://" + device, "Device", "width=800,height=600");
+	});
 
 	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) { 
 		htmlElements.exBtnDescription.addEventListener("onclick", function() {
