@@ -110,11 +110,6 @@ function onMessageArrived(message) {
 function populatePanels(timerConfig) {
 	let htmlElements = getHtmlElements(timerConfig.description);
 
-	// TODO: Check if it works
-	// let standbyStatus = document.getElementById(statusPrefix + jsonData.description);
-	// let standbyThreshold = document.getElementById(standbyThresholdPrefix + timerConfig.description);
-	// let standbyDelay = document.getElementById(standbyDelayPrefix + timerConfig.description);
-
 	// Stop processing if status element is hidden
     if ( elementHiddenOrMissing(htmlElements.standbyStatus) ) { return false; }	
 
@@ -133,6 +128,8 @@ function populatePanels(timerConfig) {
 		htmlElements.standbyStatus.classList.add('statusfalse');
 	}
 
+	// Enable remove button
+	htmlElements.removeButton.disabled = false;
 }
 
 // Save device details to datastore - [json payload]

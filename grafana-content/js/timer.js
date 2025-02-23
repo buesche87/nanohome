@@ -256,11 +256,8 @@ function addHtmlElementFunctions(description) {
 	if ( elementHiddenOrMissing(htmlElements.timerStatus) ) { return false; }
 
 	// Timer list elements
-	htmlElements.timerList.addEventListener("focus", function() { 
-		copySelectedTimer(description);
-	});
-
 	htmlElements.timerList.addEventListener("change", function() { 
+		copySelectedTimer(description);
 		htmlElements.removeButton.disabled = true;
 	});
 
