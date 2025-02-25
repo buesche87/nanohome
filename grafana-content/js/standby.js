@@ -8,11 +8,11 @@
 var deviceDataAttribute = "deviceData"; // Attribute name
 
 // HTML element prefixes
-var standbyThresholdPrefix = "standbyThreshold_";
-var standbyDelayPrefix = "standbyDelay_";
+var devicePrefix = "standbyDevice_";
+var thresholdPrefix = "standbyThreshold_";
+var delayPrefix = "standbyDelay_";
 var statusPrefix = "standbyStatus_";
 var saveBtnPrefix = "standbySaveBtn_";
-// var removeBtnPrefix = "standbyRemoveBtn_";
 var clearBtnPrefix = "clearStandbyBtn_";
 
 /*
@@ -72,7 +72,12 @@ function saveToStore(configJson) {
 	// Stop processing if datastore is hidden
     if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
-	// Save standby config to devices datastore
+	// Fill descripton 
+	htmlElements.standbyDevice.innerText = timerConfig.description;
+	htmlElements.standbyDevice.classList.remove('statusfalse');
+	htmlElements.standbyDevice.classList.add('boldText');	
+
+	// Save config to datastore
 	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(configJson));
 }
 
@@ -180,9 +185,11 @@ function generateStandbyConfig(description) {
 // Get current devices html elements
 function getHtmlElements(description) {
 	return {
+		standbyDevice:		document.getElementById(devicePrefix + description),
 		standbyStatus:		document.getElementById(statusPrefix + description),
-		standbyThreshold:	document.getElementById(standbyThresholdPrefix + description),
-		standbyDelay:		document.getElementById(standbyDelayPrefix + description),
+		standbyThreshold:	document.getElementById(thresholdPrefix + description),
+		standbyDelay:		document.getElementById(delayPrefix + description),
+		saveButton:			document.getElementById(saveBtnPrefix + description),
 		clearButton:		document.getElementById(clearBtnPrefix + description)
 	};
 }
@@ -199,12 +206,12 @@ function addHtmlElementFunctions(description) {
 	htmlElements.standbyThreshold.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
-	}, { once: true });
+	});
 
 	htmlElements.standbyDelay.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
-	}, { once: true });
+	});
 
 	// Focusout: Save new values or revert
 	//---------------------------------------------------------
@@ -214,7 +221,7 @@ function addHtmlElementFunctions(description) {
 		} else {
 			this.value = this.getAttribute("previous-value") || "";
 		}
-	}, { once: true });
+	});
 
 	htmlElements.standbyDelay.addEventListener("focusout", function() { 
 		if ( checkDigit(this.value) && htmlElements.standbyThreshold.value !== "" ) {
@@ -222,12 +229,12 @@ function addHtmlElementFunctions(description) {
 		} else {
 			this.value = this.getAttribute("previous-value") || "";
 		}
-	}, { once: true });
+	});
 
 	// Click: Disable and clear standby
 	htmlElements.clearButton.addEventListener("click", function() { 
 		clearStandby(description);
-	}, { once: true });
+	});
 
 	// KeyPress: Suppress non-digit
 	//---------------------------------------------------------
@@ -237,7 +244,7 @@ function addHtmlElementFunctions(description) {
 		} else {
 		  event.preventDefault();
 		}
-	}, { once: true });
+	});
 
 	htmlElements.standbyDelay.addEventListener("keypress", function(event) {
 		if ( event.key >= "0" && event.key <= "9" ) {
@@ -245,7 +252,7 @@ function addHtmlElementFunctions(description) {
 		} else {
 		  event.preventDefault();
 		}
-	}, { once: true });
+	});
 }
 
 // Set standby status 

@@ -45,6 +45,8 @@ hr.thight {
 	padding-left: var(--padding);
 	padding-right: var(--padding);
 	width: auto;
+	font-size: 1.1em;
+	font-weight: bold;
 }
 
 .detailEntry {
@@ -62,18 +64,13 @@ hr.thight {
 	justify-content: center;
 	padding-left: var(--padding);
 	padding-right: var(--padding);
+	margin: 2px;
 	width: 33%;
 	height: var(--input-height);
 }
 
-.detailValue {
-	flex: 2;
-	height: 42px;
-	width: auto;
-	padding-left: var(--padding);
-	padding-right: var(--padding);
-	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
+input.detailEntry {
+
 }
 
 /*
@@ -100,6 +97,10 @@ button:disabled, button:disabled:hover {
 .boldText {
 	font-size: 1.2em;
 	font-weight: bold;
+}
+
+.statustrue {
+	color: white;
 }
 
 .statusfalse {

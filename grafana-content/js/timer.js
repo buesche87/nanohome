@@ -274,29 +274,29 @@ function addHtmlElementFunctions(description) {
 	htmlElements.timerList.addEventListener("change", function() { 
 		copySelectedTimer(description);
 		htmlElements.removeButton.disabled = false;
-	}, { once: true });
+	});
 
 	// On/Off elements
 	htmlElements.timerOn.addEventListener("change", function() { 
 		validateTimerInput(description);
-	}, { once: true });
+	});
 
 	htmlElements.timerOff.addEventListener("change", function() { 
 		validateTimerInput(description);
-	}, { once: true });
+	});
 
 	// Save element
 	htmlElements.saveButton.addEventListener("click", function() { 
 		saveTimer(description);
 		htmlElements.saveButton.disabled = true;
-	}, { once: true });
+	});
 
 	// Remove element
 	htmlElements.removeButton.addEventListener("click", function() { 
 		removeTimer(description);
 		htmlElements.removeButton.disabled = true;
 		htmlElements.saveButton.disabled = false;
-	}, { once: true });
+	});
 }
 
 // Copy value from selected timer entry to timer details
