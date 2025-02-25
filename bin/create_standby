@@ -1,0 +1,25 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# nanohome - standbywatcher service
+#
+# Enable or disable a standbymanager for a device
+# if there is a new retained message in "nanohome/standby/+"
+#/////////////////////////////////////////////////////////////////////////////////////
+
+DESCRIPTION=$1
+
+# MQTT connection string with credentials
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
+
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)

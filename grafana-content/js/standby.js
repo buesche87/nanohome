@@ -126,7 +126,7 @@ function saveStandby(description) {
 	mqttPublish(nanohomeTopics.standby, JSON.stringify(newStandbyConfig), true);
 
 	// Run "create_standby" through nanohome shell to enable the timer
-	//mqttPublish(cmdInputTopic, "create_standby", false);
+	mqttPublish(cmdInputTopic, "create_standby" + description, false);
 
 	console.log("Config saved");
 }
