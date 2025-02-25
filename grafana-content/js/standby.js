@@ -65,20 +65,20 @@ function onMessageArrived(message) {
 */
 
 // Save device config to datastore - [json payload]
-function saveToStore(configJson) {
-	let htmlElements = getHtmlElements(configJson.description);
+function saveToStore(deviceConfig) {
+	let htmlElements = getHtmlElements(deviceConfig.description);
 	let dataStore = htmlElements.standbyStatus;
 
 	// Stop processing if datastore is hidden
     if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
 	// Fill descripton 
-	htmlElements.standbyDevice.innerText = timerConfig.description;
+	htmlElements.standbyDevice.innerText = deviceConfig.description;
 	htmlElements.standbyDevice.classList.remove('statusfalse');
 	htmlElements.standbyDevice.classList.add('boldText');	
 
 	// Save config to datastore
-	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(configJson));
+	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(deviceConfig));
 }
 
 // Populate standby settings - [json payload]
