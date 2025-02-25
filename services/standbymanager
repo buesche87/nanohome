@@ -68,8 +68,10 @@ update_state() {
 # Infinitely subscribe to components status/power topic
 #===============================================================
 
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
-while read -r CURRENTPOWER; do
+while true; do
+
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
+	while read -r CURRENTPOWER; do
 
 	# Extract current power from json formatted message
 	if [[ "${LEGACY}" == "false" ]]; then
@@ -132,4 +134,6 @@ while read -r CURRENTPOWER; do
 
 	# Log
 	[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbymanager: ${DESCRIPTION} - ${LOGMESSAGE}" >> /proc/1/fd/1
+	done
+	sleep 1
 done

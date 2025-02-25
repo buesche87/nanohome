@@ -52,7 +52,7 @@ convert_value() {
 # Execute every NANOHOME_MEASUREMENTS_LEGACY_INTERVAL seconds
 #===============================================================
 
-while /bin/true; do
+while true; do
 
 	# Subscribe to "shellies/+/+/+/connected"
 	CONNECTED_COMPONENTS=$(

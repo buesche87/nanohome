@@ -68,17 +68,22 @@ stop_standbyservice() {
 #===============================================================
 
 # Start a standbymanager if a new config gets published
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" -R |
-while read -r MESSAGE; do
-    if [[ -n "${MESSAGE}" ]]; then
-        start_standbyservice "${MESSAGE}"
-    fi
+while true; do
+    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" -R |
+    while read -r MESSAGE; do
+        if [[ -n "${MESSAGE}" ]]; then
+            start_standbyservice "${MESSAGE}"
+        fi
+    done &
+    sleep 1
 done &
 
-# Stop a standbymanager if a config gets deleted
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" --retained-only |
-while read -r MESSAGE; do
-    if [[ -z "${MESSAGE}" ]]; then
-        stop_standbyservice "${MESSAGE}"
-    fi
+while true; do
+    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" --retained-only |
+    while read -r MESSAGE; do
+        if [[ -z "${MESSAGE}" ]]; then
+            stop_standbyservice "${MESSAGE}"
+        fi
+    done
+    sleep 1
 done &
