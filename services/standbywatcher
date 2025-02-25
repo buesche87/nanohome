@@ -76,7 +76,7 @@ while true; do
         fi
     done &
     sleep 1
-done &
+done
 
 while true; do
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${SERVICETOPIC}" --retained-only |
@@ -86,4 +86,4 @@ while true; do
         fi
     done
     sleep 1
-done &
+done
