@@ -84,6 +84,6 @@ while true; do
         if [[ -z "${MESSAGE}" ]]; then
             stop_standbyservice "${MESSAGE}"
         fi
-    done
+    done &
     sleep 1
 done
