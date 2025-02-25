@@ -75,7 +75,7 @@ function saveToStore(deviceConfig) {
 	// Fill descripton 
 	htmlElements.standbyDevice.innerText = deviceConfig.description;
 	htmlElements.standbyDevice.classList.remove('statusfalse');
-	htmlElements.standbyDevice.classList.add('boldText');	
+	htmlElements.standbyDevice.classList.add('statustrue');	
 
 	// Save config to datastore
 	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(deviceConfig));
