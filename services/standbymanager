@@ -8,8 +8,14 @@
 # - Check if power is below threshold 
 # - Turn off output if so
 #/////////////////////////////////////////////////////////////////////////////////////
-
 JSONCONFIG=$1
+
+# MQTT connection string with credentials
+MQTT_CONNECTION_STRING=(
+	-h "${MQTT_SERVER}"
+	-u "${MQTT_USER}"
+	-P "${MQTT_PASSWORD}"
+)
 
 # Extract payload and device details from json formatted message
 DEVICEID=$( jq -r '.deviceId' <<< "${JSONCONFIG}" )
