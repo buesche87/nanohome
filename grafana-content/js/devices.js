@@ -107,6 +107,8 @@ function createPanel(device) {
 		saveComponent(device);
 		shellCommand('create_panel "' + componentDetails.description + '"');
 		getDeviceStatus(device);
+	} else {
+		console.log("Panel creation aborted")
 	}
 }
 
@@ -448,50 +450,50 @@ function addHtmlElementFunctions(device) {
 	// Description element
 	htmlElements.description.addEventListener("change", function() { 
 		htmlElements.saveButton.disabled = false;
-	});
+	}, { once: true });
 
 	// Component element
 	htmlElements.component.addEventListener("click", function() { 
 		getDeviceStatus(device);
-	});
+	}, { once: true });
 
 	// Connected element
 	htmlElements.connected.addEventListener("click", function() { 
 		connectComponent(device);
-	});
+	}, { once: true });
 
 	// Status element
 	htmlElements.status.addEventListener("click", function() { 
 		window.open("http://" + device, "Device", "width=800,height=600");
-	});
+	}, { once: true });
 
 	// Save element
 	htmlElements.status.addEventListener("click", function() { 
 		saveComponent(device);
-	});
+	}, { once: true });
 
 	// Clear measurement element
 	htmlElements.clearMeasurementBtn.addEventListener("click", function() { 
 		clearMeasurement(device);
-	});
+	}, { once: true });
 
 	// Remove component element
 	htmlElements.removeComponentBtn.addEventListener("click", function() { 
 		removeComponent(device);
-	});
+	}, { once: true });
 
 	// Example button
 	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) { 
 		htmlElements.exBtnDescription.addEventListener("click", function() { 
 			createPanel(device);
-		});
+		}, { once: true });
 	}
 
 	// Example slider
 	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) { 
 		htmlElements.exSliderDescription.addEventListener("click", function() { 
 			createPanel(device);
-		});
+		}, { once: true });
 	}
 }
 

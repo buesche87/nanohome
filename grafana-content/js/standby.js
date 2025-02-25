@@ -199,12 +199,12 @@ function addHtmlElementFunctions(description) {
 	htmlElements.standbyThreshold.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
-	});
+	}, { once: true });
 
 	htmlElements.standbyDelay.addEventListener("focus", function() { 
 		this.setAttribute("previous-value", this.value);
 		this.value = "";
-	});
+	}, { once: true });
 
 	// Focusout: Save new values or revert
 	//---------------------------------------------------------
@@ -214,7 +214,7 @@ function addHtmlElementFunctions(description) {
 		} else {
 			this.value = this.getAttribute("previous-value") || "";
 		}
-	});
+	}, { once: true });
 
 	htmlElements.standbyDelay.addEventListener("focusout", function() { 
 		if ( checkDigit(this.value) && htmlElements.standbyThreshold.value !== "" ) {
@@ -222,12 +222,12 @@ function addHtmlElementFunctions(description) {
 		} else {
 			this.value = this.getAttribute("previous-value") || "";
 		}
-	});
+	}, { once: true });
 
 	// Click: Disable and clear standby
 	htmlElements.clearButton.addEventListener("click", function() { 
 		clearStandby(description);
-	});
+	}, { once: true });
 
 	// KeyPress: Suppress non-digit
 	//---------------------------------------------------------
@@ -237,7 +237,7 @@ function addHtmlElementFunctions(description) {
 		} else {
 		  event.preventDefault();
 		}
-	});
+	}, { once: true });
 
 	htmlElements.standbyDelay.addEventListener("keypress", function(event) {
 		if ( event.key >= "0" && event.key <= "9" ) {
@@ -245,7 +245,7 @@ function addHtmlElementFunctions(description) {
 		} else {
 		  event.preventDefault();
 		}
-	});
+	}, { once: true });
 }
 
 // Set standby status 
