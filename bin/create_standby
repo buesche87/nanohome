@@ -16,9 +16,9 @@ MQTT_CONNECTION_STRING=(
 
 # Define subscribe topic: "nanohome/standby/?"
 if [[ -n "${DESCRIPTION}" ]]; then
-	STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
+	SUBSCRIBETOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
 else
-	STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/+"
+	SUBSCRIBETOPIC="${MQTT_TOPIC_STANDBY}/+"
 fi
 
 # Load standby configs
