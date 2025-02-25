@@ -19,17 +19,17 @@ MQTT_CONNECTION_STRING=(
 SUBSCRIBETOPIC="${MQTT_TOPIC_TIMER}/+"
 
 # Load timer configs
-PUBLISHED_TIMER_CONFIGS=$(
+PUBLISHED_CONFIGS=$(
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--retained-only --nodelay --quiet -W 2 \
 	-t "${SUBSCRIBETOPIC}" 
 )
 
 # Exit script if no timer are configured
-if [[ -z "${PUBLISHED_TIMER_CONFIGS}" ]]; then
+if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 	exit 1
-elif [[ "${PUBLISHED_TIMER_CONFIGS}" == "[]" ]]; then
+elif [[ "${PUBLISHED_CONFIGS}" == "[]" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No timer configured on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 	sed -i '0,/# Nanohome Crontabs/!d' "${NANOHOME_CRONTABS}"
 	exit 0

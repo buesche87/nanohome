@@ -5,7 +5,6 @@
 # Enable or disable a standbymanager for a device
 # if there is a new retained message in "nanohome/standby/+"
 #/////////////////////////////////////////////////////////////////////////////////////
-
 DESCRIPTION=$1
 
 # MQTT connection string with credentials
@@ -23,3 +22,47 @@ MQTT_RETAINED_OPTIONS=(
 	-C 1
 	-W 1
 )
+
+# Define subscribe topic: "nanohome/standby/?"
+
+if [[ -n "${DESCRIPTION}" ]]; then
+	STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
+else
+	STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/+"
+fi
+
+# Load standby configs
+PUBLISHED_CONFIGS=$(
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+	--retained-only --nodelay --quiet -W 2 \
+	-t "${SUBSCRIBETOPIC}" 
+)
+
+# Exit script if no standby managers are configured
+if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+	exit 0
+fi
+
+# Create an array containing all configs retreived
+PUBLISHED_CONFIGS_ARRAY=$(
+	jq -s 'add' <<< "${PUBLISHED_CONFIGS}"
+)
+
+# Create a crontab entry for each config
+jq -c '.[]' <<< "${PUBLISHED_CONFIGS_ARRAY}" |
+while read -r CONFIG; do
+
+	# Create standby manager for device
+	nohup /bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${CONFIG}" 2>&1
+
+
+
+
+	# Kill standby manager for device
+	PID=$(ps | grep "${STANDBYTOPIC}" | grep -v "grep" | awk '{print $1}')
+	[[ -n "${PID}" ]] && kill -9 "${PID}"
+
+
+fi
+

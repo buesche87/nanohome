@@ -35,10 +35,8 @@ MQTT_RETAINED_OPTIONS=(
 # Infinitely subscribe to "+/status/+"
 #===============================================================
 
-while true; do
-
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "+/status/+" |
-	while read -r COMPONENTSTATUS; do
+mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "+/status/+" |
+while read -r COMPONENTSTATUS; do
 
 	# Extract payload and topic from json formatted message
 	STATUSMESSAGE=$( jq -r '.payload' <<< "${COMPONENTSTATUS}" )
@@ -169,7 +167,4 @@ while true; do
 	else
 		[[ $LOG_DEBUG ]] && echo -e "${LOG_WARN} Devicewatcher: No measurement - [${DEVICEID}/${COMPONENT}]" >> /proc/1/fd/1
 	fi
-
-	done
-	sleep 1
 done
