@@ -11,7 +11,7 @@ export NANOHOME_CRONTABS="/etc/crontabs/root"
 export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="clear_measurement,create_panel,create_standbymgr,create_timer,remove_component,remove_device"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="create_panel,create_timer,create_standby,clear_measurement,remove_component,remove_device"
 
 # MQTT topics for nanohome
 export MQTT_TOPIC_DEVICES="nanohome/devices"

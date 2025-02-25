@@ -10,6 +10,7 @@
 	--border-color: #4f4f4f;
 	--border-radius: 2px;
 	--input-height: 46px;
+	--input-width: 70px;
 	--gap-size: 10px;
 	--padding: 15px;
 }
@@ -47,6 +48,7 @@ hr.thight {
 	width: auto;
 	font-size: 1.1em;
 	font-weight: bold;
+	white-space: nowrap;
 }
 
 .detailEntry {
@@ -65,7 +67,7 @@ hr.thight {
 	padding-left: var(--padding);
 	padding-right: var(--padding);
 	margin: 2px;
-	width: 33%;
+	width: var(--input-width);
 	height: var(--input-height);
 }
 
@@ -103,7 +105,6 @@ button:disabled, button:disabled:hover {
 	color: white;
 	font-size: 1.2em;
 	font-weight: bold;
-	text-align: left;
 }
 
 .statusfalse {

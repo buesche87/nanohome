@@ -22,8 +22,8 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
-# Service Topic: "nanohome/standby/+"
-SERVICETOPIC="${MQTT_TOPIC_STANDBY}/+"
+# Service Topic:
+SERVICETOPIC="nanohome/standby/+"
 
 # Temporary storage for active services
 STATE_FILE="/tmp/standbywatcher.state"
