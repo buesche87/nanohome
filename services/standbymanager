@@ -8,7 +8,11 @@
 # - Check if power is below threshold 
 # - Turn off output if so
 #/////////////////////////////////////////////////////////////////////////////////////
-JSONCONFIG=$1
+CONFIG=$1
+
+JSONCONFIG=$(
+	jq '.' <<< "${CONFIG}" 
+)
 
 # MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
@@ -121,7 +125,7 @@ while read -r CURRENTPOWER; do
 	fi
 
 	# Update the json with a new state and publish it
-	if [[ "${NEW_STATE}" != "${LAST_STATE}" ]]
+	if [[ "${NEW_STATE}" != "${LAST_STATE}" ]]; then
 				
 		JSONCONFIG_UPDATED=$(
 			jq --arg state "${NEW_STATE}" '.state = "$state"' <<< "${JSONCONFIG}"
