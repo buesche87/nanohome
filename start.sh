@@ -11,7 +11,7 @@ export NANOHOME_CRONTABS="/etc/crontabs/root"
 export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
 export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
 export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="create_panel,create_timer,create_standby,clear_measurement,remove_component,remove_device"
+export NANOHOME_SHELL_ALLOWED_COMMANDS="create_panel,create_timer,create_standby,clear_measurement,remove_standby,remove_component,remove_device"
 
 # MQTT topics for nanohome
 export MQTT_TOPIC_DEVICES="nanohome/devices"
@@ -1112,9 +1112,9 @@ fi
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Measurements legacy started" >> /proc/1/fd/1
 
-# Start standby watcher
-/bin/bash ${NANOHOME_ROOTPATH}/services/standbywatcher &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standbywatcher started" >> /proc/1/fd/1
+# Start standby managers
+/bin/bash ${NANOHOME_ROOTPATH}/bin/create_standby &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standby manager started" >> /proc/1/fd/1
 
 # Create and fill crontab file
 echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"

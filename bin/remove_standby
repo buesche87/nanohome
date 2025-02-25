@@ -1,0 +1,17 @@
+#!/bin/bash
+#/////////////////////////////////////////////////////////////////////////////////////
+# nanohome - standbywatcher service
+#
+# Enable or disable a standbymanager for a device
+# if there is a new retained message in "nanohome/standby/+"
+#/////////////////////////////////////////////////////////////////////////////////////
+DESCRIPTION=$1
+
+# Define subscribe topic: "nanohome/standby/?"
+STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
+
+# Kill standby manager for device
+PID=$(ps | grep "${STANDBYTOPIC}" | grep -v "grep" | awk '{print $1}')
+[[ -n "${PID}" ]] && kill -9 "${PID}"
+
+[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Standbymanager for \"${DESCRIPTION}\" terminated" >> /proc/1/fd/1

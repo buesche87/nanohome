@@ -148,7 +148,7 @@ function clearStandby(description) {
 	htmlElements.clearButton.disabled = true;
 
 	// Run "create_standby" through nanohome shell to enable the timer
-	//mqttPublish(cmdInputTopic, "create_standby", false);
+	mqttPublish(cmdInputTopic, "remove_standby" + description, false);
 
 	console.log("Config cleared");
 }
