@@ -14,6 +14,9 @@ JSONCONFIG=$(
 	jq '.' <<< "${CONFIG}" 
 )
 
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Starting with config" >> /proc/1/fd/1
+[[ $LOG_DEBUG ]] && jq <<< "${JSONCONFIG}"
+
 # MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
