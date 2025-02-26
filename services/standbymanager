@@ -33,6 +33,11 @@ STANDBYWAIT=$( jq -r .wait <<< "${JSONCONFIG}" )
 LEGACY=$( jq -r '.legacy' <<< "${JSONCONFIG}" )
 [[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
 
+
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: DEVICEID ${DEVICEID}" >> /proc/1/fd/1
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: COMPONENT ${COMPONENT}" >> /proc/1/fd/1
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: COMPONENT ${DESCRIPTION}" >> /proc/1/fd/1
+
 # Define mqtt topics
 if [[ "${LEGACY}" == "true" ]]; then
 	COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
