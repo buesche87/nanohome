@@ -24,6 +24,15 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
+# MQTT retained message subscription options
+MQTT_RETAINED_OPTIONS=(
+	--retained-only
+	--nodelay
+	--quiet
+	-C 1
+	-W 1
+)
+
 # Extract payload and device details from json formatted message
 DEVICEID=$( jq -r '.deviceId' <<< "${JSONCONFIG}" )
 COMPONENT=$( jq -r '.component' <<< "${JSONCONFIG}" )
@@ -32,11 +41,6 @@ THRESHOLD=$( jq -r .threshold <<< "${JSONCONFIG}" )
 STANDBYWAIT=$( jq -r .wait <<< "${JSONCONFIG}" )
 LEGACY=$( jq -r '.legacy' <<< "${JSONCONFIG}" )
 [[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
-
-
-[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: DEVICEID ${DEVICEID}" >> /proc/1/fd/1
-[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: COMPONENT ${COMPONENT}" >> /proc/1/fd/1
-[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: COMPONENT ${DESCRIPTION}" >> /proc/1/fd/1
 
 # Define mqtt topics
 if [[ "${LEGACY}" == "true" ]]; then
@@ -62,6 +66,10 @@ get_last_state() {
 	)
 
 	local state=$( jq -r .state <<< "${currentStateJson}" )
+	local description=$( jq -r .description <<< "${currentStateJson}" )
+
+	[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Last state for ${description}: ${state}" >> /proc/1/fd/1
+
 	return "${state}"
 }
 
@@ -79,6 +87,8 @@ update_state() {
 #===============================================================
 # Infinitely subscribe to components status/power topic
 #===============================================================
+
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Subscribing to ${STATUSTOPIC}" >> /proc/1/fd/1
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
 while read -r CURRENTPOWER; do
@@ -138,7 +148,8 @@ while read -r CURRENTPOWER; do
 		JSONCONFIG_UPDATED=$(
 			jq --arg state "${NEW_STATE}" '.state = "$state"' <<< "${JSONCONFIG}"
 		)
-
+		
+		[[ $LOG_SERVICE ]] && echo -e "${LOG_INFO} Standbymanager: Update state for ${DESCRIPTION}: ${NEW_STATE}" >> /proc/1/fd/1
 		update_state "${JSONCONFIG_UPDATED}"
 	fi
 
