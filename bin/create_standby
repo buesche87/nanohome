@@ -43,4 +43,5 @@ PUBLISHED_CONFIGS_ARRAY=$(
 jq -c '.[]' <<< "${PUBLISHED_CONFIGS_ARRAY}" |
 while read -r CONFIG; do
 	/bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${CONFIG}" &
+	sleep 2
 done
