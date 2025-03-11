@@ -27,14 +27,13 @@ MQTT_RETAINED_OPTIONS=(
 )
 
 # Define subscribe topic: "nanohome/standby/?"
-SUBSCRIBETOPIC="nanohome/standby/${DESCRIPTION}/"
+SUBSCRIBETOPIC="nanohome/standby/${DESCRIPTION}"
 
 [[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Started for \"${DESCRIPTION}\"" >> /proc/1/fd/1
 
 # Load standby config
 PUBLISHED_CONFIG=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--retained-only --nodelay --quiet -W 2 \
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" "${MQTT_RETAINED_OPTIONS[@]}" \
 	-t "${SUBSCRIBETOPIC}" 
 )
 
@@ -93,7 +92,7 @@ update_state() {
 # Infinitely subscribe to components status/power topic
 #===============================================================
 
-[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Subscribing to ${STATUSTOPIC}" >> /proc/1/fd/1
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Subscribing to \"${STATUSTOPIC}\"" >> /proc/1/fd/1
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
 while read -r CURRENTPOWER; do
