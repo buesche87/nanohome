@@ -16,7 +16,7 @@ MQTT_CONNECTION_STRING=(
 )
 
 # Define subscribe topic: "nanohome/timer/+"
-SUBSCRIBETOPIC="${MQTT_TOPIC_TIMER}/+"
+SUBSCRIBETOPIC="nanohome/timer/+"
 
 # Load timer configs
 PUBLISHED_CONFIGS=$(
@@ -31,7 +31,7 @@ if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
 	exit 1
 elif [[ "${PUBLISHED_CONFIGS}" == "[]" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No timer configured on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
-	sed -i '0,/# Nanohome Crontabs/!d' "${NANOHOME_CRONTABS}"
+	sed -i '0,/# Nanohome Crontabs/!d' "/etc/crontabs/root"
 	exit 0
 fi
 
@@ -40,7 +40,7 @@ CRONENTRY_TEMPLATE="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ /usr/bin/mosquitto_pub ${M
 CRONENTRY_TEMPLATE_LEGACY="_MINUTE_ _HOUR_ * * _TIMERPERIOD_ /usr/bin/mosquitto_pub ${MQTT_CONNECTION_STRING[@]} -t shellies/_DEVICEID_/_COMPONENTDEV_/_COMPONENTINDEX_/command -m _MESSAGE_"
 
 # Clear crontab file
-sed -i '0,/# Nanohome Crontabs/!d' "${NANOHOME_CRONTABS}"
+sed -i '0,/# Nanohome Crontabs/!d' "/etc/crontabs/root"
 
 # Create an array containing all configs retreived
 PUBLISHED_TIMER_ARRAY=$(
@@ -95,7 +95,7 @@ while read -r TIMER; do
 		CRONENTRY_ON="${CRONENTRY_ON//_MESSAGE_/${MESSAGE}}"
 
 		# Append entry to crontab
-		echo "${CRONENTRY_ON}" >> "${NANOHOME_CRONTABS}"
+		echo "${CRONENTRY_ON}" >> "/etc/crontabs/root"
 
 		# Log
 		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Nanohome: Timer for \"${DESCRIPTION}\" - [On: ${TIMERPERIODTXT} - ${HOUR}:${MINUTE}]" >> /proc/1/fd/1
@@ -119,7 +119,7 @@ while read -r TIMER; do
 		CRONENTRY_OFF="${CRONENTRY_OFF//_MESSAGE_/${MESSAGE}}"
 
 		# Append entry to crontab
-		echo "${CRONENTRY_OFF}" >> "${NANOHOME_CRONTABS}"
+		echo "${CRONENTRY_OFF}" >> "/etc/crontabs/root"
 
 		# Log
 		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Nanohome: Timer for \"${DESCRIPTION}\" - [Off: ${TIMERPERIODTXT} - ${HOUR}:${MINUTE}]" >> /proc/1/fd/1

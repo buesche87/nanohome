@@ -1131,18 +1131,18 @@ fi
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_legacy &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Measurements legacy started" >> /proc/1/fd/1
 
-# Start standby managers
-/bin/bash ${NANOHOME_ROOTPATH}/bin/create_standby &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standby manager started" >> /proc/1/fd/1
-
-# Create and fill crontab file
-echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"
-/bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
-
 # Start nanohome Shell
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Shell started" >> /proc/1/fd/1
+
+# Create and fill crontab file
+echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"
+/bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
+
+# Start standby managers
+/bin/bash ${NANOHOME_ROOTPATH}/bin/create_standby
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standby manager started" >> /proc/1/fd/1
 
 # Start crond
 crond -f &

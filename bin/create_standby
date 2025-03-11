@@ -17,9 +17,10 @@ MQTT_CONNECTION_STRING=(
 # Define subscribe topic: "nanohome/standby/?"
 if [[ -n "${DESCRIPTION}" ]]; then
 	
-	/bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${DESCRIPTION}" &
+	/bin/bash "/nanohome/services/standbymanager" "${DESCRIPTION}" &
 else
-	SUBSCRIBETOPIC="${MQTT_TOPIC_STANDBY}/+"
+
+	SUBSCRIBETOPIC="nanohome/standby/+"
 
 	# Load standby configs
 	PUBLISHED_CONFIGS=$(
@@ -43,7 +44,7 @@ else
 	jq -c '.[]' <<< "${PUBLISHED_CONFIGS_ARRAY}" |
 	while read -r CONFIG; do
 		DESCRIPTION=$( jq -r '.description' <<< "${CONFIG}" )
-		/bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${DESCRIPTION}" &
+		/bin/bash "/nanohome/services/standbymanager" "${DESCRIPTION}" &
 		sleep 2
 	done
 fi

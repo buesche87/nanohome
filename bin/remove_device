@@ -18,16 +18,16 @@ MQTT_CONNECTION_STRING=(
 
 # Delete device from influxdb
 if [ -n "${DEVICE}" ]; then
-	influx delete --bucket "${INFLUX_BUCKET_DEVICES}" \
+	influx delete --bucket "Devices" \
 	  --start '1970-01-01T00:00:00Z' \
 	  --stop $(date --utc +"%Y-%m-%dT%H:%M:%SZ") \
 	  --predicate "_measurement=\"${DEVICE}\""
 fi
 
 # Prepare mqtt topics to be cleared
-DEVICETOPIC="${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
-STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}"
-TIMERTOPIC="${MQTT_TOPIC_TIMER}/${DESCRIPTION}"
+DEVICETOPIC="nanohome/devices/${DESCRIPTION}"
+STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
+TIMERTOPIC="nanohome/timer/${DESCRIPTION}"
 
 if [ "${LEGACY}" == "true" ]; then
 	SHELLYTOPIC="shellies/${DEVICE}/+/+/+"
@@ -42,7 +42,7 @@ mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${TIMERTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${SHELLYTOPIC}" -m ""
 
 # Remove device from crontab file
-sed -i "/${DEVICE}/d" "${NANOHOME_CRONTABS}"
+sed -i "/${DEVICE}/d" "/etc/crontabs/root"
 
 # Kill running services for legacy devices
 if [ "${LEGACY}" == "true" ]; then

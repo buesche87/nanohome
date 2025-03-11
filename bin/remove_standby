@@ -8,7 +8,7 @@
 DESCRIPTION=$1
 
 # Define subscribe topic: "nanohome/standby/?"
-STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
+STANDBYTOPIC="nanohome/standby/${DESCRIPTION}/"
 
 # Kill standby manager for device
 PID=$(ps | grep "${STANDBYTOPIC}" | grep -v "grep" | awk '{print $1}')

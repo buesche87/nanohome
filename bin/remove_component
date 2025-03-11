@@ -16,16 +16,23 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
+# Define Variables
+DEVICETOPIC="nanohome/devices/${DESCRIPTION}"
+STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
+TIMERTOPIC="nanohome/timer/${DESCRIPTION}"
+MEASUREMENTS_BUCKET="Measurements"
+NANOHOME_CRONTABS="/etc/crontabs/root"
+
 # Load component config from "nanohome/devices/"
 PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	--retained-only --quiet -C 1 -W 1 \
-    -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+    -t "${DEVICETOPIC}"
 )
 
 # Exit if no config found
 if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DEVICES}/${DESCRIPTION}\"" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${DEVICETOPIC}\"" >> /proc/1/fd/1
     exit 1
 fi
 
@@ -37,7 +44,7 @@ LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
 
 # Clear Measurement
 if [ -n "${DESCRIPTION}" ]; then
-	influx delete --bucket "${INFLUX_BUCKET_MEASUREMENTS}" \
+	influx delete --bucket "${MEASUREMENTS_BUCKET}" \
 	  --start '1970-01-01T00:00:00Z' \
 	  --stop "$(date --utc +"%Y-%m-%dT%H:%M:%SZ")" \
 	  --predicate "_measurement=\"${DESCRIPTION}\""
@@ -46,10 +53,6 @@ if [ -n "${DESCRIPTION}" ]; then
 fi
 
 # Prepare mqtt topics to be cleared
-DEVICETOPIC="${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
-STANDBYTOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}"
-TIMERTOPIC="${MQTT_TOPIC_TIMER}/${DESCRIPTION}"
-
 if [ "${LEGACY}" == "true" ]; then
 	COMPONENTNAME=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
 	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )

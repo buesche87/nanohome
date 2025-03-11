@@ -18,16 +18,19 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
+# Define subscribe topic: "nanohome/timer/+"
+SUBSCRIBETOPIC="nanohome/devices/${DESCRIPTION}"
+
 # Get dashboard configs from "nanohome/devices/$1"
 PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
     --retained-only --nodelay --quiet -C 1 -W 2 \
-    -t "${MQTT_TOPIC_DEVICES}/${DESCRIPTION}"
+    -t "${SUBSCRIBETOPIC}"
 )
 
 # Exit if no config found
 if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${MQTT_TOPIC_DEVICES}/${DESCRIPTION}\"" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
     exit 1
 fi
 
