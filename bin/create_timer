@@ -44,7 +44,7 @@ sed -i '0,/# Nanohome Crontabs/!d' "/etc/crontabs/root"
 
 # Create an array containing all configs retreived
 PUBLISHED_TIMER_ARRAY=$(
-	jq -s 'add' <<< "${PUBLISHED_TIMER_CONFIGS}"
+	jq -s 'add' <<< "${PUBLISHED_CONFIGS}"
 )
 
 # Create a crontab entry for each config
