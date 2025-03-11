@@ -16,32 +16,35 @@ MQTT_CONNECTION_STRING=(
 
 # Define subscribe topic: "nanohome/standby/?"
 if [[ -n "${DESCRIPTION}" ]]; then
-	SUBSCRIBETOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
+	
+	/bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${DESCRIPTION}" &
 else
 	SUBSCRIBETOPIC="${MQTT_TOPIC_STANDBY}/+"
+
+	# Load standby configs
+	PUBLISHED_CONFIGS=$(
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+		--retained-only --nodelay --quiet -W 2 \
+		-t "${SUBSCRIBETOPIC}" 
+	)
+
+	# Exit script if no standby managers are configured
+	if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
+		[[ $LOG_EXEC ]] && echo -e "${LOG_WARN} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+		exit 0
+	fi
+
+	# Create an array containing all configs retreived
+	PUBLISHED_CONFIGS_ARRAY=$(
+		jq -s '.' <<< "${PUBLISHED_CONFIGS}"
+	)
+
+	# Create a standby manager for each config
+	jq -c '.[]' <<< "${PUBLISHED_CONFIGS_ARRAY}" |
+	while read -r CONFIG; do
+		DESCRIPTION=$( jq -r '.description' <<< "${CONFIG}" )
+		/bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${DESCRIPTION}" &
+		sleep 2
+	done
 fi
 
-# Load standby configs
-PUBLISHED_CONFIGS=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--retained-only --nodelay --quiet -W 2 \
-	-t "${SUBSCRIBETOPIC}" 
-)
-
-# Exit script if no standby managers are configured
-if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_WARN} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
-	exit 0
-fi
-
-# Create an array containing all configs retreived
-PUBLISHED_CONFIGS_ARRAY=$(
-	jq -s '.' <<< "${PUBLISHED_CONFIGS}"
-)
-
-# Create a standby manager for each config
-jq -c '.[]' <<< "${PUBLISHED_CONFIGS_ARRAY}" |
-while read -r CONFIG; do
-	/bin/bash "${NANOHOME_ROOTPATH}/services/standbymanager" "${CONFIG}" &
-	sleep 2
-done

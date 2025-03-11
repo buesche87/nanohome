@@ -8,14 +8,7 @@
 # - Check if power is below threshold 
 # - Turn off output if so
 #/////////////////////////////////////////////////////////////////////////////////////
-CONFIG=$1
-
-JSONCONFIG=$(
-	jq '.' <<< "${CONFIG}" 
-)
-
-[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Starting with config" >> /proc/1/fd/1
-[[ $LOG_DEBUG ]] && jq <<< "${JSONCONFIG}"
+DESCRIPTION=$1
 
 # MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
@@ -33,13 +26,25 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
+# Define subscribe topic: "nanohome/standby/?"
+SUBSCRIBETOPIC="${MQTT_TOPIC_STANDBY}/${DESCRIPTION}/"
+
+[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Started for ${DESCRIPTION}" >> /proc/1/fd/1
+
+# Load standby config
+PUBLISHED_CONFIG=$(
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
+	--retained-only --nodelay --quiet -W 2 \
+	-t "${SUBSCRIBETOPIC}" 
+)
+
 # Extract payload and device details from json formatted message
-DEVICEID=$( jq -r '.deviceId' <<< "${JSONCONFIG}" )
-COMPONENT=$( jq -r '.component' <<< "${JSONCONFIG}" )
-DESCRIPTION=$( jq -r '.description' <<< "${JSONCONFIG}" )
-THRESHOLD=$( jq -r .threshold <<< "${JSONCONFIG}" )
-STANDBYWAIT=$( jq -r .wait <<< "${JSONCONFIG}" )
-LEGACY=$( jq -r '.legacy' <<< "${JSONCONFIG}" )
+DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_CONFIG}" )
+COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG}" )
+DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG}" )
+THRESHOLD=$( jq -r .threshold <<< "${PUBLISHED_CONFIG}" )
+STANDBYWAIT=$( jq -r .wait <<< "${PUBLISHED_CONFIG}" )
+LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG}" )
 [[ "${STANDBYWAIT}" == "null" ]] && STANDBYWAIT=1
 
 # Define mqtt topics

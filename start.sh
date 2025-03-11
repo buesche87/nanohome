@@ -83,6 +83,7 @@ export LOG_ERRO="[${LOG_RED}-Error-${LOG_NOC}]"
 #===============================================================
 # - If no influx cli configuration exists, create one
 
+# Search for existing influx configuration
 influxconfig_search() {
 
 	local answer=$(
@@ -104,6 +105,7 @@ influxconfig_search() {
 	fi
 }
 
+# Create new influx configuration
 influxconfig_create() {
 
 	local answer=$(
@@ -135,7 +137,7 @@ influxconfig=$(
 	influxconfig_search || influxconfig_create
 )
 
-# Validate configuration
+# Validate influx configuration
 influx ping > /dev/null 2>&1
 
 if [[ $? -ne 0 ]]; then
@@ -151,6 +153,7 @@ echo -e "${LOG_SUCC} Influx CLI: Successfully connected to ${INFLUX_HOST}" >> /p
 #===============================================================
 # - If buckets do not exist, create them
 
+# Search for existing influx bucket
 influxbucket_search() {
 
 	local bucket=$1
@@ -179,6 +182,7 @@ influxbucket_search() {
 	fi
 }
 
+# Create new influx bucket
 influxbucket_create() {
 	local bucket=$1
 
@@ -211,7 +215,6 @@ influxbucket_create() {
 	fi
 }
 
-# Devices bucket
 influxbucket_devices=$(
 	influxbucket_search "${INFLUX_BUCKET_DEVICES}" || \
 	influxbucket_create "${INFLUX_BUCKET_DEVICES}"
@@ -223,7 +226,6 @@ export INFLUX_BUCKET_DEVICES_ID=$(
 
 [[ $LOG_START ]] && jq  '. | {id, name, createdAt}' <<< "${influxbucket_devices}" >> /proc/1/fd/1
 
-# Measurements bucket
 influxbucket_measurements=$(
 	influxbucket_search "${INFLUX_BUCKET_MEASUREMENTS}" || \
 	influxbucket_create "${INFLUX_BUCKET_MEASUREMENTS}"
@@ -242,6 +244,7 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$(
 # - If one token found, validate permissions, exit if failed (manual deletion)
 # - If multiple tokens found, exit script (manual deletion)
 
+# Search for existing auth token
 influxauthtoken_search() {
 
 	local answer=$(
@@ -256,6 +259,7 @@ influxauthtoken_search() {
 	jq <<< "${result}"
 }
 
+# Create new auth token
 influxauthtoken_create() {
 
 	local answer=$(
@@ -282,6 +286,7 @@ influxauthtoken_create() {
 	fi	
 }
 
+# Validate auth token
 influxauthtoken_validate() {
 	local influxauthtoken_found=$1
 
@@ -357,6 +362,7 @@ grafanaserviceaccount_json='{
 	"isDisabled": false
 }'
 
+# Test api connection with basic auth
 grafanaapibasicauth_test() {
 
 	local answer=$(
@@ -377,6 +383,7 @@ grafanaapibasicauth_test() {
 	fi
 }
 
+# Search for existing service account
 grafanaserviceaccount_find() {
 
 	local answer=$(
@@ -403,6 +410,7 @@ grafanaserviceaccount_find() {
 	fi
 }
 
+# Create new service account
 grafanaserviceaccount_create() {
 
 	local answer=$(
@@ -431,6 +439,7 @@ grafanaserviceaccount_create() {
 	fi
 }
 
+# Search for existing service account token
 grafanaserviceaccounttoken_find() {
 	local said=$1
 
@@ -453,6 +462,7 @@ grafanaserviceaccounttoken_find() {
 	fi
 }
 
+# Delete existing service account token
 grafanaserviceaccounttoken_delete() {
 	local grafanaserviceaccount_id=$1
 	local grafanaserviceaccount_token_id=$2
@@ -475,6 +485,7 @@ grafanaserviceaccounttoken_delete() {
 	fi
 }
 
+# Create a new service account token
 grafanaserviceaccounttoken_create() {
 	local grafanaserviceaccount_id=$1
 
@@ -504,10 +515,8 @@ elif [[ -n "${GRAFANA_ADMIN}" ]] && [[ -n "${GRAFANA_PASS}" ]] && [[ -n "${GRAFA
 
 	echo -e "${LOG_WARN} Grafana: No service account token provided in .env file" >> /proc/1/fd/1
 
-	# Validate basic auth connection
 	grafanaapibasicauth_test
 
-	# Find or create service account
 	grafanaserviceaccount=$(
 		grafanaserviceaccount_find "${GRAFANA_SERVICEACCOUNT}" || \
 		grafanaserviceaccount_create
@@ -519,7 +528,6 @@ elif [[ -n "${GRAFANA_ADMIN}" ]] && [[ -n "${GRAFANA_PASS}" ]] && [[ -n "${GRAFA
 
 	[[ $LOG_START ]] && jq <<< "${grafanaserviceaccount}" >> /proc/1/fd/1
 
-	# Find token
 	grafanaserviceaccount_token=$(
 		grafanaserviceaccounttoken_find "${grafanaserviceaccount_id}"
 	)
@@ -528,7 +536,6 @@ elif [[ -n "${GRAFANA_ADMIN}" ]] && [[ -n "${GRAFANA_PASS}" ]] && [[ -n "${GRAFA
 		jq length <<< ${grafanaserviceaccount_token}
 	)
 
-	# Delete existing token(s)
 	for (( i = 0; i < grafanaserviceaccount_token_objects; i++ )); do
 		grafanaserviceaccount_token_current=$(
 			jq .[$i] <<< "${grafanaserviceaccount_token}"
@@ -545,7 +552,6 @@ elif [[ -n "${GRAFANA_ADMIN}" ]] && [[ -n "${GRAFANA_PASS}" ]] && [[ -n "${GRAFA
 		[[ $LOG_START ]] && jq '. | {id, name, created}' <<< "${grafanaserviceaccount_token_current}" >> /proc/1/fd/1
 	done
 
-	# Create a new token
 	grafanaserviceaccount_token=$(
 		grafanaserviceaccounttoken_create "${grafanaserviceaccount_id}"
 	)
@@ -572,6 +578,7 @@ grafanaapiheaders_token=(
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
 
+# Test api connection with service account token
 grafanaapiauthtoken_test() {
 
 	local answer=$(
@@ -600,6 +607,7 @@ grafanaapiauthtoken_test
 #===============================================================
 # - If datasources do not exist create them
 
+# Search for existing datasource
 grafanadatasource_search() {
 	local dsname=$1
 
@@ -628,6 +636,7 @@ grafanadatasource_search() {
 	fi
 }
 
+# Prepare datasource in json format
 grafanadatasource_prepare() {
 	local bucket=$1
 
@@ -646,6 +655,7 @@ grafanadatasource_prepare() {
 	jq <<< "${result}"
 }
 
+# Create a new datasource
 grafanadatasource_create() {
 	local dsjson=$1
 
@@ -679,7 +689,7 @@ grafanadatasource_create() {
 	fi
 }
 
-# Datasource: Devices
+# Datasrouce: Devices
 grafanadatasource_devices_json=$(
 	grafanadatasource_prepare "${GRAFANA_DATASOURCE_DEVICES}"
 )
@@ -717,7 +727,8 @@ grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measur
 grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
-grafanacontent_setCredentials() {
+# Set credentials in config.js
+grafanacontent_setcredentials() {
 	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/config.js"
 	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/config.js"
 
@@ -730,6 +741,7 @@ grafanacontent_setCredentials() {
 	fi	
 }
 
+# Move grafana content to persistent storage
 grafanacontent_move() {
 	rm -rf "${grafanacontent_destination}"/*
 	mv -f "${grafanacontent_source}"/* "${grafanacontent_destination}"
@@ -746,7 +758,7 @@ grafanacontent_move() {
 if [[ -d "${grafanacontent_source}" ]]; then
 	echo -e "${LOG_INFO} Grafana: Creating content \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 
-	grafanacontent_setCredentials
+	grafanacontent_setcredentials
 	grafanacontent_move
 else
 	echo -e "${LOG_INFO} Grafana: Content \"${grafanacontent_destination}\" already created" >> /proc/1/fd/1
@@ -757,6 +769,7 @@ fi
 #===============================================================
 # - If dashboard folder "nanohome" does not exist create it
 
+# Search for existing dahboard folder
 grafanadashfolder_search() {
 	local foldername=$1
 
@@ -785,6 +798,7 @@ grafanadashfolder_search() {
 	fi
 }
 
+# Create a new dahboard folder
 grafanadashfolder_create() {
 	local foldername=$1
 
@@ -838,6 +852,7 @@ grafanadashboard_metadata='{
 	"overwrite": true
 }'
 
+# Search for existing dahboard
 grafanadashboard_find() {
 	local uid=$1
 
@@ -866,6 +881,7 @@ grafanadashboard_find() {
 	fi	
 }
 
+# Prepare dashboard template for upload (metadata and datasource uid)
 grafanadashboard_prepare() {
 	local file=$1
 	local dsuid=$2
@@ -898,6 +914,7 @@ grafanadashboard_prepare() {
 	fi	
 }
 
+# Upload new dashboard
 grafanadashboard_create() {
 	local jsondata=$1
 
@@ -1027,6 +1044,7 @@ fi
 #===============================================================
 # - Set home dashboard preference in grafana settings
 
+# Validate current home dashboard preference
 grafanadashboard_gethomepreference() {
 
 	local answer=$(
@@ -1049,6 +1067,7 @@ grafanadashboard_gethomepreference() {
 	fi	
 }
 
+# Set new home dashbord preference
 grafanadashboard_sethomepreference() {
 	local id=$1
 
