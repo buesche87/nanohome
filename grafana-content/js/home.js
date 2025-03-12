@@ -156,3 +156,12 @@ function loadWeatherWidget() {
     script.src = "https://weatherwidget.io/js/widget.min.js";
     document.body.appendChild(script);
 }
+
+/*
+===============================================================
+	Execute
+===============================================================
+*/
+
+loadWeatherWidget();
+setInterval(loadWeatherWidget, 600000);
