@@ -8,10 +8,6 @@
 var home_outputComponent = "";
 var command;
 
-// Set weather widget preferences
-const weatherWidgetLink = "https://forecast7.com/en/47d058d31/lucerne/";
-const weatherWidgetCity = "Lucerne";
-
 /*
 ===============================================================
 	MQTT Subscribe

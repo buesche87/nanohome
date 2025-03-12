@@ -721,24 +721,36 @@ grafanadatasource_measurements_uid=$( jq -r .uid <<< "${grafanadatasource_measur
 # Grafana: Modify and copy public content
 #===============================================================
 # - If source folder grafana-content exists
-# - Modify mqtt credentials in config.js
+# - Modify mqtt credentials and weather widget in config.js
 # - Move content to "${NANOHOME_ROOTPATH}/data/grafana"
 
 grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
 grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
-# Set credentials in config.js
-grafanacontent_setcredentials() {
-	sed -i '/var user/c\var user = "'"${MQTT_USER}"'"' "${grafanacontent_source}/js/config.js"
-	sed -i '/var pwd/c\var pwd = "'"${MQTT_PASSWORD}"'"' "${grafanacontent_source}/js/config.js"
+# Set preferences in config.js
+grafanacontent_setpreferences() {
+	
+    # Grafana credentials
+    sed -i '/^var user =/c\var user = "'"${MQTT_USER}"'";' "${grafanacontent_source}/js/config.js"
+    sed -i '/^var pwd =/c\var pwd = "'"${MQTT_PASSWORD}"'";' "${grafanacontent_source}/js/config.js"
 
-	if [[ $? -eq 0 ]]; then
-		echo -e "${LOG_SUCC} Grafana: Content credentials set" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_ERRO} Grafana: Failed setting content credentials" >> /proc/1/fd/1
-		exit 1
-	fi	
+    if ! grep -q "var user = \"${MQTT_USER}\";" "${grafanacontent_source}/js/config.js"; then
+        echo -e "${LOG_ERRO} Grafana: Failed setting content credentials" >> /proc/1/fd/1
+        exit 1
+    fi
+
+    # Weather widget
+    if [[ -n "${WEATHER_URL}" ]]; then
+        sed -i '/^var weatherWidgetLink =/c\var weatherWidgetLink = "'"${WEATHER_URL}"'";' "${grafanacontent_source}/js/config.js"
+        sed -i '/^var weatherWidgetCity =/c\var weatherWidgetCity = "'"${WEATHER_LOCATION}"'";' "${grafanacontent_source}/js/config.js"
+
+        if ! grep -q "var weatherWidgetLink = \"${WEATHER_URL}\";" "${grafanacontent_source}/js/config.js"; then
+            echo -e "${LOG_ERRO} Grafana: Failed setting weather widget preferences" >> /proc/1/fd/1
+            exit 1
+        fi
+    fi
+
+    echo -e "${LOG_SUCC} Grafana: Content preferences set" >> /proc/1/fd/1
 }
 
 # Move grafana content to persistent storage
@@ -758,7 +770,7 @@ grafanacontent_move() {
 if [[ -d "${grafanacontent_source}" ]]; then
 	echo -e "${LOG_INFO} Grafana: Creating content \"${grafanacontent_destination}\"" >> /proc/1/fd/1
 
-	grafanacontent_setcredentials
+	grafanacontent_setpreferences
 	grafanacontent_move
 else
 	echo -e "${LOG_INFO} Grafana: Content \"${grafanacontent_destination}\" already created" >> /proc/1/fd/1
@@ -952,13 +964,6 @@ if [[ -z "${grafanadashboard_home_exists}" ]]; then
 	grafanadashboard_home_json=$(
 		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}" "${grafanadatasource_measurements_uid}"
 	)
-
-	# Set weather widget settings
-	if [[ -n "${WEATHER_URL}" ]]; then
-		grafanadashboard_home_json="${grafanadashboard_home_json//https:\/\/forecast7.com\/en\/47d058d31\/lucerne\//$WEATHER_URL}"
-		grafanadashboard_home_json="${grafanadashboard_home_json//Lucerne//$WEATHER_LOCATION}"
-		[[ $LOG_Debug ]] && echo "${LOG_INFO} Grafana: Wether widget settings set" >> /proc/1/fd/1
-	fi
 
 	grafanadashboard_home=$(
 		grafanadashboard_create "${grafanadashboard_home_json}"

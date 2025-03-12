@@ -23,12 +23,17 @@ var mqttConnected = false;
 
 /*
 ===============================================================
-	Nanohome Shell
+	Nanohome Options
 ===============================================================
 */
 
+// Shell Topics
 var cmdInputTopic = "nanohome/shell/input";
 var cmdOutputTopic = "nanohome/shell/output";
+
+// Weather widget
+var weatherWidgetLink = "https://forecast7.com/en/47d058d31/lucerne/";
+var weatherWidgetCity = "Lucerne";
 
 /*
 ===============================================================
