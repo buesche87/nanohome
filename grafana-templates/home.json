@@ -533,34 +533,8 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<a class=\"weatherwidget-io\" href=\"https://forecast7.com/en/47d058d31/lucerne/\" data-label_1=\"Lucerne\" data-label_2=\"\" data-font=\"Open Sans\" data-icons=\"Climacons Animated\" data-theme=\"gray\" data-basecolor=\"#111217\" data-accent=\"rgba(67, 67, 67, 0.64)\" data-highcolor=\"#de792d\" data-suncolor=\"#de792d\" data-cloudfill=\"#5a5a5a\" >Lucerne Weather</a>\r\n<script>\r\n!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io-js');\r\n</script>",
+          "content": "<div id=\"weather-container\"></div>",
           "mode": "html"
-        },
-        "pluginVersion": "11.5.2",
-        "title": "",
-        "transparent": true,
-        "type": "text"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 8
-        },
-        "id": 1683352665,
-        "options": {
-          "code": {
-            "language": "plaintext",
-            "showLineNumbers": false,
-            "showMiniMap": false
-          },
-          "content": "",
-          "mode": "markdown"
         },
         "pluginVersion": "11.5.2",
         "title": "",
@@ -576,7 +550,7 @@
           "h": 5,
           "w": 8,
           "x": 0,
-          "y": 9
+          "y": 8
         },
         "id": 1739901676,
         "options": {
@@ -602,7 +576,7 @@
           "h": 5,
           "w": 8,
           "x": 8,
-          "y": 9
+          "y": 8
         },
         "id": 1739902182,
         "options": {
@@ -613,6 +587,32 @@
           },
           "content": "<div \n    class=\"btnContainer btnHome\"\n    id=\"shelly1pm-E89F6D857029_0\"\n    onclick='sendCommandLegacy(\"shelly1pm-E89F6D857029\", \"0\", \"legacy\", \"toggle\")'>\n    <div\n        class=\"btnImage\" \n        style=\"background-image: url('../public/nanohome/icons/frame.png');\">\n    </div>\n    <div\n        class=\"btnDescription\">\n        <span>legacy</span>\n    </div>\n</div>",
           "mode": "html"
+        },
+        "pluginVersion": "11.5.2",
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 13
+        },
+        "id": 1683352665,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "",
+          "mode": "markdown"
         },
         "pluginVersion": "11.5.2",
         "title": "",
