@@ -8,6 +8,10 @@
 var home_outputComponent = "";
 var command;
 
+// Set weather widget preferences
+const weatherWidgetLink = "https://forecast7.com/en/47d058d31/lucerne/";
+const weatherWidgetCity = "Lucerne";
+
 /*
 ===============================================================
 	MQTT Subscribe
@@ -139,4 +143,20 @@ function updateHomeOutput(value) {
     setTimeout(() => {
         statusOutput.textContent = "";
     }, 5000);
+}
+
+// Load the weather widget
+function loadWeatherWidget() {
+    document.getElementById("weather-container").innerHTML = `
+        <a class="weatherwidget-io" href="${weatherWidgetLink}" 
+           data-label_1="${weatherWidgetCity}" data-label_2="" 
+           data-font="Open Sans" data-icons="Climacons Animated" 
+           data-theme="gray" data-basecolor="#111217" 
+           data-accent="rgba(67, 67, 67, 0.64)" 
+           data-highcolor="#de792d" data-suncolor="#de792d" 
+           data-cloudfill="#5a5a5a">${weatherWidgetCity} Weather</a>`;
+
+    let script = document.createElement("script");
+    script.src = "https://weatherwidget.io/js/widget.min.js";
+    document.body.appendChild(script);
 }
