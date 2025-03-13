@@ -277,8 +277,8 @@ influxauthtoken_validate() {
 	local influxauthtoken_found="$1"
 
 	local result=$(
-		jq -e --arg val1 "${INFLUX_BUCKET_DEVICES_ID}" --arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
-		'[.[].permissions[] | .resource.id] | contains([$val1, $val2])' <<< "$influxauthtoken_found"
+		jq -e --arg val1 "${INFLUX_BUCKET_DEVICES_ID}" --arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" '
+		[.[].permissions[] | .resource.id] | contains([$val1, $val2])' <<< "$influxauthtoken_found"
 	)
 
 	if [[ "$result" == "true" ]]; then
