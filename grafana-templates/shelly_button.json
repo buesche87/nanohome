@@ -2,10 +2,10 @@
   "datasource": null,
   "content": {},
   "gridPos": {
+    "h": 4,
+    "w": 8,
     "x": 0,
-    "y": 8,
-    "h": 5,
-    "w": 8
+    "y": 8
   },
   "id": 9490,
   "links": [],
