@@ -112,7 +112,10 @@ function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
 
 	// Stop processing if panel is hidden or missing
-    if (elementHiddenOrMissing(panelElement)) { return; }	
+    if (elementHiddenOrMissing(panelElement)) { return; }
+
+	// Set panel value (slider position)
+	panelElement.value = payload;
 
 	// Set panel status
 	switch(payload) {
