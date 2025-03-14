@@ -642,11 +642,11 @@ grafanadatasource_create() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" erfolgreich erstellt" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
 		jq -e '.datasource | {uid, name, type, url}' <<< "$answer" 2>/dev/null
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Fehler beim Erstellen der Datasource \"${dsname}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed to create datasource \"${dsname}\"" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
@@ -757,7 +757,7 @@ grafanadashfolder_search() {
 	answer=$(
 		curl -s "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder") || {
-		echo -e "${LOG_ERRO} Grafana: API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed searching for dashboard folder - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
@@ -785,7 +785,7 @@ grafanadashfolder_create() {
 		curl -s "${grafanaapiheaders_token[@]}" \
 		-X POST -H "Content-Type: application/json" \
 		-d "{\"title\": \"$foldername\"}" "http://${GRAFANA_SERVICE}/api/folders") || {
-		echo -e "${LOG_ERRO} Grafana: API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed creating dashboar folder - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
@@ -793,11 +793,11 @@ grafanadashfolder_create() {
 	local result
 	result=$(
 		jq -e '. | {uid, title, url}' <<< "$answer") || {
-		echo -e "${LOG_ERRO} Grafana: Error parsing API response" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed creating dashboar folder - Error parsing API response" >> /proc/1/fd/1
 		return 1
 	}
 
-	echo -e "${LOG_SUCC} Grafana: Folder \"$foldername\" created" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Grafana: Dashboard folder \"$foldername\" created" >> /proc/1/fd/1
 	jq <<< "$result"
 	return 0
 }
@@ -809,7 +809,7 @@ grafanadashfolder=$(
 ) || exit 1
 
 # Extract UID
-export GRAFANA_FOLDER_UID=$(jq -r '.uid' <<< "${grafanadashfolder}" 2>/dev/null)
+export GRAFANA_FOLDER_UID=$( jq -r '.uid' <<< "${grafanadashfolder}" 2>/dev/null )
 
 # Ensure UID was successfully extracted
 if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
@@ -840,12 +840,12 @@ grafanadashboard_find() {
 	answer=$(
 		curl -s "${grafanaapiheaders_token[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}") || {
-		echo -e "${LOG_ERRO} Grafana: API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed searching dashboard - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
 	if [[ -z "${answer}" || "${answer}" == "[]" ]]; then
-		echo -e "${LOG_INFO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed searching dashboard - Empty API response" >> /proc/1/fd/1
 		return 1
 	fi
 
@@ -870,12 +870,17 @@ grafanadashboard_prepare() {
 		jq --arg uid "$dsuid" '
 		.dashboard |= walk(if type == "object" and .datasource? and .datasource.type == "influxdb"
 						   then .datasource.uid = $uid else . end)' "${file}") || {
-		echo -e "${LOG_ERRO} Grafana: Failed processing dashboard \"${file}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\"" >> /proc/1/fd/1
 		return 1
 	}
 
+	local output=$(
+		jq --argjson dashboard "${result}" \
+		'.dashboard = $dashboard' <<< "${grafanadashboard_metadata}"
+	)
+
 	echo -e "${LOG_SUCC} Grafana: Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
-	jq <<< "${result}"
+	jq <<< "${output}"
 	return 0
 }
 

@@ -193,7 +193,7 @@ docker build -t nanohome .
 docker run \
     --name nanohome \
     --env-file .env \
-    --mount type=bind,src=./appdata/nanohome/data,dst=/opt/nanohome/data \
+    --mount type=bind,src=./appdata/nanohome/data,dst=/nanohome/data \
     nanohome
 ```
 

@@ -16,10 +16,8 @@ MQTT_CONNECTION_STRING=(
 
 # Define subscribe topic: "nanohome/standby/?"
 if [[ -n "${DESCRIPTION}" ]]; then
-	
 	/bin/bash "/nanohome/services/standbymanager" "${DESCRIPTION}" &
 else
-
 	SUBSCRIBETOPIC="nanohome/standby/+"
 
 	# Load standby configs
@@ -31,7 +29,7 @@ else
 
 	# Exit script if no standby managers are configured
 	if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
-		[[ $LOG_EXEC ]] && echo -e "${LOG_WARN} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+		[[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 		exit 0
 	fi
 

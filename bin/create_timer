@@ -27,8 +27,8 @@ PUBLISHED_CONFIGS=$(
 
 # Exit script if no timer are configured
 if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
-	exit 1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+	exit 0
 elif [[ "${PUBLISHED_CONFIGS}" == "[]" ]]; then
     [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No timer configured on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 	sed -i '0,/# Nanohome Crontabs/!d' "/etc/crontabs/root"
