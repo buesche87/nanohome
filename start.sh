@@ -826,7 +826,6 @@ fi
 # - Load dashboard templates, prepare and upload them
 
 grafanadashboard_metadata='{
-	"dashboard": {},
 	"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
 	"message": "Initial upload",
 	"overwrite": true
@@ -845,7 +844,7 @@ grafanadashboard_find() {
 	}
 
 	if [[ -z "${answer}" || "${answer}" == "[]" ]]; then
-		echo -e "${LOG_ERRO} Grafana: Failed searching dashboard - Empty API response" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 
