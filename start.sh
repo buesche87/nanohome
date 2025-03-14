@@ -636,7 +636,6 @@ grafanadatasource_create() {
 		return 1
 	fi
 
-	# TODO: Wirklich .datasource.name ?
 	local result=$(
 		jq -e '.datasource.name == "'"$dsname"'"' <<< "$answer" 2>/dev/null
 	)
@@ -867,8 +866,8 @@ grafanadashboard_prepare() {
 	local result
 	result=$(
 		jq --arg uid "$dsuid" '
-		.dashboard |= walk(if type == "object" and .datasource? and .datasource.type == "influxdb"
-						   then .datasource.uid = $uid else . end)' "${file}") || {
+		walk(if type == "object" and .datasource? and .datasource.type == "influxdb"
+			 then .datasource.uid = $uid else . end)' "${file}") || {
 		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\"" >> /proc/1/fd/1
 		return 1
 	}
