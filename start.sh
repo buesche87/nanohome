@@ -866,14 +866,14 @@ grafanadashboard_prepare() {
 	local result
 	result=$(
 		jq --arg uid "$dsuid" '
-		walk(if type == "object" and .datasource? and .datasource.type == "influxdb"
-			 then .datasource.uid = $uid else . end)' "${file}") || {
+		.dashboard |= walk(if type == "object" and .datasource? and .datasource.type == "influxdb"
+						   then .datasource.uid = $uid else . end)' "${file}") || {
 		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\"" >> /proc/1/fd/1
 		return 1
 	}
 
 	local output=$(
-		jq --argjson dashboard "${result}" \
+		jq --argjson dashboard "$(jq '.dashboard' <<< "${result}")" \
 		'.dashboard = $dashboard' <<< "${grafanadashboard_metadata}"
 	)
 
