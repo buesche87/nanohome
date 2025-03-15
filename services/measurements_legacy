@@ -42,9 +42,7 @@ start_measurement() {
 		curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_MEASUREMENTS}&precision=s" \
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Content-Type: text/plain" \
-		--data-binary "${MEASUREMENT_PAYLOAD}" 
-
-		# influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -o "${INFLUX_ORG}" -p s "${description} ${measurement}=$value"
+		--data-binary "${MEASUREMENT_PAYLOAD}"
 	done &
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Measurement started - [${topic}]" >> /proc/1/fd/1

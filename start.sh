@@ -93,9 +93,9 @@ echo -e " " >> /proc/1/fd/1
 # InfluxDB: Config
 #===============================================================
 # - If no influx cli configuration exists, create one
-
-# Search for existing influx configuration
-influxconfig_search() {
+# 
+# # Search for existing influx configuration
+# influxconfig_search() {
 	local answer=$(
 		influx config list --json 2>/dev/null) || { 
 		echo -e "${LOG_ERRO} Influx CLI: Failed to retrieve config list" >> /proc/1/fd/1
@@ -114,10 +114,10 @@ influxconfig_search() {
 		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUX_CONFIG}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
-}
-
-# Create new influx configuration
-influxconfig_create() {
+# }
+# 
+# # Create new influx configuration
+# influxconfig_create() {
 	local answer=$(
 		influx config create \
 		--config-name "${INFLUX_CONFIG}" \
@@ -143,22 +143,22 @@ influxconfig_create() {
 		jq <<< "${answer}" >> /proc/1/fd/1
 		return 1
 	fi
-}
-
-# Search for or create the InfluxDB config
-influxconfig=$(
+# }
+# 
+# # Search for or create the InfluxDB config
+# influxconfig=$(
 	influxconfig_search || influxconfig_create
-) || exit 1
-
-# Validate InfluxDB connection
-if ! influx ping > /dev/null 2>&1; then
+# ) || exit 1
+# 
+# # Validate InfluxDB connection
+# if ! influx ping > /dev/null 2>&1; then
 	echo -e "${LOG_ERRO} Influx CLI: Connection to \"${INFLUX_HOST}\" failed" >> /proc/1/fd/1
 	exit 1
-fi
-
-# Log
-echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >> /proc/1/fd/1
-jq <<< "${influxconfig}" >> /proc/1/fd/1
+# fi
+# 
+# # Log
+# echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >> /proc/1/fd/1
+# jq <<< "${influxconfig}" >> /proc/1/fd/1
 
 #===============================================================
 # InfluxDB: Buckets
@@ -168,10 +168,15 @@ jq <<< "${influxconfig}" >> /proc/1/fd/1
 # Search for an existing InfluxDB bucket
 influxbucket_search() {
 	local bucket=$1
-	local answer=$( influx bucket list --json )
+
+	local answer=$(
+		curl --request GET "${INFLUX_HOST}/api/v2/buckets?org=${INFLUX_ORG}" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Accept: application/json"
+	)
 
 	local result=$(
-		jq -e --arg name "$bucket" '.[] | select(.name == $name)' <<< "$answer"
+		jq -e --arg name "$bucket" '.buckets[] | select(.name == $name)' <<< "$answer"
 	)
 
 	if [[ -n "$result" ]]; then
@@ -189,11 +194,14 @@ influxbucket_create() {
 	local bucket=$1
 
 	local answer=$(
-		influx bucket create \
-		--name "$bucket" \
-		--org "$INFLUX_ORG" \
-		--token "$INFLUX_TOKEN" \
-		--json
+		curl --request POST "${INFLUX_HOST}/api/v2/buckets" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Content-Type: application/json" \
+		--data '{
+			"name": "'"${bucket}"'",
+			"org": "'"${INFLUX_ORG}"'",
+			"retentionRules": []
+		}'
 	)
 
 	local result=$(
@@ -241,11 +249,15 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$INFLUX_BUCKET_ID
 
 # Search for existing auth token
 influxauthtoken_search() {
-	local answer=$( influx auth list --json )
+	local answer=$(
+		curl --request GET "${INFLUX_HOST}/api/v2/authorizations" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Accept: application/json"
+	)
 
 	local result=$(
 		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" '
-		[.[] | select(.description == $description)]' <<< "$answer"
+		[.authorizations[] | select(.description == $description)]' <<< "$answer"
 	)
 
 	jq <<< "$result"
@@ -254,12 +266,29 @@ influxauthtoken_search() {
 # Create a new auth token
 influxauthtoken_create() {
 	local answer=$(
-		influx auth create \
-		--description "${INFLUX_ROTOKEN_DESCRIPTION}" \
-		--org "${INFLUX_ORG}" \
-		--read-bucket "${INFLUX_BUCKET_DEVICES_ID}" \
-		--read-bucket "${INFLUX_BUCKET_MEASUREMENTS_ID}" \
-		--json
+		curl --request POST "${INFLUX_HOST}/api/v2/authorizations" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Content-Type: application/json" \
+		--data '{
+			"description": "'"${INFLUX_ROTOKEN_DESCRIPTION}"'",
+			"org": "'"${INFLUX_ORG}"'",
+			"permissions": [
+			{
+				"action": "read",
+				"resource": {
+				"type": "bucket",
+				"id": "'"${INFLUX_BUCKET_DEVICES_ID}"'"
+				}
+			},
+			{
+				"action": "read",
+				"resource": {
+				"type": "bucket",
+				"id": "'"${INFLUX_BUCKET_MEASUREMENTS_ID}"'"
+				}
+			}
+			]
+		}'
 	)
 
 	local result=$(
@@ -1067,8 +1096,7 @@ fi
 #===============================================================
 
 # Start device watcher
-# /bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
-/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher 2>&1 | tee /nanohome/data/devwatcher_debug.log &
+/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
 
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher started" >> /proc/1/fd/1
 

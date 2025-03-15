@@ -115,7 +115,5 @@ while read -r DEVICESTATUS; do
 	--header "Content-Type: text/plain" \
 	--data-binary "${DEVICE_PAYLOAD}" 
 
-	# influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
-
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 done
