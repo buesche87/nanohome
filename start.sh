@@ -32,8 +32,6 @@ export GRAFANA_PANEL_TEMPLATE_COVER_HTML="${NANOHOME_ROOTPATH}/grafana-templates
 export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
-
-
 #===============================================================
 # Script Variables		
 #===============================================================
@@ -158,8 +156,9 @@ if ! influx ping > /dev/null 2>&1; then
 	exit 1
 fi
 
+# Log
 echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >> /proc/1/fd/1
-[[ $LOG_START ]] && jq <<< "${influxconfig}" >> /proc/1/fd/1
+jq <<< "${influxconfig}" >> /proc/1/fd/1
 
 #===============================================================
 # InfluxDB: Buckets
@@ -222,7 +221,8 @@ influxbucket_prepare() {
 
 	export INFLUX_BUCKET_ID=$( jq -r '.id' <<< "$bucket_info" )
 
-	[[ $LOG_START ]] && jq '. | {id, name, createdAt}' <<< "$bucket_info" >> /proc/1/fd/1
+	# Log
+	jq '. | {id, name, createdAt}' <<< "$bucket_info" >> /proc/1/fd/1
 }
 
 # Process required buckets
@@ -326,8 +326,8 @@ fi
 # Extract token
 export INFLUXDB_ROTOKEN=$( jq -r '.token' <<< "$influxauthtoken" )
 
-# Log securely
-[[ $LOG_START ]] && jq '.token = "<SECURETOKEN>"' <<< "$influxauthtoken" >> /proc/1/fd/1
+# Log
+jq '.token = "<SECURETOKEN>"' <<< "$influxauthtoken" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Service account 
@@ -501,7 +501,8 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 		jq -r .id <<< "$grafanaserviceaccount"
 	)
 
-	[[ $LOG_START ]] && jq <<< "$grafanaserviceaccount" >> /proc/1/fd/1
+	# Log
+	jq <<< "$grafanaserviceaccount" >> /proc/1/fd/1
 
 	grafanaserviceaccount_token=$(
 		grafanaserviceaccounttoken_find "$grafanaserviceaccount_id"
@@ -525,7 +526,8 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 
 	export GRAFANA_SERVICEACCOUNT_TOKEN=$( jq -r .key <<< "$grafanaserviceaccount_token" )
 
-	[[ $LOG_START ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafanaserviceaccount_token" >> /proc/1/fd/1
+	# Log
+	jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafanaserviceaccount_token" >> /proc/1/fd/1
 else
 	echo -e "${LOG_ERRO} Grafana: Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
 	exit 1
@@ -664,7 +666,8 @@ grafanadatasource_devices=$(
 
 export GRAFANADATASOURCE_DEVICES_UID=$( jq -r .uid <<< "$grafanadatasource_devices" )
 
-[[ $LOG_START ]] && jq <<< "$grafanadatasource_devices" >> /proc/1/fd/1
+# Log
+jq <<< "$grafanadatasource_devices" >> /proc/1/fd/1
 
 # Datasource: Measurements
 grafanadatasource_measurements_json=$(
@@ -678,7 +681,8 @@ grafanadatasource_measurements=$(
 
 export GRAFANADATASOURCE_MEASUREMENTS_UID=$( jq -r .uid <<< "$grafanadatasource_measurements" )
 
-[[ $LOG_START ]] && jq <<< "$grafanadatasource_measurements" >> /proc/1/fd/1
+# Log
+jq <<< "$grafanadatasource_measurements" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Modify and copy public content
@@ -817,7 +821,8 @@ if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
 	exit 1
 fi
 
-[[ $LOG_START ]] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
+# Log
+jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Dashboards
@@ -917,7 +922,8 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"; then
 		grafanadashboard_create "${grafanadashboard_home_json}"
 	) || exit 1
 
-	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_home}" >> /proc/1/fd/1
+	# Log
+	jq '.' <<< "${grafanadashboard_home}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Devices
@@ -931,7 +937,8 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"; then
 		grafanadashboard_create "${grafanadashboard_devices_json}"
 	) || exit 1
 
-	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_devices}" >> /proc/1/fd/1	
+	# Log
+	jq '.' <<< "${grafanadashboard_devices}" >> /proc/1/fd/1	
 fi
 
 # Dashboard: Timer
@@ -945,7 +952,8 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"; then
 		grafanadashboard_create "${grafanadashboard_timer_json}"
 	) || exit 1
 
-	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_timer}" >> /proc/1/fd/1
+	# Log
+	jq '.' <<< "${grafanadashboard_timer}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Standby
@@ -959,7 +967,8 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}" ; then
 		grafanadashboard_create "${grafanadashboard_standby_json}"
 	) || exit 1
 
-	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_standby}" >> /proc/1/fd/1
+	# Log
+	jq '.' <<< "${grafanadashboard_standby}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Measurements
@@ -973,7 +982,8 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"; then
 		grafanadashboard_create "${grafanadashboard_measurements_json}"
 	) || exit 1
 
-	[[ $LOG_START ]] && jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
+	# Log
+	jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
 fi
 
 #===============================================================
