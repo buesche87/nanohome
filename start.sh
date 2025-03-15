@@ -160,6 +160,11 @@ echo -e " " >> /proc/1/fd/1
 # echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >> /proc/1/fd/1
 # jq <<< "${influxconfig}" >> /proc/1/fd/1
 
+#===============================================================
+# InfluxDB: Organization
+#===============================================================
+# - Get organization ID
+
 influxorgid_get() {
 
 	local answer=$(
@@ -173,7 +178,7 @@ influxorgid_get() {
 
 	if [[ -n "$result" ]]; then
 		echo -e "${LOG_SUCC} InfluxDB: OrgID for \"${INFLUX_ORG}\" found" >> /proc/1/fd/1
-		jq <<< "$result"
+		echo "$result"
 		return 0
 	else
 		echo -e "${LOG_ERRO} InfluxDB: Failed retriving OrgID for \"${INFLUX_ORG}\"" >> /proc/1/fd/1
