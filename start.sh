@@ -32,6 +32,8 @@ export GRAFANA_PANEL_TEMPLATE_COVER_HTML="${NANOHOME_ROOTPATH}/grafana-templates
 export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
+
+
 #===============================================================
 # Script Variables		
 #===============================================================
@@ -40,6 +42,7 @@ export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates
 INFLUX_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
 
 # Grafana general settings
+GRAFANA_SERVICE=$(echo "$GRAFANA_HOST" | sed -E 's|^https?://||')
 GRAFANA_DATASOURCE_DEVICES="Devices"
 GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 GRAFANA_DASHFOLDER_NAME="nanohome"
@@ -162,8 +165,6 @@ echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >
 # InfluxDB: Buckets
 #===============================================================
 # - If buckets do not exist, create them
-
-# TODO: Test optimized functions
 
 # Search for an existing InfluxDB bucket
 influxbucket_search() {
