@@ -160,6 +160,29 @@ echo -e " " >> /proc/1/fd/1
 # echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >> /proc/1/fd/1
 # jq <<< "${influxconfig}" >> /proc/1/fd/1
 
+influxorgid_get() {
+
+	local answer=$(
+		curl -s --request GET "${INFLUX_HOST}/api/v2/orgs" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" | jq
+	)
+
+	local result=$(
+		jq -r --arg orgname "$INFLUX_ORG" '.orgs[] | select(.name == $orgname ) | .id' <<< "$answer"
+	)
+
+	if [[ -n "$result" ]]; then
+		echo -e "${LOG_SUCC} InfluxDB: OrgID for \"${INFLUX_ORG}\" found" >> /proc/1/fd/1
+		jq <<< "$result"
+		return 0
+	else
+		echo -e "${LOG_ERRO} InfluxDB: Failed retriving OrgID for \"${INFLUX_ORG}\"" >> /proc/1/fd/1
+		return 1
+	fi
+}
+
+export INFLUX_ORG_ID=$( influxorgid_get || exit 1 )
+
 #===============================================================
 # InfluxDB: Buckets
 #===============================================================
@@ -176,7 +199,7 @@ influxbucket_search() {
 	)
 
 	local result=$(
-		jq -e --arg name "$bucket" '.buckets[] | select(.name == $name)' <<< "$answer"
+		jq -r --arg name "$bucket" '.buckets[] | select(.name == $name)' <<< "$answer"
 	)
 
 	if [[ -n "$result" ]]; then
@@ -199,7 +222,7 @@ influxbucket_create() {
 		--header "Content-Type: application/json" \
 		--data '{
 			"name": "'"${bucket}"'",
-			"org": "'"${INFLUX_ORG}"'",
+			"orgID": "'"${INFLUX_ORG_ID}"'",
 			"retentionRules": []
 		}'
 	)
