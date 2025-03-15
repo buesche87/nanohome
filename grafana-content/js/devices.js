@@ -468,7 +468,7 @@ function addHtmlElementFunctions(device) {
 	});
 
 	// Save element
-	htmlElements.status.addEventListener("click", function() { 
+	htmlElements.saveButton.addEventListener("click", function() { 
 		saveComponent(device);
 	});
 
