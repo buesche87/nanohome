@@ -1067,7 +1067,9 @@ fi
 #===============================================================
 
 # Start device watcher
-/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
+# /bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
+/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher 2>&1 | tee /nanohome/data/devwatcher_debug.log &
+
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher started" >> /proc/1/fd/1
 
 # Start  device watcher legacy

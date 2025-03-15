@@ -31,7 +31,6 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
-
 INFLUX_BUCKET_DEVICES="Devices"
 INFLUX_BUCKET_MEASUREMENTS="Measurements"
 
@@ -78,7 +77,14 @@ while read -r COMPONENTSTATUS; do
 
 		# Add device ping to influxdb "Devices" bucket
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
-		influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+		# influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+
+
+		curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Content-Type: text/plain" \
+		--data-binary "${DEVICE_PAYLOAD}" 
+
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
@@ -100,7 +106,12 @@ while read -r COMPONENTSTATUS; do
 
 		# Add device ping to influxdb "Devices" bucket
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
-		influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+		# influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+
+		curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Content-Type: text/plain" \
+		--data-binary "${DEVICE_PAYLOAD}" 
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
@@ -145,7 +156,12 @@ while read -r COMPONENTSTATUS; do
 
 	# InfluxDB: Write a device ping into the 'Devices' bucket
 	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
-	influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+	# influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+
+	curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
+	--header "Authorization: Token ${INFLUX_TOKEN}" \
+	--header "Content-Type: text/plain" \
+	--data-binary "${DEVICE_PAYLOAD}" 
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 
@@ -165,7 +181,12 @@ while read -r COMPONENTSTATUS; do
 	if [[ "${MEASUREMENT_PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
 		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
 
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -o "${INFLUX_ORG}" -p s "${MEASUREMENT_PAYLOAD}"
+		curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_MEASUREMENTS}&precision=s" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Content-Type: text/plain" \
+		--data-binary "${MEASUREMENT_PAYLOAD}" 
+
+		# influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -o "${INFLUX_ORG}" -p s "${MEASUREMENT_PAYLOAD}"
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Measurement saved to \"$INFLUX_BUCKET_MEASUREMENTS\" - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
 	else

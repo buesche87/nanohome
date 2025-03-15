@@ -29,9 +29,6 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
-INFLUX_BUCKET_DEVICES="Devices"
-INFLUX_BUCKET_MEASUREMENTS="Measurements"
-
 # Start component monitoring in background
 start_measurement() {
 	local measurement=$1
@@ -40,7 +37,14 @@ start_measurement() {
 
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${topic}" |
 	while read -r value; do
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -o "${INFLUX_ORG}" -p s "${description} ${measurement}=$value"
+		MEASUREMENT_PAYLOAD="${description} ${measurement}=$value"
+
+		curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_MEASUREMENTS}&precision=s" \
+		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		--header "Content-Type: text/plain" \
+		--data-binary "${MEASUREMENT_PAYLOAD}" 
+
+		# influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -o "${INFLUX_ORG}" -p s "${description} ${measurement}=$value"
 	done &
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Measurement started - [${topic}]" >> /proc/1/fd/1

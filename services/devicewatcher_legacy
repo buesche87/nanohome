@@ -29,9 +29,6 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
-INFLUX_BUCKET_DEVICES="Devices"
-INFLUX_BUCKET_MEASUREMENTS="Measurements"
-
 #===============================================================
 # Infinitely subscribe to "shellies/+/+/+"
 #===============================================================
@@ -108,12 +105,17 @@ while read -r DEVICESTATUS; do
 
 	# InfluxDB: Write a device ping into the 'Devices' bucket
 	if [[ -z "${DESCRIPTION}" ]]; then
-		INFLUX_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	else
-		INFLUX_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	fi
 
-	influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${INFLUX_PAYLOAD}"
+	curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
+	--header "Authorization: Token ${INFLUX_TOKEN}" \
+	--header "Content-Type: text/plain" \
+	--data-binary "${DEVICE_PAYLOAD}" 
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
+	# influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${DEVICE_PAYLOAD}"
+
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 done
