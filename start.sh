@@ -46,16 +46,16 @@ GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 GRAFANA_DASHFOLDER_NAME="nanohome"
 
 # Grafana dashboard template settings
-GRAFANA_DASHBOARD_UID_HOME="XieEaLmRk"
-GRAFANA_DASHBOARD_FILE_HOME="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
-GRAFANA_DASHBOARD_UID_DEVICES="fe47pva0wy8lcb"
-GRAFANA_DASHBOARD_FILE_DEVICES="${NANOHOME_ROOTPATH}/grafana-templates/devices.json"
-GRAFANA_DASHBOARD_UID_TIMER="ae489b6q64nwgf"
-GRAFANA_DASHBOARD_FILE_TIMER="${NANOHOME_ROOTPATH}/grafana-templates/timer.json"
-GRAFANA_DASHBOARD_UID_STANDBY="adjak60hekvswd"
-GRAFANA_DASHBOARD_FILE_STANDBY="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
-GRAFANA_DASHBOARD_UID_MEASUREMENTS="ee8v5d70ojpj4b"
-GRAFANA_DASHBOARD_FILE_MEASUREMENTS="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
+GRAFANA_DASHBOARD_HOME_UID="XieEaLmRk"
+GRAFANA_DASHBOARD_HOME_FILE="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
+GRAFANA_DASHBOARD_DEVICES_UID="fe47pva0wy8lcb"
+GRAFANA_DASHBOARD_DEVICES_FILE="${NANOHOME_ROOTPATH}/grafana-templates/devices.json"
+GRAFANA_DASHBOARD_TIMER_UID="ae489b6q64nwgf"
+GRAFANA_DASHBOARD_TIMER_FILE="${NANOHOME_ROOTPATH}/grafana-templates/timer.json"
+GRAFANA_DASHBOARD_STANDBY_UID="adjak60hekvswd"
+GRAFANA_DASHBOARD_STANDBY_FILE="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
+GRAFANA_DASHBOARD_MEASUREMENTS_UID="ee8v5d70ojpj4b"
+GRAFANA_DASHBOARD_MEASUREMENTS_FILE="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 
 # Mosquitto
 MQTT_CONNECTION_STRING=(
@@ -902,10 +902,10 @@ grafanadashboard_create() {
 }
 
 # Dashboard: Home
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"; then
+if ! grafanadashboard_find "${GRAFANA_DASHBOARD_HOME_UID}"; then
 
 	grafanadashboard_home_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_HOME}" "${GRAFANADATASOURCE_MEASUREMENTS_UID}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_HOME_FILE}" "${GRAFANADATASOURCE_MEASUREMENTS_UID}"
 	) || exit 1
 
 	grafanadashboard_home=$(
@@ -917,10 +917,10 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_HOME}"; then
 fi
 
 # Dashboard: Devices
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"; then
+if ! grafanadashboard_find "${GRAFANA_DASHBOARD_DEVICES_UID}"; then
 
 	grafanadashboard_devices_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_DEVICES}" "${GRAFANADATASOURCE_DEVICES_UID}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_DEVICES_FILE}" "${GRAFANADATASOURCE_DEVICES_UID}"
 	) || exit 1
 
 	grafanadashboard_devices=$(
@@ -932,10 +932,10 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_DEVICES}"; then
 fi
 
 # Dashboard: Timer
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"; then
+if ! grafanadashboard_find "${GRAFANA_DASHBOARD_TIMER_UID}"; then
 
 	grafanadashboard_timer_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_TIMER}" "${GRAFANADATASOURCE_DEVICES_UID}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_TIMER_FILE}" "${GRAFANADATASOURCE_DEVICES_UID}"
 	) || exit 1
 
 	grafanadashboard_timer=$(	
@@ -947,10 +947,10 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_TIMER}"; then
 fi
 
 # Dashboard: Standby
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}" ; then
+if ! grafanadashboard_find "${GRAFANA_DASHBOARD_STANDBY_UID}" ; then
 
 	grafanadashboard_standby_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_STANDBY}" "${GRAFANADATASOURCE_DEVICES_UID}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_STANDBY_FILE}" "${GRAFANADATASOURCE_DEVICES_UID}"
 	) || exit 1
 
 	grafanadashboard_standby=$(	
@@ -962,10 +962,10 @@ if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_STANDBY}" ; then
 fi
 
 # Dashboard: Measurements
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_UID_MEASUREMENTS}"; then
+if ! grafanadashboard_find "${GRAFANA_DASHBOARD_MEASUREMENTS_UID}"; then
 
 	grafanadashboard_measurements_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_FILE_MEASUREMENTS}" "${GRAFANADATASOURCE_MEASUREMENTS_UID}"
+		grafanadashboard_prepare "${GRAFANA_DASHBOARD_MEASUREMENTS_FILE}" "${GRAFANADATASOURCE_MEASUREMENTS_UID}"
 	) || exit 1
 
 	grafanadashboard_measurements=$(	
@@ -990,7 +990,7 @@ grafanadashboard_gethomepreference() {
 		return 1
 	}
 
-	if jq -e --arg uid "${GRAFANA_DASHBOARD_UID_HOME}" '.homeDashboardUID == $uid' <<< "$answer" >/dev/null; then
+	if jq -e --arg uid "${GRAFANA_DASHBOARD_HOME_UID}" '.homeDashboardUID == $uid' <<< "$answer" >/dev/null; then
 		echo -e "${LOG_SUCC} Grafana: Home dashboard preference is set" >> /proc/1/fd/1
 		jq <<< "$answer"
 		return 0
@@ -1026,7 +1026,7 @@ grafanadashboard_sethomepreference() {
 
 grafanadashboard_home_id=$(
 	curl -s "${grafanaapiheaders_token[@]}" \
-	-X GET "http://${GRAFANA_SERVICE}/api/dashboards/uid/${GRAFANA_DASHBOARD_UID_HOME}" |
+	-X GET "http://${GRAFANA_SERVICE}/api/dashboards/uid/${GRAFANA_DASHBOARD_HOME_UID}" |
 	jq -r '.dashboard.id' 2>/dev/null | xargs
 )
 

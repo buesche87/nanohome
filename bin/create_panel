@@ -103,7 +103,7 @@ DASHBOARD_CURRENT_JSON=$(
     curl -s \
     -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
     -H "Content-Type: application/json" \
-    -X GET "${GRAFANA_HOST}/api/dashboards/uid/${GRAFANA_DASHBOARD_UID_HOME}" \
+    -X GET "${GRAFANA_HOST}/api/dashboards/uid/${GRAFANA_DASHBOARD_HOME_UID}" \
     -- json
 )
 
@@ -114,10 +114,10 @@ DASHBOARD_CURRENT=$(
 
 # Exit if there was an error
 if [[ -z "${DASHBOARD_CURRENT}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\"" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\"" >> /proc/1/fd/1
     exit 1
 else
-    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_UID_HOME}\" loaded" >> /proc/1/fd/1
+    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\" loaded" >> /proc/1/fd/1
 fi
 
 # Merge new panel into dashboard
