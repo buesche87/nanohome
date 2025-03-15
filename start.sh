@@ -844,7 +844,7 @@ grafanadashboard_find() {
 	}
 
 	if [[ -z "${answer}" || "${answer}" == "[]" ]]; then
-		echo -e "${LOG_ERRO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 
