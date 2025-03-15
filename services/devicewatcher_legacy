@@ -110,7 +110,7 @@ while read -r DEVICESTATUS; do
 		INFLUX_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	fi
 
-	influx write -b "${INFLUX_BUCKET_DEVICES}" -p s "${INFLUX_PAYLOAD}"
+	influx write -b "${INFLUX_BUCKET_DEVICES}" -o "${INFLUX_ORG}" -p s "${INFLUX_PAYLOAD}"
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${INFLUX_PAYLOAD}]" >> /proc/1/fd/1
 done

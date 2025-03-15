@@ -37,7 +37,7 @@ start_measurement() {
 
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${topic}" |
 	while read -r value; do
-		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -p s "${description} ${measurement}=$value"
+		influx write -b "${INFLUX_BUCKET_MEASUREMENTS}" -o "${INFLUX_ORG}" -p s "${description} ${measurement}=$value"
 	done &
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Measurement started - [${topic}]" >> /proc/1/fd/1
