@@ -90,77 +90,6 @@ echo -e "${LOG_GRN}Initializing environment...${LOG_NOC}" >> /proc/1/fd/1
 echo -e " " >> /proc/1/fd/1
 
 #===============================================================
-# InfluxDB: Config
-#===============================================================
-# - If no influx cli configuration exists, create one
-# 
-# # Search for existing influx configuration
-# influxconfig_search() {
-#	local answer=$(
-#		influx config list --json 2>/dev/null) || { 
-#		echo -e "${LOG_ERRO} Influx CLI: Failed to retrieve config list" >> /proc/1/fd/1
-#		return 1
-#	}
-#
-#	local result=$(
-#		jq -e --arg name "${INFLUX_CONFIG}" 'has($name)' <<< "${answer}" 2>/dev/null
-#	)
-#
-#	if [[ $result == true ]]; then
-#		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" found" >> /proc/1/fd/1
-#		jq --arg name "${INFLUX_CONFIG}" '(.[$name].token) |= "<SECURETOKEN>"' <<< "${answer}"
-#		return 0
-#	else
-#		echo -e "${LOG_INFO} Influx CLI: Config \"${INFLUX_CONFIG}\" not found" >> /proc/1/fd/1
-#		return 1
-#	fi
-# }
-# 
-# # Create new influx configuration
-# influxconfig_create() {
-#	local answer=$(
-#		influx config create \
-#		--config-name "${INFLUX_CONFIG}" \
-#		--host-url "${INFLUX_HOST}" \
-#		--org "${INFLUX_ORG}" \
-#		--token "${INFLUX_TOKEN}" \
-#		--active \
-#		--json 2>/dev/null) || {
-#		echo -e "${LOG_ERRO} Influx CLI: Failed to create config \"${INFLUX_CONFIG}\"" >> /proc/1/fd/1
-#		return 1
-#	}
-#
-#	local result=$(
-#		jq -e 'has("token")' <<< "${answer}" 2>/dev/null
-#	)
-#
-#	if [[ $result == true ]]; then
-#		echo -e "${LOG_SUCC} Influx CLI: Config \"${INFLUX_CONFIG}\" created" >> /proc/1/fd/1
-#		jq '.token = "<SECURETOKEN>"' <<< "${answer}"
-#		return 0
-#	else
-#		echo -e "${LOG_ERRO} Influx CLI: Failed to create config \"${INFLUX_CONFIG}\"" >> /proc/1/fd/1
-#		jq <<< "${answer}" >> /proc/1/fd/1
-#		return 1
-#	fi
-# }
-# 
-# # Search for or create the InfluxDB config
-# influxconfig=$(
-#	influxconfig_search || influxconfig_create
-# ) || exit 1
-# 
-# # Validate InfluxDB connection
-# if ! influx ping > /dev/null 2>&1; then
-#	echo -e "${LOG_ERRO} Influx CLI: Connection to \"${INFLUX_HOST}\" failed" >> /proc/1/fd/1
-#	exit 1
-# fi
-# 
-# # Log
-# echo -e "${LOG_SUCC} Influx CLI: Successfully connected to \"${INFLUX_HOST}\"" >> /proc/1/fd/1
-# jq <<< "${influxconfig}" >> /proc/1/fd/1
-
-#===============================================================
 # InfluxDB: Organization
 #===============================================================
 # - Get organization ID
@@ -299,19 +228,19 @@ influxauthtoken_create() {
 		--header "Content-Type: application/json" \
 		--data '{
 			"description": "'"${INFLUX_ROTOKEN_DESCRIPTION}"'",
-			"org": "'"${INFLUX_ORG}"'",
+			"orgID": "'"${INFLUX_ORG_ID}"'",
 			"permissions": [
 			{
 				"action": "read",
 				"resource": {
-				"type": "bucket",
+				"type": "buckets",
 				"id": "'"${INFLUX_BUCKET_DEVICES_ID}"'"
 				}
 			},
 			{
 				"action": "read",
 				"resource": {
-				"type": "bucket",
+				"type": "buckets",
 				"id": "'"${INFLUX_BUCKET_MEASUREMENTS_ID}"'"
 				}
 			}
