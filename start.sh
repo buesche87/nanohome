@@ -227,21 +227,24 @@ influxauthtoken_create() {
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Content-Type: application/json" \
 		--data '{
+			"status": "active",
 			"description": "'"${INFLUX_ROTOKEN_DESCRIPTION}"'",
 			"orgID": "'"${INFLUX_ORG_ID}"'",
 			"permissions": [
 			{
 				"action": "read",
 				"resource": {
-				"type": "bucket",
-				"id": "'"${INFLUX_BUCKET_DEVICES_ID}"'"
+					"orgID": "'"${INFLUX_ORG_ID}"'",
+					"type": "buckets",
+					"id": "'"${INFLUX_BUCKET_DEVICES_ID}"'"
 				}
 			},
 			{
 				"action": "read",
 				"resource": {
-				"type": "bucket",
-				"id": "'"${INFLUX_BUCKET_MEASUREMENTS_ID}"'"
+					"orgID": "'"${INFLUX_ORG_ID}"'",
+					"type": "buckets",
+					"id": "'"${INFLUX_BUCKET_MEASUREMENTS_ID}"'"
 				}
 			}
 			]
