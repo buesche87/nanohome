@@ -233,14 +233,14 @@ influxauthtoken_create() {
 			{
 				"action": "read",
 				"resource": {
-				"type": "buckets",
+				"type": "bucket",
 				"id": "'"${INFLUX_BUCKET_DEVICES_ID}"'"
 				}
 			},
 			{
 				"action": "read",
 				"resource": {
-				"type": "buckets",
+				"type": "bucket",
 				"id": "'"${INFLUX_BUCKET_MEASUREMENTS_ID}"'"
 				}
 			}
