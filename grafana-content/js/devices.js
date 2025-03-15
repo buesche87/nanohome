@@ -435,7 +435,7 @@ function getElementValues(device) {
 		status:              htmlElements.status.textContent,
 		exBtnDescription:    htmlElements.exBtnDescription.textContent,
 		exSliderDescription: htmlElements.exSliderDescription.textContent,
-		icon:                icon,
+		exButtonImage:       icon,
 		legacy:              legacy
 	}
 }
