@@ -110,7 +110,7 @@ while read -r DEVICESTATUS; do
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	fi
 
-	curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
+	curl -s --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
 	--header "Authorization: Token ${INFLUX_TOKEN}" \
 	--header "Content-Type: text/plain" \
 	--data-binary "${DEVICE_PAYLOAD}" 

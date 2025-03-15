@@ -170,7 +170,7 @@ influxbucket_search() {
 	local bucket=$1
 
 	local answer=$(
-		curl --request GET "${INFLUX_HOST}/api/v2/buckets?org=${INFLUX_ORG}" \
+		curl -s --request GET "${INFLUX_HOST}/api/v2/buckets?org=${INFLUX_ORG}" \
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Accept: application/json"
 	)
@@ -194,7 +194,7 @@ influxbucket_create() {
 	local bucket=$1
 
 	local answer=$(
-		curl --request POST "${INFLUX_HOST}/api/v2/buckets" \
+		curl -s --request POST "${INFLUX_HOST}/api/v2/buckets" \
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Content-Type: application/json" \
 		--data '{
@@ -250,7 +250,7 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$INFLUX_BUCKET_ID
 # Search for existing auth token
 influxauthtoken_search() {
 	local answer=$(
-		curl --request GET "${INFLUX_HOST}/api/v2/authorizations" \
+		curl -s --request GET "${INFLUX_HOST}/api/v2/authorizations" \
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Accept: application/json"
 	)
@@ -266,7 +266,7 @@ influxauthtoken_search() {
 # Create a new auth token
 influxauthtoken_create() {
 	local answer=$(
-		curl --request POST "${INFLUX_HOST}/api/v2/authorizations" \
+		curl -s --request POST "${INFLUX_HOST}/api/v2/authorizations" \
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Content-Type: application/json" \
 		--data '{
