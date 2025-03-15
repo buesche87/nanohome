@@ -29,6 +29,9 @@ MQTT_RETAINED_OPTIONS=(
 	-W 1
 )
 
+INFLUX_BUCKET_DEVICES="Devices"
+INFLUX_BUCKET_MEASUREMENTS="Measurements"
+
 # Start component monitoring in background
 start_measurement() {
 	local measurement=$1
