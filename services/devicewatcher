@@ -136,7 +136,7 @@ while read -r COMPONENTSTATUS; do
 	#===============================================================
 
 	# This value will be used on the home dashboard
-	if [[ "${CURRENTPOSITION}" != "null" ]]; then
+	if [[ "${COMPONENT}" == *"cover"* ]]; then
 		OUTPUTVALUE="${CURRENTPOSITION}"
 	else
 		OUTPUTVALUE=$( convert_value "${OUTPUT}" )
