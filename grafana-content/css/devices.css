@@ -222,6 +222,7 @@ button:disabled, button:disabled:hover {
 
 input[type=range] {
 	-webkit-appearance: none;
+	appearance: none;
 	width: 100%;
 	margin: 10px 0;
 }
