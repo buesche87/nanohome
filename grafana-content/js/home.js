@@ -82,7 +82,7 @@ function onMessageArrived(message) {
 		} else {
 			let statusData = JSON.parse(payload);
 			let switchOutput = statusData?.output;
-			let coverPosition = statusData?.target_pos;
+			let coverPosition = statusData?.current_pos;
 	
 			if ( !elementHiddenOrMissing(coverPosition) ) {
 				setElementStatus(device, component, coverPosition);
@@ -112,7 +112,7 @@ function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
 
 	// Stop processing if panel is hidden or missing
-    if (elementHiddenOrMissing(panelElement)) { return; }
+    if (elementHiddenOrMissing(panelElement)) { return false; }
 
 	// Set panel value (slider position)
 	panelElement.value = payload;

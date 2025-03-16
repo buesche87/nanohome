@@ -31,6 +31,9 @@ function getDeviceStatus(device) {
 	mqttSubscribe(descriptionTopicAll, fastsubscribe);
 	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 
+	// Stop processing for initial page load
+	if ( elementHiddenOrMissing(device) ) { return false; }
+
 	// Wait for the messages to arrive
 	setTimeout(() => {
 		getDeviceDetails(device)
@@ -457,7 +460,7 @@ function addHtmlElementFunctions(device) {
 
 	// Component element
 	if (!htmlElements.component.dataset.listenerAdded) {
-		htmlElements.component.addEventListener("click", function() { 
+		htmlElements.component.addEventListener("change", function() {
 			getDeviceStatus(device);
 		});
 		htmlElements.component.dataset.listenerAdded = "true";
@@ -534,3 +537,11 @@ function showExampleElement(device, element) {
 	divElement.classList.remove('elementHidden');
 	divElement.classList.add('elementFlex');
 }
+
+/*
+===============================================================
+	Execute
+===============================================================
+*/
+
+getDeviceStatus(device)
