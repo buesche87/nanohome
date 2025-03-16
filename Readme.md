@@ -108,19 +108,6 @@ If you'd like to use existing containers of Grafana, InfluxDB and/or Mosquitto y
 
 ## Prepare Grafana
 
-- Map a custom `grafana.ini` to the container
-
-    | location | path |
-    | ----------- | ----------- |
-    | host | ./appdata/grafana/config/grafana.ini |
-    | container | /etc/grafana/grafana.ini |
-
-- Modify the `[panels]` section in `grafana.ini`
-
-    ```
-    disable_sanitize_html = true
-    ```
-
 - Map an additional path to the grafana container
 
     | location | path |
@@ -132,11 +119,12 @@ If you'd like to use existing containers of Grafana, InfluxDB and/or Mosquitto y
 
     > The same path has to be mapped to the nanohome container. Nanohome will copy its web content at container start
 
-- Install grafana plugins by defining corresponding environment variable
+- Define the following variables
 
-    | variable | value |
-    | ----------- | ----------- |
-    | GF_INSTALL_PLUGINS | grafana-clock-panel |
+    | variable | value | description |
+    | ----------- | ----------- | ----------- |
+    | GF_PANELS_DISABLE_SANITIZE_HTML | true | allow html tags in markup panels |
+    | GF_INSTALL_PLUGINS | grafana-clock-panel | install clock panel |
 
 - Provide a service account token or admin credentials in nanohomes `.env` file
 

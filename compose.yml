@@ -64,13 +64,13 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./configs/grafana.ini:/etc/grafana/grafana.ini
       - ./appdata/nanohome/data/grafana:/usr/share/grafana/public/nanohome
       - ./appdata/grafana/data:/var/lib/grafana
       - ./appdata/grafana/log:/var/log/grafana
       - ./appdata/grafana/ssl:/certs
     environment:
       - GF_INSTALL_PLUGINS=grafana-clock-panel
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
 
   mosquitto:
     image: eclipse-mosquitto:latest
