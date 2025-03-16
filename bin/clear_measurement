@@ -8,8 +8,8 @@ MEASUREMENT="$1"
 
 if [[ -n "${MEASUREMENT}" ]]; then
 
-	curl --request POST "${INFLUX_HOST}/api/v2/delete?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_MEASUREMENTS}" \
-	--header "Authorization: Token ${INFLUX_TOKEN}" \
+	curl --request POST "${INFLUXDB_HOST}/api/v2/delete?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_MEASUREMENTS}" \
+	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 	--header "Content-Type: application/json" \
 	--data '{
 		"start": "1970-01-01T00:00:00Z",

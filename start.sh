@@ -21,8 +21,8 @@ export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
 # InfluxDB settings
-export INFLUX_BUCKET_DEVICES="Devices" # Must begin with capital letter
-export INFLUX_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
+export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
+export INFLUXDB_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
 
 # Grafana panel template settings
 export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
@@ -37,10 +37,11 @@ export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates
 #===============================================================
 
 # InfluxDB settings
-INFLUX_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
+INFLUXDB_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
 
 # Grafana general settings
 GRAFANA_SERVICE=$(echo "$GRAFANA_HOST" | sed -E 's|^https?://||')
+GRAFANA_SERVICEACCOUNT="nanohome"
 GRAFANA_DATASOURCE_DEVICES="Devices"
 GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
 GRAFANA_DASHFOLDER_NAME="nanohome"
@@ -97,25 +98,25 @@ echo -e " " >> /proc/1/fd/1
 influxorgid_get() {
 
 	local answer=$(
-		curl -s --request GET "${INFLUX_HOST}/api/v2/orgs" \
-		--header "Authorization: Token ${INFLUX_TOKEN}" | jq
+		curl -s --request GET "${INFLUXDB_HOST}/api/v2/orgs" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}" | jq
 	)
 
 	local result=$(
-		jq -r --arg orgname "$INFLUX_ORG" '.orgs[] | select(.name == $orgname ) | .id' <<< "$answer"
+		jq -r --arg orgname "$INFLUXDB_ORG" '.orgs[] | select(.name == $orgname ) | .id' <<< "$answer"
 	)
 
 	if [[ -n "$result" ]]; then
-		echo -e "${LOG_SUCC} InfluxDB: OrgID for \"${INFLUX_ORG}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: OrgID for \"${INFLUXDB_ORG}\" found" >> /proc/1/fd/1
 		echo "$result"
 		return 0
 	else
-		echo -e "${LOG_ERRO} InfluxDB: Failed retriving OrgID for \"${INFLUX_ORG}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} InfluxDB: Failed retriving OrgID for \"${INFLUXDB_ORG}\"" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
-export INFLUX_ORG_ID=$( influxorgid_get || exit 1 )
+export INFLUXDB_ORG_ID=$( influxorgid_get || exit 1 )
 
 #===============================================================
 # InfluxDB: Buckets
@@ -127,8 +128,8 @@ influxbucket_search() {
 	local bucket=$1
 
 	local answer=$(
-		curl -s --request GET "${INFLUX_HOST}/api/v2/buckets?org=${INFLUX_ORG}" \
-		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		curl -s --request GET "${INFLUXDB_HOST}/api/v2/buckets?org=${INFLUXDB_ORG}" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 		--header "Accept: application/json"
 	)
 
@@ -151,12 +152,12 @@ influxbucket_create() {
 	local bucket=$1
 
 	local answer=$(
-		curl -s --request POST "${INFLUX_HOST}/api/v2/buckets" \
-		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		curl -s --request POST "${INFLUXDB_HOST}/api/v2/buckets" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 		--header "Content-Type: application/json" \
 		--data '{
 			"name": "'"${bucket}"'",
-			"orgID": "'"${INFLUX_ORG_ID}"'",
+			"orgID": "'"${INFLUXDB_ORG_ID}"'",
 			"retentionRules": []
 		}'
 	)
@@ -184,18 +185,18 @@ influxbucket_prepare() {
 		influxbucket_search "$bucket_name" || influxbucket_create "$bucket_name"
 	) || exit 1
 
-	export INFLUX_BUCKET_ID=$( jq -r '.id' <<< "$bucket_info" )
+	export INFLUXDB_BUCKET_ID=$( jq -r '.id' <<< "$bucket_info" )
 
 	# Log
 	jq '. | {id, name, createdAt}' <<< "$bucket_info" >> /proc/1/fd/1
 }
 
 # Process required buckets
-influxbucket_prepare "${INFLUX_BUCKET_DEVICES}"
-export INFLUX_BUCKET_DEVICES_ID=$INFLUX_BUCKET_ID
+influxbucket_prepare "${INFLUXDB_BUCKET_DEVICES}"
+export INFLUXDB_BUCKET_DEVICES_ID=$INFLUXDB_BUCKET_ID
 
-influxbucket_prepare "${INFLUX_BUCKET_MEASUREMENTS}"
-export INFLUX_BUCKET_MEASUREMENTS_ID=$INFLUX_BUCKET_ID
+influxbucket_prepare "${INFLUXDB_BUCKET_MEASUREMENTS}"
+export INFLUXDB_BUCKET_MEASUREMENTS_ID=$INFLUXDB_BUCKET_ID
 
 #===============================================================
 # InfluxDB: Auth token (for Grafana datasource)
@@ -207,13 +208,13 @@ export INFLUX_BUCKET_MEASUREMENTS_ID=$INFLUX_BUCKET_ID
 # Search for existing auth token
 influxauthtoken_search() {
 	local answer=$(
-		curl -s --request GET "${INFLUX_HOST}/api/v2/authorizations" \
-		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		curl -s --request GET "${INFLUXDB_HOST}/api/v2/authorizations" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 		--header "Accept: application/json"
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" '
+		jq -e --arg description "${INFLUXDB_ROTOKEN_DESCRIPTION}" '
 		[.authorizations[] | select(.description == $description)]' <<< "$answer"
 	)
 
@@ -223,28 +224,28 @@ influxauthtoken_search() {
 # Create a new auth token
 influxauthtoken_create() {
 	local answer=$(
-		curl -s --request POST "${INFLUX_HOST}/api/v2/authorizations" \
-		--header "Authorization: Token ${INFLUX_TOKEN}" \
+		curl -s --request POST "${INFLUXDB_HOST}/api/v2/authorizations" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 		--header "Content-Type: application/json" \
 		--data '{
 			"status": "active",
-			"description": "'"${INFLUX_ROTOKEN_DESCRIPTION}"'",
-			"orgID": "'"${INFLUX_ORG_ID}"'",
+			"description": "'"${INFLUXDB_ROTOKEN_DESCRIPTION}"'",
+			"orgID": "'"${INFLUXDB_ORG_ID}"'",
 			"permissions": [
 			{
 				"action": "read",
 				"resource": {
-					"orgID": "'"${INFLUX_ORG_ID}"'",
+					"orgID": "'"${INFLUXDB_ORG_ID}"'",
 					"type": "buckets",
-					"id": "'"${INFLUX_BUCKET_DEVICES_ID}"'"
+					"id": "'"${INFLUXDB_BUCKET_DEVICES_ID}"'"
 				}
 			},
 			{
 				"action": "read",
 				"resource": {
-					"orgID": "'"${INFLUX_ORG_ID}"'",
+					"orgID": "'"${INFLUXDB_ORG_ID}"'",
 					"type": "buckets",
-					"id": "'"${INFLUX_BUCKET_MEASUREMENTS_ID}"'"
+					"id": "'"${INFLUXDB_BUCKET_MEASUREMENTS_ID}"'"
 				}
 			}
 			]
@@ -252,16 +253,16 @@ influxauthtoken_create() {
 	)
 
 	local result=$(
-		jq -e --arg description "${INFLUX_ROTOKEN_DESCRIPTION}" '
+		jq -e --arg description "${INFLUXDB_ROTOKEN_DESCRIPTION}" '
 		.description == $description' <<< "$answer"
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" created" >> /proc/1/fd/1
 		jq <<< "$answer"
 		return 0
 	else
-		echo -e "${LOG_ERRO} InfluxDB: Failed to create auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} InfluxDB: Failed to create auth token \"${INFLUXDB_ROTOKEN_DESCRIPTION}\"" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
@@ -272,16 +273,16 @@ influxauthtoken_validate() {
 	local influxauthtoken_found="$1"
 
 	local result=$(
-		jq -e --arg val1 "${INFLUX_BUCKET_DEVICES_ID}" --arg val2 "${INFLUX_BUCKET_MEASUREMENTS_ID}" '
+		jq -e --arg val1 "${INFLUXDB_BUCKET_DEVICES_ID}" --arg val2 "${INFLUXDB_BUCKET_MEASUREMENTS_ID}" '
 		[.[] | .permissions[].resource.id] | index($val1) and index($val2)
 		' <<< "${influxauthtoken_found}"
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" has correct permissions" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} InfluxDB: Auth token \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" has correct permissions" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" has missing permissions. Delete it first." >> /proc/1/fd/1
+		echo -e "${LOG_WARN} InfluxDB: Auth token \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" has missing permissions. Delete it first." >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -302,14 +303,14 @@ if [[ "$influxauthtoken_objects" -eq 0 ]]; then
 		influxauthtoken_create
 	) || exit 1
 elif [[ "$influxauthtoken_objects" -eq 1 ]]; then
-	echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUX_ROTOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 
 	influxauthtoken_validate "$influxauthtoken_found" || exit 1
 	influxauthtoken=$(
 		jq '.[]' <<< "$influxauthtoken_found"
 	)
 else
-	echo -e "${LOG_ERRO} InfluxDB: Multiple auth tokens \"${INFLUX_ROTOKEN_DESCRIPTION}\" found. Delete them first." >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} InfluxDB: Multiple auth tokens \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" found. Delete them first." >> /proc/1/fd/1
 	exit 1
 fi
 
@@ -598,7 +599,7 @@ grafanadatasource_prepare() {
 	local bucket=$1
 
 	local result=$(
-		jq -n --arg name "$bucket" --arg url "$INFLUX_HOST" --arg token "$INFLUXDB_ROTOKEN" '{
+		jq -n --arg name "$bucket" --arg url "$INFLUXDB_HOST" --arg token "$INFLUXDB_ROTOKEN" '{
 		name: $name,
 		type: "influxdb",
 		typeName: "InfluxDB",

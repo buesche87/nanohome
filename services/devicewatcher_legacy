@@ -110,10 +110,10 @@ while read -r DEVICESTATUS; do
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 	fi
 
-	curl -s --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_DEVICES}&precision=s" \
-	--header "Authorization: Token ${INFLUX_TOKEN}" \
+	curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_DEVICES}&precision=s" \
+	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 	--header "Content-Type: text/plain" \
 	--data-binary "${DEVICE_PAYLOAD}" 
 
-	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUX_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 done

@@ -1,36 +1,34 @@
 # Features
 
 ## Customizable touch dashboard
-- Provides a customizable grafana dashboard designed for touch displays
+- Provides a customizable dashboard designed for touch displays
 - Control your shellies by touch or swipe
-- Add your own visualizations to the dashboard
+- Add a control panel from the devicemanager or your own visualizations
 
 ![screenshot_home](https://github.com/user-attachments/assets/d9677096-298b-4b6f-997f-f8830d34a192)
 
 ## Device management
 - Automatically detect Shelly devices on your mqtt broker
-- Connect their components to nanohome and give them a name
-- Create a dashboard panel in one touch (button or slider)
+- Connect their output(s) to nanohome, give them a name and an icon
+- Create a dashboard panel by touching the example panel (button or slider)
 
 ![screenshot_devicemanager](https://github.com/user-attachments/assets/6f68a453-f050-44b3-b7b6-2e5189bea46a)
 
 ## Measurements
-- Monitor your shellies (power, voltage, temperatures and more)
-- Archive measurements from connected components in influxdb
-- Visualize those measurements on a simple dashboard
+- Monitor your shellies (power, current, temperatures and more)
+- Archive these measurements in influxdb and visualize them on this simple dashboard
 - Or create a new dashboard to your liking
 
 ![screenshot_measurements](https://github.com/user-attachments/assets/7d1185df-571b-4bba-9692-0e1e797b6d54)
 
 ## Timer / Scheduler
-- Create multiple timer for each connected component
-- Schedule on or off states
-- Open or close covers at a specific time
+- Create multiple timer for each connected output
+- Schedule on or off states or open/close covers at a specific time
 
 ![screenshot_timer](https://github.com/user-attachments/assets/3f9ecb12-52f9-4b18-95dd-7cdd90b84d0b)
 
 ## Standby Manager
-- Turn off output if the plugged in device draws less power than defined
+- Turn off an output if the plugged in device draws less power than defined
 - Use a delay to prevent power off during device startup
 
 ![screenshot_standby](https://github.com/user-attachments/assets/be150755-f227-4a9d-9cdd-87e704d17c25)
@@ -50,9 +48,15 @@ To connect your shellies to your mqtt broker use the following credentials
 
 | setting | value |
 | ----------- | ----------- |
-| server | MQTTBROKERIP:1883 |
-| username | `MQTT_USER` in `.env` |
-| password | `MQTT_PASSWORD` in `.env` |
+| server | `MQTT_Server`:1883 |
+| username | `MQTT_USER` |
+| password | `MQTT_PASSWORD` |
+
+> You can use the credentials from your `.env` file or create new ones with
+
+```
+docker exec -ti mosquitto mosquitto_passwd -b /mosquitto/data/passwd <USERNAME> <PASSWORD>
+```
 
 ## Services
 
@@ -62,14 +66,13 @@ Nanohome depends on the following services:
 - InfluxDB
 - Mosquitto (or any other mqtt broker)
 
-Use the instruction in chapter `Docker Compose` to setup all services
+Use the quick start chapter to get up and running in no time
 
-> If you'd like to use an existing installation of those services, use the instructions provided in chapter "Manual Installation"
+If you'd like to manually setup your environment, use the instructions provided in chapter "Manual Installation"
 
+# Quick Start - Docker Compose
 
-# Docker Compose
-
-To setup nanohome with all dependencies follow these instructions:
+To setup nanohome with all dependencies follow these instructions.
 
 - Clone repository to any directory
 
@@ -162,6 +165,10 @@ If you'd like to use existing containers of Grafana, InfluxDB and/or Mosquitto y
 
 ## Run Nanohome
 
+https://hub.docker.com/repository/docker/buesche87/nanohome
+
+Alterantively:
+
 - Clone repository to any directory
 
 ```
@@ -203,22 +210,19 @@ docker run \
 | Variable | Description | Example |
 | ----------- | ----------- | ----------- |
 | GRAFANA_HOST | url to grafana dashboard - used for panel and dashboard creation | http://grafana:3000 |
-| GRAFANA_SERVICEACCOUNT_TOKEN | service account token - used for panel and dashboard creation |  |
+| GRAFANA_SERVICEACCOUNT_TOKEN | service account token with admin privileges - used for panel and dashboard creation |  |
 | GRAFANA_SERVICE | only needed if no GRAFANA_SERVICEACCOUNT_TOKEN is set | grafana:3000 |
 | GRAFANA_ADMIN | only needed if no GRAFANA_SERVICEACCOUNT_TOKEN is set | admin |
 | GRAFANA_PASS | only needed if no GRAFANA_SERVICEACCOUNT_TOKEN is set | admin |
-| GRAFANA_SERVICEACCOUNT | only needed if no GRAFANA_SERVICEACCOUNT_TOKEN is set | nanohome |
-| INFLUX_HOST | url to influxdb - used to write data into buckets | http://influxdb:8086 |
-| INFLUX_ORG | your organisations name | nanohome |
-| INFLUX_TOKEN | admin token - used for influx cli |  |
-| INFLUX_CONFIG | name of influx cli config | nanohome |
+| INFLUXDB_HOST | url to influxdb - used to write data into buckets | http://influxdb:8086 |
+| INFLUXDB_ORG | your organisations name | nanohome |
+| INFLUXDB_TOKEN | admin token - used for influx cli |  |
 | MQTT_SERVER | hostname/fqdn of mqtt broker | mosquitto |
 | MQTT_USER | mqtt user created with mosquitto_passwd | nanohome |
-| MQTT_PASSWORD | mqtt password created with mosquitto_passwd |  |
-| LOG_START | enable advanced logging of start.sh | true/false |
-| LOG_SERVICES | enable advanced logging of nanohome services | true/false |
-| LOG_EXEC | enable advanced logging of nanohome shell executables (bin) | true/false |
-| LOG_DEBUG | enable debug logging | true/false |
+| MQTT_PASSWORD | mqtt password created with mosquitto_passwd | securepassword |
+| LOG_SERVICES | enable advanced logging of nanohome services | true |
+| LOG_EXEC | enable advanced logging of nanohome shell executables (bin) | true |
+| LOG_DEBUG | enable debug logging | true |
 
 ## Docker start procedure
 
