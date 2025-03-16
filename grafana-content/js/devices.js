@@ -75,13 +75,19 @@ function connectComponent(device) {
 	mqttPublish(componentTopics.connected, payload, true);
 
 	// Refresh device on dashboard
-	getDeviceStatus(device);
+	populateConnectionState(device, componentDetails.component, payload)
+	// getDeviceStatus(device);
 }
 
 // Save component details as json to mqtt topic nanohome/devices/#
+// TODO: Only if description set?
 function saveComponent(device) {
 	let componentDetails = getElementValues(device);
 	let componentTopics = getDeviceTopics(componentDetails);
+
+	// Don't save if description is empty (will delete configs)
+	if ( checkEmpty(componentDetails.description) ) { return false; }
+
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
 	// Generate device config and publish it to nanohome/devices
@@ -447,53 +453,72 @@ function addHtmlElementFunctions(device) {
 	// Stop processing if status elements is hidden
 	if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
-	// Description element
-	htmlElements.description.addEventListener("change", function() { 
-		htmlElements.saveButton.disabled = false;
-	});
-
 	// Component element
-	htmlElements.component.addEventListener("click", function() { 
-		getDeviceStatus(device);
-	});
+	if (!htmlElements.component.dataset.listenerAdded) {
+		htmlElements.component.addEventListener("click", function() { 
+			getDeviceStatus(device);
+		});
+		htmlElements.component.dataset.listenerAdded = "true";
+	}
 
 	// Connected element
-	htmlElements.connected.addEventListener("click", function() { 
-		connectComponent(device);
-	});
+	if (!htmlElements.connected.dataset.listenerAdded) {
+		htmlElements.connected.addEventListener("click", function() { 
+			connectComponent(device);
+		});
+		htmlElements.component.dataset.listenerAdded = "true";
+	}
 
 	// Status element
-	htmlElements.status.addEventListener("click", function() { 
-		window.open("http://" + device, "Device", "width=800,height=600");
-	});
+	if (!htmlElements.status.dataset.listenerAdded) {
+		htmlElements.status.addEventListener("click", function() { 
+			window.open("http://" + device, "Device", "width=800,height=600");
+		});
+		htmlElements.status.dataset.listenerAdded = "true";
+	}
 
 	// Save element
-	htmlElements.saveButton.addEventListener("click", function() { 
-		saveComponent(device);
-	});
+	if (!htmlElements.saveButton.dataset.listenerAdded) {
+		htmlElements.saveButton.addEventListener("click", function() { 
+			saveComponent(device);
+		});
+		htmlElements.saveButton.dataset.listenerAdded = "true";
+	}
 
 	// Clear measurement element
-	htmlElements.clearMeasurementBtn.addEventListener("click", function() { 
-		clearMeasurement(device);
-	});
+	if (!htmlElements.clearMeasurementBtn.dataset.listenerAdded) {
+		htmlElements.clearMeasurementBtn.addEventListener("click", function() { 
+			clearMeasurement(device);
+		});
+		htmlElements.clearMeasurementBtn.dataset.listenerAdded = "true";
+	}
 
 	// Remove component element
-	htmlElements.removeComponentBtn.addEventListener("click", function() { 
-		removeComponent(device);
-	});
+	if (!htmlElements.removeComponentBtn.dataset.listenerAdded) {
+		htmlElements.removeComponentBtn.addEventListener("click", function() { 
+			removeComponent(device);
+		});
+		htmlElements.removeComponentBtn.dataset.listenerAdded = "true";
+	}
 
 	// Example button
 	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) { 
-		htmlElements.exBtnDescription.addEventListener("click", function() { 
-			createPanel(device);
-		});
+		if (!htmlElements.exBtnDescription.dataset.listenerAdded) {
+			htmlElements.exBtnDescription.addEventListener("click", function() { 
+				createPanel(device);
+			});
+			htmlElements.exBtnDescription.dataset.listenerAdded = "true";
+		}
 	}
 
 	// Example slider
-	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) { 
-		htmlElements.exSliderDescription.addEventListener("click", function() { 
-			createPanel(device);
-		});
+	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) {
+		if (!htmlElements.exSliderDescription.dataset.listenerAdded) {
+			htmlElements.exSliderDescription.addEventListener("click", function() { 
+				createPanel(device);
+			});
+			htmlElements.exBtnDescription.dataset.listenerAdded = "true";
+		}
 	}
 }
 
