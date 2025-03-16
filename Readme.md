@@ -5,7 +5,7 @@
 - Control your shellies by touch or swipe
 - Add your own visualizations to the dashboard
 
-![screenshot_home](https://github.com/user-attachments/assets/e92c3603-4379-41fe-b807-7ec45e4fe8f9)
+![screenshot_home](https://github.com/user-attachments/assets/d9677096-298b-4b6f-997f-f8830d34a192)
 
 ## Device management
 - Automatically detect Shelly devices on your mqtt broker
