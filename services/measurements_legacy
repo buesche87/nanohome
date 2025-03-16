@@ -39,7 +39,7 @@ start_measurement() {
 	while read -r value; do
 		MEASUREMENT_PAYLOAD="${description} ${measurement}=$value"
 
-		curl --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_MEASUREMENTS}&precision=s" \
+		curl -s --request POST "${INFLUX_HOST}/api/v2/write?org=${INFLUX_ORG}&bucket=${INFLUX_BUCKET_MEASUREMENTS}&precision=s" \
 		--header "Authorization: Token ${INFLUX_TOKEN}" \
 		--header "Content-Type: text/plain" \
 		--data-binary "${MEASUREMENT_PAYLOAD}"

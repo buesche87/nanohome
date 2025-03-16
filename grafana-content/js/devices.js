@@ -80,7 +80,6 @@ function connectComponent(device) {
 }
 
 // Save component details as json to mqtt topic nanohome/devices/#
-// TODO: Only if description set?
 function saveComponent(device) {
 	let componentDetails = getElementValues(device);
 	let componentTopics = getDeviceTopics(componentDetails);
@@ -104,6 +103,9 @@ function saveComponent(device) {
 // Create a new dashboard panel through nanohome_shell
 function createPanel(device) {
 	let componentDetails = getElementValues(device);
+
+	// Don't save if description is empty (will delete configs)
+	if ( checkEmpty(componentDetails.description) ) { return false; }
 
 	// Confirm creation of element
 	let confirmDialog = confirm('Save "' + componentDetails.description + '" and create home dashboard panel?');
