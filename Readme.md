@@ -20,7 +20,7 @@
 - Visualize those measurements on a simple dashboard
 - Or create a new dashboard to your liking
 
-![screenshot_measurements](https://github.com/user-attachments/assets/46f18f43-09f8-4980-bf5c-4187e17c3071)
+![screenshot_measurements](https://github.com/user-attachments/assets/a93908e7-4e03-486b-a053-ae2850a1039b)
 
 ## Timer / Scheduler
 - Create multiple timer for each connected component
