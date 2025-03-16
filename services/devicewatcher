@@ -142,10 +142,12 @@ while read -r COMPONENTSTATUS; do
 		OUTPUTVALUE=$( convert_value "${OUTPUT}" )
 	fi
 
-	OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
+	if [[ "${OUTPUTVALUE}" != "null" ]]; then
+		OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
 
-	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-		-t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
+			-t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
+	fi
 
 	#===============================================================
 	# Write measurements into influx buckets
