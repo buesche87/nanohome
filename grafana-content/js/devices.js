@@ -75,8 +75,8 @@ function connectComponent(device) {
 	mqttPublish(componentTopics.connected, payload, true);
 
 	// Refresh device on dashboard
-	populateConnectionState(device, componentDetails.component, payload)
-	// getDeviceStatus(device);
+	// populateConnectionState(device, componentDetails.component, payload)
+	getDeviceStatus(device);
 }
 
 // Save component details as json to mqtt topic nanohome/devices/#
@@ -466,7 +466,7 @@ function addHtmlElementFunctions(device) {
 		htmlElements.connected.addEventListener("click", function() { 
 			connectComponent(device);
 		});
-		htmlElements.component.dataset.listenerAdded = "true";
+		htmlElements.connected.dataset.listenerAdded = "true";
 	}
 
 	// Status element
