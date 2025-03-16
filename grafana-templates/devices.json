@@ -398,7 +398,9 @@
       "from": "now-30d",
       "to": "now"
     },
-    "timepicker": {},
+    "timepicker": {
+      "hidden": true
+    },
     "timezone": "",
     "title": "Devices",
     "uid": "fe47pva0wy8lcb",

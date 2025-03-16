@@ -43,18 +43,18 @@ function onMessageArrived(message) {
 
 	// Device config: Add functions to html element and save
 	if ( topicSplit[1] == "devices" ) { 
+		console.log('Device config received:');
+		console.log(JSON.parse(payload));
+
 		addHtmlElementFunctions(description);
 		saveToStore(JSON.parse(payload));
 
-		console.log('Device config received:');
-		console.log(JSON.parse(payload));
-	
 	// Standby Config: Populate incoming values 
 	} else if ( topicSplit[1] == "standby" ) {	
-		populatePanels(JSON.parse(payload));
-
 		console.log('Standby config received:');
 		console.log(JSON.parse(payload));
+
+		populatePanels(JSON.parse(payload));
 	}
 }
 

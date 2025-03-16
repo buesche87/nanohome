@@ -160,7 +160,6 @@
           "definition": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
           "includeAll": true,
           "label": "Device",
-          "multi": true,
           "name": "Description",
           "options": [],
           "query": "show tag values with key=Description where Component =~ /(?:switch|relay)/",
