@@ -117,8 +117,10 @@ button:disabled, button:disabled:hover {
 }
 
 .btnDescription {
-	flex-grow: 1;
-	padding: 10px;
+    flex-grow: 1;
+    padding-left: 10px;
+    padding-top: 20px;
+    padding-bottom: 20px;
 }
 
 /*
@@ -130,10 +132,10 @@ button:disabled, button:disabled:hover {
 /* minimized style with animation from open to close */
 .btnDropdown {
 	border: none;
-	width: 35px;
-	height: 35px;
-	margin-top: 6px;
-	margin-bottom: 6px;
+	width: 40px;
+	height: 40px;
+	padding-left: 2px;
+	align-content: center;
 	overflow: hidden;
 	-moz-transition: height 0.1s;
 	-webkit-transition: height 0.1s;
@@ -148,6 +150,7 @@ button:disabled, button:disabled:hover {
 	width: 50px;
 	margin-top: 11px;
 	overflow-y: scroll;
+	scrollbar-width: thin;
 	-moz-transition: height 0.5s;
 	-webkit-transition: height 0.5s;
 	-ms-transition: height 0.5s;
