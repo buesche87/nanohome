@@ -72,11 +72,6 @@ function saveToStore(deviceConfig) {
 	// Stop processing if datastore is hidden
     if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
-	// Fill descripton 
-	htmlElements.standbyDevice.innerText = deviceConfig.description;
-	htmlElements.standbyDevice.classList.remove('statusfalse');
-	htmlElements.standbyDevice.classList.add('statustrue');	
-
 	// Save config to datastore
 	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(deviceConfig));
 }
