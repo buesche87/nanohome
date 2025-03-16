@@ -5,14 +5,14 @@
 - Control your shellies by touch or swipe
 - Add your own visualizations to the dashboard
 
-![nanohome_home_dashboard](https://github.com/user-attachments/assets/b205292a-8536-4eeb-9875-8112ba491c36)
+![screenshot_home](https://github.com/user-attachments/assets/e92c3603-4379-41fe-b807-7ec45e4fe8f9)
 
 ## Device management
 - Automatically detect Shelly devices on your mqtt broker
 - Connect their components to nanohome and give them a name
 - Create a dashboard panel in one touch (button or slider)
 
-![nanohome_device_manager](https://github.com/user-attachments/assets/e3c967d8-e1db-43de-b042-aeebb967a9fb)
+![screenshot_devicemanager](https://github.com/user-attachments/assets/4707e7d1-5b61-41ae-846b-ecb8e13061a1)
 
 ## Measurements
 - Monitor your shellies (power, voltage, temperatures and more)
@@ -27,14 +27,13 @@
 - Schedule on or off states
 - Open or close covers at a specific time
 
-![nanohome_timer_manager](https://github.com/user-attachments/assets/a3a46be3-5413-4323-b933-81bb83c180da)
+![screenshot_timer](https://github.com/user-attachments/assets/3c8a369d-0e18-4478-a1bc-484619915dbd)
 
 ## Standby Manager
-> Work in progress
+- Turn off output if the plugged in device draws less power than defined
+- Use a delay to prevent power off during device startup
 
-Manage your devices standby power
-- Turn off a components output if the plugged in device draws less power than defined
-- Use a timeout as device startup delay
+![screenshot_standby](https://github.com/user-attachments/assets/025dd213-6411-43ea-a607-223ac332ff87)
 
 # Prerequisites
 
