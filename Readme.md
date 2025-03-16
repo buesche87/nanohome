@@ -12,7 +12,7 @@
 - Connect their components to nanohome and give them a name
 - Create a dashboard panel in one touch (button or slider)
 
-![screenshot_devicemanager](https://github.com/user-attachments/assets/4707e7d1-5b61-41ae-846b-ecb8e13061a1)
+![screenshot_devicemanager](https://github.com/user-attachments/assets/6f68a453-f050-44b3-b7b6-2e5189bea46a)
 
 ## Measurements
 - Monitor your shellies (power, voltage, temperatures and more)
@@ -20,20 +20,20 @@
 - Visualize those measurements on a simple dashboard
 - Or create a new dashboard to your liking
 
-![nanohome_measurements](https://github.com/user-attachments/assets/b3998a9f-63a2-4d8e-837b-bb98bbf80d09)
+![screenshot_measurements](https://github.com/user-attachments/assets/46f18f43-09f8-4980-bf5c-4187e17c3071)
 
 ## Timer / Scheduler
 - Create multiple timer for each connected component
 - Schedule on or off states
 - Open or close covers at a specific time
 
-![screenshot_timer](https://github.com/user-attachments/assets/3c8a369d-0e18-4478-a1bc-484619915dbd)
+![screenshot_timer](https://github.com/user-attachments/assets/3f9ecb12-52f9-4b18-95dd-7cdd90b84d0b)
 
 ## Standby Manager
 - Turn off output if the plugged in device draws less power than defined
 - Use a delay to prevent power off during device startup
 
-![screenshot_standby](https://github.com/user-attachments/assets/025dd213-6411-43ea-a607-223ac332ff87)
+![screenshot_standby](https://github.com/user-attachments/assets/be150755-f227-4a9d-9cdd-87e704d17c25)
 
 # Prerequisites
 
