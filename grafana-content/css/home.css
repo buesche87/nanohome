@@ -22,6 +22,7 @@
 .markdown-html {
 	display: flex;
 	flex-wrap: wrap;
+	flex: 1 1 0px;
 	height: 100%;
 	width: 100%;
 }
