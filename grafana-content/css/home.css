@@ -21,6 +21,7 @@
 /* Grafana Fix */
 .markdown-html {
 	display: flex;
+	flex-wrap: wrap;
 	height: 100%;
 	width: 100%;
 }
