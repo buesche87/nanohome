@@ -533,7 +533,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "<div id=\"weather-container\"></div>",
+          "content": "<div class=\"weather\" id=\"weather-container\"></div>",
           "mode": "html"
         },
         "pluginVersion": "11.5.2",
