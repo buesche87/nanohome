@@ -28,8 +28,8 @@ var removeBtnPrefix = "timerRemoveBtn_"
 function getTimer(description) {
 	let nanohomeTopics = getNanohomeTopics(description);
 
-	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
-	mqttSubscribe(nanohomeTopics.timer, fastsubscribe);
+	mqttSubscribe(nanohomeTopics.deviceConfig, fastsubscribe);
+	mqttSubscribe(nanohomeTopics.timerConfig, fastsubscribe);
 }
 
 /*
@@ -56,7 +56,7 @@ function saveTimer(description) {
 
 	// Save the modified config to datastore and publish it to "nanohome/timer/#"
 	saveToStore(existingTimerConfig, description, "timer")
-	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingTimerConfig), true);
+	mqttPublish(nanohomeTopics.timerConfig, JSON.stringify(existingTimerConfig), true);
 
 	// Repopulate the timer list and set current status
 	populateTimerList(existingTimerConfig, description);
@@ -102,7 +102,7 @@ function removeTimer(description) {
 	setTimerStatus(existingTimerConfig, description);
 
 	// Publish timer json to "nanohome/timer"
-	mqttPublish(nanohomeTopics.timer, JSON.stringify(existingTimerConfig), true);
+	mqttPublish(nanohomeTopics.timerConfig, JSON.stringify(existingTimerConfig), true);
 
 	// Run "create_timer" through nanohome shell
 	mqttPublish(cmdInputTopic, "create_timer", false);

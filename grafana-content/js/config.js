@@ -5,9 +5,10 @@
 ===============================================================
 */
 
+// Connection parameters for the JavaScript Websocket Client
 var host = location.hostname;
-var user = "mqtt_grafana";
-var pwd = "Grafana@MQTT";
+var user = "mqtt_grafana"; // will be set from env
+var pwd = "Grafana@MQTT"; // will be set from env
 var port = 1884;
 var useTLS = false;
 var mqtt;
@@ -27,11 +28,11 @@ var mqttConnected = false;
 ===============================================================
 */
 
-// Shell Topics
+// Nanohome shell topics
 var cmdInputTopic = "nanohome/shell/input";
 var cmdOutputTopic = "nanohome/shell/output";
 
-// Weather widget
+// Weather widget preferences (set on first docker run)
 var weatherWidgetLink = "https://forecast7.com/en/47d058d31/lucerne/";
 var weatherWidgetCity = "Lucerne";
 
@@ -48,15 +49,12 @@ var connectedTopicAllLegacy = "shellies/+/+/+/connected";
 var descriptionTopicAll = "+/status/+/description";
 var descriptionTopicAllLegacy = "shellies/+/+/+/description";
 
-// Return nanohome mqtt topics
+// Return nanohome mqtt topics - [string payload]
 function getNanohomeTopics(description) {
 	return {
-		device:  "nanohome/devices/" + description,
 		deviceConfig:  "nanohome/devices/" + description,
-		standby: "nanohome/standby/" + description,
 		standbyConfig: "nanohome/standby/" + description,
-		timer:   "nanohome/timer/" + description,
-		timerConfig:   "nanohome/timer/" + description,
+		timerConfig:   "nanohome/timer/" + description
 	}
 }
 
@@ -85,7 +83,7 @@ function getDeviceTopics(componentDetails) {
 ===============================================================
 */
 
-// MQTT Websocket min.js
+// Simple Paho JS Client
 var mqttws31minLocation = "../public/nanohome/js/mqttws31.min.js";
 
 /*
@@ -94,14 +92,13 @@ var mqttws31minLocation = "../public/nanohome/js/mqttws31.min.js";
 ===============================================================
 */
 
-// Rturn latest index in json array, return 1 if none set
+// Rturn latest index in json array, return 1 if none is set
 function getJsonIndex(payload) {
 	let jsonIndex = 1;
 
 	// Stop processing if payload is empty
-    if (elementHiddenOrMissing(payload)) { return; }
+    if ( elementHiddenOrMissing(payload) ) { return false; }
 
-	// Get 
 	for (var j = 0; j < payload.length; j++) {
 		if (payload[j].index > jsonIndex) {
 			jsonIndex = payload[j].index;
@@ -113,7 +110,7 @@ function getJsonIndex(payload) {
 	return jsonIndex;
 }
 
-// Check if html element is hidden or missing
+// Check if html elements are hidden or missing
 function elementHiddenOrMissing(...elements) {
 	return elements.some(element => element === undefined || element === null);
 }
@@ -131,5 +128,5 @@ function checkDigit(value) {
 // Execute command with nanohome shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);
-	console.log('Execute: ' + payload);
+	// console.log('Execute: ' + payload);
 }

@@ -31,10 +31,10 @@ function getDeviceStatus(device) {
 	mqttSubscribe(descriptionTopicAll, fastsubscribe);
 	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 
-	// Stop processing for initial page load
+	// Stop processing if no device was provided (initial page load)
 	if ( elementHiddenOrMissing(device) ) { return false; }
 
-	// Wait for the messages to arrive
+	// Wait for the messages to arrive before further processing
 	setTimeout(() => {
 		getDeviceDetails(device)
 	}, fastsubscribe);
@@ -50,16 +50,18 @@ function getDeviceDetails(device) {
 	// Stop processing if component panel is hidden
     if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
-	mqttSubscribe(nanohomeTopics.device, fastsubscribe);
+	// Retreive published device config
+	mqttSubscribe(nanohomeTopics.deviceConfig, fastsubscribe);
 
-	// Set legacy or request status from shelly
-	if ( componentDetails.legacy ) {
-		setStatusLegacy(device);
-	} else {
-		let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
-		mqttSubscribe(componentTopics.rpcDest, longsubscribe);
-		mqttPublish(componentTopics.rpc, payload, false);
+	// Stop processing if shelly is a gen1 device
+	if ( legacyKeywords.some(legacyKeywords => componentTopics.includes(legacyKeywords)) ) {
+		return false;
 	}
+
+	// Request status from shelly
+	let payload = '{"id":999, "src":"' + componentTopics.rpcSource + '", "method":"Shelly.GetStatus"}';
+	mqttSubscribe(componentTopics.rpcDest, longsubscribe);
+	mqttPublish(componentTopics.rpc, payload, false);
 }
 
 /*
@@ -78,25 +80,23 @@ function connectComponent(device) {
 	mqttPublish(componentTopics.connected, payload, true);
 
 	// Refresh device on dashboard
-	// populateConnectionState(device, componentDetails.component, payload)
 	getDeviceStatus(device);
 }
 
-// Save component details as json to mqtt topic nanohome/devices/#
+// Save a deviceconfig as json to nanohome/devices/#
 function saveComponent(device) {
 	let componentDetails = getElementValues(device);
 	let componentTopics = getDeviceTopics(componentDetails);
-
-	// Don't save if description is empty (will delete configs)
-	if ( checkEmpty(componentDetails.description) ) { return false; }
-
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
-	// Generate device config and publish it to nanohome/devices
+	// Stop processing if description is empty (will delete all device configs)
+	if ( checkEmpty(componentDetails.description) ) { return false; }
+
+	// Generate a device config and publish it as retained message
 	let jsonConfig = generateComponentConfig(componentDetails);
-	mqttPublish(nanohomeTopics.device, JSON.stringify(jsonConfig), true);
+	mqttPublish(nanohomeTopics.deviceConfig, JSON.stringify(jsonConfig), true);
 	
-	// Publish description to component topic
+	// Publish description as retained message to component topic
 	mqttPublish(componentTopics.description, componentDetails.description, true);
 	
 	// Refresh device on dashboard
@@ -107,10 +107,10 @@ function saveComponent(device) {
 function createPanel(device) {
 	let componentDetails = getElementValues(device);
 
-	// Don't save if description is empty (will delete configs)
+	// Stop processing if description is empty (will delete all device configs)
 	if ( checkEmpty(componentDetails.description) ) { return false; }
 
-	// Confirm creation of element
+	// Confirm creation of a new panel
 	let confirmDialog = confirm('Save "' + componentDetails.description + '" and create home dashboard panel?');
 
 	// Publish any changes and create a panel
@@ -153,17 +153,17 @@ function onMessageArrived(message) {
 	//================================
 	if ( topicSplit[0] == "nanohome" ) {
 
-		// Parse status message
+		// Parse a shelly status message
 		if ( topicSplit[1] == "devicestatus" ) {
-			console.log('Device status received:');
-			console.log(JSON.parse(payload));
+			// console.log('Device status received:');
+			// console.log(JSON.parse(payload));
 			populateNetworkElement(payload);
 		}
 
-		// Set example panel description and icon
+		// Parse a device config
 		if ( topicSplit[1] == "devices" ) {
-			console.log('Device info received:');
-			console.log(JSON.parse(payload));
+			// console.log('Device info received:');
+			// console.log(JSON.parse(payload));
 			setExampleElementDescription(payload);
 			setExampleElementIcon(payload);
 		}
@@ -180,19 +180,19 @@ function onMessageArrived(message) {
 		addHtmlElementFunctions(device);
 
 		// Show example button or slider
-		if (component.includes("switch")) {
+		if ( component.includes("switch") ) {
 			showExampleElement(device, "btnContainer");
-		} else if (component.includes("cover")) {
+		} else if ( component.includes("cover") ) {
 			showExampleElement(device, "sliderContainer");
 		}
 
 		// Populate connected state
-		if (topicSplit[3] == "connected") {
+		if ( topicSplit[3] == "connected" ) {
 			populateConnectionState(device, component, payload);
 		}
 
 		// Populate description
-		if (topicSplit[3] == "description") {
+		if ( topicSplit[3] == "description" ) {
 			populateDescription(device, component, payload);
 		}
 	} 
@@ -211,17 +211,17 @@ function onMessageArrived(message) {
 		setStatusLegacy(device);
 
 		// Show example button
-		if (componentdev.includes("relay")) {
+		if ( componentdev.includes("relay") ) {
 			showExampleElement(device, "btnContainer");
 		}
 
 		// Populate connected state
-		if (topicSplit[4] == "connected") {
+		if ( topicSplit[4] == "connected" ) {
 			populateConnectionState(device, componentMerged, payload);
 		}
 
 		// Populate description
-		if (topicSplit[4] == "description") {
+		if ( topicSplit[4] == "description" ) {
 			populateDescription(device, componentMerged, payload);
 		}
 	}
@@ -242,15 +242,15 @@ function populateComponentElement(device, component) {
     if ( elementHiddenOrMissing(componentSelect) ) { return false; }
 
 	// Check if component was already populated
-	for (var i = 0; i < componentSelect.options.length; i++) {
-		if (componentSelect.options[i].value === component) {
+	for ( var i = 0; i < componentSelect.options.length; i++ ) {
+		if ( componentSelect.options[i].value === component ) {
 			optionExists = true;
 			return;
 		}
 	}
 
 	// Add component to list if it does not already exist
-	if (optionExists == false) {
+	if ( optionExists == false ) {
 		componentSelect.options[componentSelect.options.length] = new Option(component, component);
 	}
 }
@@ -264,10 +264,7 @@ function populateConnectionState(device, component, payload) {
     if ( elementHiddenOrMissing(htmlElements.component, htmlElements.connected) ) { return false; }
 
 	// Stop processing if component in message is not the one requested
-    if ( component != componentDetails.component  ) { 
-		console.log('populateConnectionState: wrong component ' + component);
-		return false; 
-	}
+    if ( component != componentDetails.component ) { return false; }
 
 	// Set connected state
 	if ( payload == "true" ) {
@@ -290,13 +287,10 @@ function populateDescription(device, component, payload) {
     if ( elementHiddenOrMissing(htmlElements.component, htmlElements.status) ) { return false; }
 
 	// Stop processing if component in message is not the one requested
-    if ( component != componentDetails.component ) { 
-		console.log('populateDescription: wrong component ' + component);
-		return false; 
-	}
+    if ( component != componentDetails.component ) { return false; }
 
-	// Set description
-	if ( !checkEmpty(payload)) {
+	// Set description if payload is not empty
+	if ( !checkEmpty(payload) ) {
 		htmlElements.description.value = payload;
 	} else {
 		htmlElements.description.value = "";
@@ -308,7 +302,7 @@ function populateNetworkElement(payload) {
 	let statusData = JSON.parse(payload);
 	let htmlElements = getHtmlElements(statusData.src);
 
-	// Stop processing if network element is hidden
+	// Stop processing if status element is hidden
     if ( elementHiddenOrMissing(htmlElements.status) ) { return false; }
 
 	// Parse json data and populate network panel
@@ -321,12 +315,12 @@ function populateNetworkElement(payload) {
 
 	htmlElements.status.classList.remove('statusfalse');
 
-	// Populate ip address or update notification
+	// Populate ip address and update notification
 	if ( elementHiddenOrMissing(update) ) {
 		htmlElements.status.innerText = ipaddress;
 		htmlElements.status.classList.add('statusgreen');
 	} else {
-		console.log(statusData.device + ' Update: v' + update);
+		// console.log(statusData.device + ' Update: v' + update);
 		statusText = ipaddress + "\n" +	"(Update: v" + update + ")";
 		htmlElements.status.innerText = statusText;
 		htmlElements.status.classList.add('statusorange');
@@ -370,7 +364,7 @@ function setExampleElementIcon(payload) {
 function setStatusLegacy(device) {
 	let htmlElements = getHtmlElements(device);
 
-	// Stop processing if status panel is hidden
+	// Stop processing if status element is hidden
     if ( elementHiddenOrMissing(htmlElements.status) ) { return false; }
 
 	htmlElements.status.innerText = "Legacy";
@@ -422,18 +416,18 @@ function getHtmlElements(device) {
 // Get current devices element values - [object input]
 function getElementValues(device) {
 	let htmlElements = getHtmlElements(device);
+	let icon = "";
+	let legacy = false;
 
 	// Stop processing if component element is hidden
     if ( elementHiddenOrMissing(htmlElements.component) ) { return false; }
 
 	// Define icon value
-	let icon = "";
 	if ( !elementHiddenOrMissing(htmlElements.exBtnIconForm) ) {
 		icon = htmlElements.exBtnIconForm.elements[exBtnIconOption].value;
 	} 
 
 	// Define legacy status
-	let legacy = false;
 	if ( legacyKeywords.some(legacyKeywords => htmlElements.component.value.includes(legacyKeywords)) ) {
 		legacy = true;
 	}
@@ -451,7 +445,7 @@ function getElementValues(device) {
 	}
 }
 
-// Add functions to html elements
+// Add functions to html elements if not yet added
 function addHtmlElementFunctions(device) {
 	let htmlElements = getHtmlElements(device);
 
@@ -529,13 +523,13 @@ function addHtmlElementFunctions(device) {
 
 // Show example element - [string input]
 function showExampleElement(device, element) {
-	let divElement = document.getElementById(element + "_" + device);
+	let htmlElement = document.getElementById(element + "_" + device);
 
 	// Stop processing if html elements are missing
-	if ( elementHiddenOrMissing(divElement) ) { return false; }
+	if ( elementHiddenOrMissing(htmlElement) ) { return false; }
 
-	divElement.classList.remove('elementHidden');
-	divElement.classList.add('elementFlex');
+	htmlElement.classList.remove('elementHidden');
+	htmlElement.classList.add('elementFlex');
 }
 
 /*

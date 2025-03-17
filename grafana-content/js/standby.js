@@ -117,8 +117,8 @@ function saveStandby(description) {
 	let newStandbyConfig = generateStandbyConfig(description);
 
 	// Publish config to "nanohome/standby/*"
-	mqttSubscribe(nanohomeTopics.standby, longsubscribe);
-	mqttPublish(nanohomeTopics.standby, JSON.stringify(newStandbyConfig), true);
+	mqttSubscribe(nanohomeTopics.standbyConfig, longsubscribe);
+	mqttPublish(nanohomeTopics.standbyConfig, JSON.stringify(newStandbyConfig), true);
 
 	// Run "create_standby" through nanohome shell to enable the timer
 	mqttPublish(cmdInputTopic, "create_standby" + description, false);
@@ -132,7 +132,7 @@ function clearStandby(description) {
 	let nanohomeTopics = getNanohomeTopics(description);
 
 	// Publish nothing to nanohome/standby/#
-	mqttPublish(nanohomeTopics.standby, "", true);
+	mqttPublish(nanohomeTopics.standbyConfig, "", true);
 
 	// Clear html elements
 	setStandbyStatus(htmlElements, "inactive");
