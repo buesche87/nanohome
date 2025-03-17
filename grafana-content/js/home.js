@@ -4,9 +4,8 @@
 ===============================================================
 */
 
-// Identify source of mqtt message
-// var home_outputComponent = "";
-// var command;
+// Timeout in ms to display an output
+var statusOutputTimeout = 5000;
 
 /*
 ===============================================================
@@ -14,14 +13,14 @@
 ===============================================================
 */
 
-// Infinitely subscribe to all devices output topic
+// Subscribe to all devices output topic
 function subscribeToOutput() {
 
-	// Initial subscribe to output topic
+	// Initial subscribe to output topic managed by nanohome
 	mqttSubscribe("+/status/+/output", fastsubscribe);
 	mqttSubscribe("shellies/+/+/+/output", fastsubscribe);
 
-	// Infinitely subscribe to status topic
+	// Infinitely subscribe to status topic managed by devices
 	mqtt.subscribe("+/status/+", { qos: 2 });
 	mqtt.subscribe("shellies/+/relay/+", { qos: 2 });
 }
@@ -32,32 +31,26 @@ function subscribeToOutput() {
 ===============================================================
 */
 
-// Send a command
+// Send a command to a shelly device
 function sendCommand(device, component, description, command) {
 	let commandTopic = device + "/command/" + component;
 	let statusTopic = device + "/status/" + component;
 
-	// set global variable to identify mqtt message
-	// home_outputComponent = component;
-
 	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
 
-	console.log('Command "' + command + '" sent for: ' + description);
+	// console.log('Command "' + command + '" sent for: ' + description);
 }
 
-// Send a command Legacy
+// Send a command to a shelly gen1 device (legacy)
 function sendCommandLegacy(device, component, description, command) {
 	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";
 	let statusTopic = "shellies/" + device + "/relay/" + component;
 
-	// set global variable to identify mqtt message
-	// home_outputComponent = component;
-
 	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
 
-	console.log('Command "' + command + '" sent for: ' + description);
+	// console.log('Command "' + command + '" sent for: ' + description);
 }
 
 /*
@@ -66,7 +59,7 @@ function sendCommandLegacy(device, component, description, command) {
 ===============================================================
 */
 
-// Decide what to do with new mqtt mesages
+// Decide what to do with incoming mqtt mesages
 function onMessageArrived(message) {
 	let payload = message.payloadString;
 	let topicSplit = message.destinationName.split("/");
@@ -136,7 +129,7 @@ function setElementStatus(device, component, payload) {
 	} 
 }
 
-// Show slider position on output element for 5 seconds
+// Show slider position on output element
 function updateHomeOutput(value) {
 	let statusOutput = document.getElementById("statusOutput");
 
@@ -144,7 +137,7 @@ function updateHomeOutput(value) {
 
     setTimeout(() => {
         statusOutput.textContent = "";
-    }, 5000);
+    }, statusOutputTimeout);
 }
 
 // Load the weather widget
