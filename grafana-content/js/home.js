@@ -66,13 +66,12 @@ function sendCommandLegacy(device, component, description, command) {
 ===============================================================
 */
 
-// TODO: status einfacher gestalten (trotzdem schneller wechsel)
 // Decide what to do with new mqtt mesages
 function onMessageArrived(message) {
 	let payload = message.payloadString;
 	let topicSplit = message.destinationName.split("/");
 
-	// Shelly Plus devices
+	// Message from shelly devices
 	if ( topicSplit[0].startsWith("shelly") ) {
 		let device = topicSplit[0];
 		let component = topicSplit[2];
@@ -80,19 +79,23 @@ function onMessageArrived(message) {
 		if ( topicSplit[3] === "output" ) {
 			setElementStatus(device, component, payload);
 		} else {
+
 			let statusData = JSON.parse(payload);
 			let switchOutput = statusData?.output;
-			let coverPosition = statusData?.current_pos;
-	
-			if ( !elementHiddenOrMissing(coverPosition) ) {
-				setElementStatus(device, component, coverPosition);
+			let currentPosition = statusData?.current_pos;
+			let targetPosition = statusData?.target_pos;
+			
+			if ( !elementHiddenOrMissing(targetPosition) ) {
+				setElementStatus(device, component, targetPosition);
+			} else if ( !elementHiddenOrMissing(currentPosition) ) {
+				etElementStatus(device, component, currentPosition);
 			} else if ( !elementHiddenOrMissing(switchOutput) ) {
 				setElementStatus(device, component, switchOutput);
 			}
 		}
 	} 
 
-	// Shelly legacy devices
+	// Message from shelly gen1 devices (legacy)
 	else if ( topicSplit[0] == "shellies" ) {
 		let device = topicSplit[1];
 		let componentidx = topicSplit[3];
@@ -107,7 +110,7 @@ function onMessageArrived(message) {
 ===============================================================
 */
 
-// Parse response from "Shelly.GetStatus"
+// Set dashboard panel values and on/off state
 function setElementStatus(device, component, payload) {
 	let panelElement = document.getElementById(device + "_" + component);
 
