@@ -88,7 +88,7 @@ function onMessageArrived(message) {
 			if ( !elementHiddenOrMissing(targetPosition) ) {
 				setElementStatus(device, component, targetPosition);
 			} else if ( !elementHiddenOrMissing(currentPosition) ) {
-				etElementStatus(device, component, currentPosition);
+				setElementStatus(device, component, currentPosition);
 			} else if ( !elementHiddenOrMissing(switchOutput) ) {
 				setElementStatus(device, component, switchOutput);
 			}
