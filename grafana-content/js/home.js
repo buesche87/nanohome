@@ -5,8 +5,8 @@
 */
 
 // Identify source of mqtt message
-var home_outputComponent = "";
-var command;
+// var home_outputComponent = "";
+// var command;
 
 /*
 ===============================================================
@@ -38,7 +38,7 @@ function sendCommand(device, component, description, command) {
 	let statusTopic = device + "/status/" + component;
 
 	// set global variable to identify mqtt message
-	home_outputComponent = component;
+	// home_outputComponent = component;
 
 	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
@@ -52,7 +52,7 @@ function sendCommandLegacy(device, component, description, command) {
 	let statusTopic = "shellies/" + device + "/relay/" + component;
 
 	// set global variable to identify mqtt message
-	home_outputComponent = component;
+	// home_outputComponent = component;
 
 	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
