@@ -143,12 +143,14 @@ export INFLUXDB_ORG_ID=$( try_influxdb_orgid_get || exit 1 )
 # - Test Grafana connection to 3000 with admin:password
 
 # Test API connection with Basic Auth
-grafana_basicauth_headers=(
-	-H "Accept: application/json"
-	-H "Content-Type:application/json"
-)
 
 grafana_basicauth_test() {
+
+	grafana_basicauth_headers=(
+		-H "Accept: application/json"
+		-H "Content-Type:application/json"
+	)
+
 	local answer=$(
 		curl -s "${grafana_basicauth_headers[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
@@ -168,6 +170,13 @@ grafana_basicauth_test() {
 }
 
 grafana_authtoken_test() {
+
+	grafana_authtoken_apiheaders=(
+		-H "Accept: application/json"
+		-H "Content-Type:application/json"
+		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
+	)
+
 	local answer=$(
 		curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org"
 	)
@@ -201,7 +210,7 @@ try_grafana_basicauth_test() {
         sleep "$delay"
     done
 
-    if [ -z "$result" ]; then
+    if [ ! $result ]; then
 		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
         return 1
     fi
@@ -219,7 +228,7 @@ try_grafana_authtoken_test() {
         sleep "$delay"
     done
 
-    if [ -z "$result" ]; then
+    if [ ! $result ]; then
 		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
         return 1
     fi
@@ -228,13 +237,6 @@ try_grafana_authtoken_test() {
 }
 
 if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
-
-	grafana_authtoken_apiheaders=(
-		-H "Accept: application/json"
-		-H "Content-Type:application/json"
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
-	)
-
 	try_grafana_authtoken_test || exit 1
 else
 	try_grafana_basicauth_test || exit 1
