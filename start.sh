@@ -91,11 +91,12 @@ echo -e "${LOG_GRN}Initializing environment...${LOG_NOC}" >> /proc/1/fd/1
 echo -e " " >> /proc/1/fd/1
 
 #===============================================================
-# InfluxDB: Organization
+# InfluxDB: Validate connection and get Org ID
 #===============================================================
-# - Get organization ID
+# - Test InfluxDB connection to 8086
+# - Retrive Org ID
 
-influxorgid_get() {
+influxdb_orgid_get() {
 
 	local answer=$(
 		curl -s --request GET "${INFLUXDB_HOST}/api/v2/orgs" \
@@ -116,7 +117,75 @@ influxorgid_get() {
 	fi
 }
 
-export INFLUXDB_ORG_ID=$( influxorgid_get || exit 1 )
+try_influxdb_orgid_get() {
+    local retries=(1 3 5)
+    local result
+
+    for delay in "${retries[@]}"; do
+        result=$( influxdb_orgid_get ) && break
+		echo -e "${LOG_WARN} InfluxDB: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
+        sleep "$delay"
+    done
+
+    if [ -z "$result" ]; then
+		echo -e "${LOG_ERRO} InfluxDB: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
+        return 1
+    fi
+
+    echo "$result"
+}
+
+export INFLUXDB_ORG_ID=$( try_influxdb_orgid_get || exit 1 )
+
+#===============================================================
+# Validate connection to Grafana
+#===============================================================
+# - Test Grafana connection to 3000 with admin:password
+
+# Test API connection with Basic Auth
+grafana_basicauth_headers=(
+	-H "Accept: application/json"
+	-H "Content-Type:application/json"
+)
+
+grafana_basicauth_test() {
+	local answer=$(
+		curl -s "${grafana_basicauth_headers[@]}" \
+		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
+	)
+
+	local result=$(
+		jq -e 'has("name")' <<< "$answer"
+	)
+
+	if [[ $result == true ]]; then
+		echo -e "${LOG_SUCC} Grafana: Basic auth successful" >> /proc/1/fd/1
+		return 0
+	else
+		echo -e "${LOG_ERRO} Grafana: Basic auth failed. Check credentials in .env file" >> /proc/1/fd/1
+		return 1
+	fi
+}
+
+try_grafana_basicauth_test() {
+    local retries=( 1 3 5 )
+    local result
+
+    for delay in "${retries[@]}"; do
+        result=$( grafana_basicauth_test ) && break
+		echo -e "${LOG_WARN} Grafana: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
+        sleep "$delay"
+    done
+
+    if [ -z "$result" ]; then
+		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
+        return 1
+    fi
+
+    echo "$result"
+}
+
+try_grafana_basicauth_test || exit 1
 
 #===============================================================
 # InfluxDB: Buckets
@@ -124,7 +193,7 @@ export INFLUXDB_ORG_ID=$( influxorgid_get || exit 1 )
 # - If buckets do not exist, create them
 
 # Search for an existing InfluxDB bucket
-influxbucket_search() {
+influxdb_bucket_search() {
 	local bucket=$1
 
 	local answer=$(
@@ -148,7 +217,7 @@ influxbucket_search() {
 }
 
 # Create a new InfluxDB bucket
-influxbucket_create() {
+influxdb_bucket_create() {
 	local bucket=$1
 
 	local answer=$(
@@ -178,11 +247,11 @@ influxbucket_create() {
 }
 
 # Create or find a bucket and export its ID
-influxbucket_prepare() {
+influxdb_bucket_prepare() {
 	local bucket_name=$1
 
 	local bucket_info=$(
-		influxbucket_search "$bucket_name" || influxbucket_create "$bucket_name"
+		influxdb_bucket_search "$bucket_name" || influxdb_bucket_create "$bucket_name"
 	) || exit 1
 
 	export INFLUXDB_BUCKET_ID=$( jq -r '.id' <<< "$bucket_info" )
@@ -192,10 +261,10 @@ influxbucket_prepare() {
 }
 
 # Process required buckets
-influxbucket_prepare "${INFLUXDB_BUCKET_DEVICES}"
+influxdb_bucket_prepare "${INFLUXDB_BUCKET_DEVICES}"
 export INFLUXDB_BUCKET_DEVICES_ID=$INFLUXDB_BUCKET_ID
 
-influxbucket_prepare "${INFLUXDB_BUCKET_MEASUREMENTS}"
+influxdb_bucket_prepare "${INFLUXDB_BUCKET_MEASUREMENTS}"
 export INFLUXDB_BUCKET_MEASUREMENTS_ID=$INFLUXDB_BUCKET_ID
 
 #===============================================================
@@ -206,7 +275,7 @@ export INFLUXDB_BUCKET_MEASUREMENTS_ID=$INFLUXDB_BUCKET_ID
 # - If multiple tokens found, exit script (manual deletion)
 
 # Search for existing auth token
-influxauthtoken_search() {
+influxdb_authtoken_search() {
 	local answer=$(
 		curl -s --request GET "${INFLUXDB_HOST}/api/v2/authorizations" \
 		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
@@ -222,7 +291,7 @@ influxauthtoken_search() {
 }
 
 # Create a new auth token
-influxauthtoken_create() {
+influxdb_authtoken_create() {
 	local answer=$(
 		curl -s --request POST "${INFLUXDB_HOST}/api/v2/authorizations" \
 		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
@@ -269,13 +338,13 @@ influxauthtoken_create() {
 }
 
 # Validate auth token permissions
-influxauthtoken_validate() {
-	local influxauthtoken_found="$1"
+influxdb_authtoken_validate() {
+	local influxdb_authtoken_found="$1"
 
 	local result=$(
 		jq -e --arg val1 "${INFLUXDB_BUCKET_DEVICES_ID}" --arg val2 "${INFLUXDB_BUCKET_MEASUREMENTS_ID}" '
 		[.[] | .permissions[].resource.id] | index($val1) and index($val2)
-		' <<< "${influxauthtoken_found}"
+		' <<< "${influxdb_authtoken_found}"
 	)
 
 	if [[ $result == true ]]; then
@@ -288,26 +357,26 @@ influxauthtoken_validate() {
 }
 
 # Search for existing tokens
-influxauthtoken_found=$(
-	influxauthtoken_search
+influxdb_authtoken_found=$(
+	influxdb_authtoken_search
 )
 
-influxauthtoken_objects=$(
-	jq length <<< "$influxauthtoken_found"
+influxdb_authtoken_objects=$(
+	jq length <<< "$influxdb_authtoken_found"
 )
 
-if [[ "$influxauthtoken_objects" -eq 0 ]]; then
+if [[ "$influxdb_authtoken_objects" -eq 0 ]]; then
 	echo -e "${LOG_INFO} InfluxDB: No auth token found" >> /proc/1/fd/1
 
 	influxauthtoken=$(
-		influxauthtoken_create
+		influxdb_authtoken_create
 	) || exit 1
-elif [[ "$influxauthtoken_objects" -eq 1 ]]; then
+elif [[ "$influxdb_authtoken_objects" -eq 1 ]]; then
 	echo -e "${LOG_INFO} InfluxDB: Auth token \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" found" >> /proc/1/fd/1
 
-	influxauthtoken_validate "$influxauthtoken_found" || exit 1
+	influxdb_authtoken_validate "$influxdb_authtoken_found" || exit 1
 	influxauthtoken=$(
-		jq '.[]' <<< "$influxauthtoken_found"
+		jq '.[]' <<< "$influxdb_authtoken_found"
 	)
 else
 	echo -e "${LOG_ERRO} InfluxDB: Multiple auth tokens \"${INFLUXDB_ROTOKEN_DESCRIPTION}\" found. Delete them first." >> /proc/1/fd/1
@@ -329,41 +398,16 @@ jq '.token = "<SECURETOKEN>"' <<< "$influxauthtoken" >> /proc/1/fd/1
 #   - Create a service account if needed
 #   - Recreate auth token on every docker start
 
-grafanaapiheaders_basicauth=(
-	-H "Accept: application/json"
-	-H "Content-Type:application/json"
-)
-
-grafanaserviceaccount_json='{
+grafana_serviceaccount_json='{
 	"name": "'"${GRAFANA_SERVICEACCOUNT}"'",
 	"role": "Admin",
 	"isDisabled": false
 }'
 
-# Test API connection with Basic Auth
-grafanaapibasicauth_test() {
-	local answer=$(
-		curl -s "${grafanaapiheaders_basicauth[@]}" \
-		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
-	)
-
-	local result=$(
-		jq -e 'has("name")' <<< "$answer"
-	)
-
-	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Basic auth successful" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_ERRO} Grafana: Basic auth failed. Check credentials in .env file" >> /proc/1/fd/1
-		return 1
-	fi
-}
-
 # Search for existing service account
-grafanaserviceaccount_find() {
+grafana_serviceaccount_find() {
 	local answer=$(
-		curl -s "${grafanaapiheaders_basicauth[@]}" \
+		curl -s "${grafana_basicauth_headers[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/search?query=${GRAFANA_SERVICEACCOUNT}"
 	)
 
@@ -383,10 +427,10 @@ grafanaserviceaccount_find() {
 }
 
 # Create new service account
-grafanaserviceaccount_create() {
+grafana_serviceaccount_create() {
 	local answer=$(
-		curl -s "${grafanaapiheaders_basicauth[@]}" \
-		-d "${grafanaserviceaccount_json}" \
+		curl -s "${grafana_basicauth_headers[@]}" \
+		-d "${grafana_serviceaccount_json}" \
 		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts"
 	)
 
@@ -406,11 +450,11 @@ grafanaserviceaccount_create() {
 }
 
 # Search for existing service account token
-grafanaserviceaccounttoken_find() {
+grafana_serviceaccount_token_find() {
 	local said="$1"
 
 	local answer=$(
-		curl -s "${grafanaapiheaders_basicauth[@]}" \
+		curl -s "${grafana_basicauth_headers[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
 	)
 
@@ -429,12 +473,12 @@ grafanaserviceaccounttoken_find() {
 }
 
 # Delete existing service account token
-grafanaserviceaccounttoken_delete() {
+grafana_serviceaccount_token_delete() {
 	local said="$1"
 	local token_id="$2"
 
 	local answer=$(
-		curl -s "${grafanaapiheaders_basicauth[@]}" \
+		curl -s "${grafana_basicauth_headers[@]}" \
 		-X DELETE "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens/${token_id}"
 	)
 
@@ -453,12 +497,12 @@ grafanaserviceaccounttoken_delete() {
 }
 
 # Create a new service account token
-grafanaserviceaccounttoken_create() {
+grafana_serviceaccount_token_create() {
 	local said="$1"
 
 	local answer=$(
-		curl -s "${grafanaapiheaders_basicauth[@]}" \
-		-d "${grafanaserviceaccount_json}" \
+		curl -s "${grafana_basicauth_headers[@]}" \
+		-d "${grafana_serviceaccount_json}" \
 		-X POST "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/serviceaccounts/${said}/tokens"
 	)
 
@@ -482,43 +526,41 @@ if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
 elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEACCOUNT}" ]]; then
 	echo -e "${LOG_WARN} Grafana: No service account token provided in .env file" >> /proc/1/fd/1
 
-	grafanaapibasicauth_test || exit 1
-
 	grafanaserviceaccount=$(
-		grafanaserviceaccount_find || grafanaserviceaccount_create
+		grafana_serviceaccount_find || grafana_serviceaccount_create
 	) || exit 1
 
-	grafanaserviceaccount_id=$(
+	grafana_serviceaccount_id=$(
 		jq -r .id <<< "$grafanaserviceaccount"
 	)
 
 	# Log
 	jq <<< "$grafanaserviceaccount" >> /proc/1/fd/1
 
-	grafanaserviceaccount_token=$(
-		grafanaserviceaccounttoken_find "$grafanaserviceaccount_id"
+	grafana_serviceaccount_token=$(
+		grafana_serviceaccount_token_find "$grafana_serviceaccount_id"
 	)
 
-	grafanaserviceaccount_token_objects=$(
-		jq length <<< "$grafanaserviceaccount_token"
+	grafana_serviceaccount_token_objects=$(
+		jq length <<< "$grafana_serviceaccount_token"
 	)
 
-	for ((i = 0; i < grafanaserviceaccount_token_objects; i++)); do
-		grafanaserviceaccount_token_id=$(
-			jq -r ".[$i].id" <<< "$grafanaserviceaccount_token"
+	for ((i = 0; i < grafana_serviceaccount_token_objects; i++)); do
+		grafana_serviceaccount_token_id=$(
+			jq -r ".[$i].id" <<< "$grafana_serviceaccount_token"
 		)
 
-		grafanaserviceaccounttoken_delete "$grafanaserviceaccount_id" "$grafanaserviceaccount_token_id" || exit 1
+		grafana_serviceaccount_token_delete "$grafana_serviceaccount_id" "$grafana_serviceaccount_token_id" || exit 1
 	done
 
-	grafanaserviceaccount_token=$(
-		grafanaserviceaccounttoken_create "$grafanaserviceaccount_id"
+	grafana_serviceaccount_token=$(
+		grafana_serviceaccount_token_create "$grafana_serviceaccount_id"
 	) || exit 1
 
-	export GRAFANA_SERVICEACCOUNT_TOKEN=$( jq -r .key <<< "$grafanaserviceaccount_token" )
+	export GRAFANA_SERVICEACCOUNT_TOKEN=$( jq -r .key <<< "$grafana_serviceaccount_token" )
 
 	# Log
-	jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafanaserviceaccount_token" >> /proc/1/fd/1
+	jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafana_serviceaccount_token" >> /proc/1/fd/1
 else
 	echo -e "${LOG_ERRO} Grafana: Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
 	exit 1
@@ -530,15 +572,15 @@ fi
 # - Test connection to "http://${GRAFANA_SERVICE}/api/org"
 # - With provided or created token
 
-grafanaapiheaders_token=(
+grafana_authtoken_apiheaders=(
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
 
-grafanaapiauthtoken_test() {
+grafana_authtoken_test() {
 	local answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org"
+		curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org"
 	)
 
 	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
@@ -560,7 +602,7 @@ grafanaapiauthtoken_test() {
 	fi
 }
 
-grafanaapiauthtoken_test || exit 1
+grafana_authtoken_test || exit 1
 
 #===============================================================
 # Grafana: Datasources
@@ -568,11 +610,11 @@ grafanaapiauthtoken_test || exit 1
 # - If datasources do not exist create them
 
 # Search for existing datasource
-grafanadatasource_search() {
+grafana_datasource_search() {
 	local dsname=$1
 
 	local answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" -X GET "${GRAFANA_HOST}/api/datasources/name/${dsname}"
+		curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "${GRAFANA_HOST}/api/datasources/name/${dsname}"
 	)
 
 	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
@@ -595,7 +637,7 @@ grafanadatasource_search() {
 }
 
 # Prepare datasource in JSON format
-grafanadatasource_prepare() {
+grafana_datasource_prepare() {
 	local bucket=$1
 
 	local result=$(
@@ -615,12 +657,12 @@ grafanadatasource_prepare() {
 }
 
 # Create a new datasource
-grafanadatasource_create() {
+grafana_datasource_create() {
 	local dsjson=$1
 	local dsname=$( jq -r .name <<< "$dsjson" )
 
 	local answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X POST -H "Content-Type: application/json" \
 		-d "$dsjson" "${GRAFANA_HOST}/api/datasources"
 	)
@@ -646,34 +688,34 @@ grafanadatasource_create() {
 }
 
 # Datasource: Devices
-grafanadatasource_devices_json=$(
-	grafanadatasource_prepare "$GRAFANA_DATASOURCE_DEVICES"
+grafana_datasource_devices_json=$(
+	grafana_datasource_prepare "$GRAFANA_DATASOURCE_DEVICES"
 )
 
-grafanadatasource_devices=$(
-	grafanadatasource_search "$GRAFANA_DATASOURCE_DEVICES" || \
-	grafanadatasource_create "$grafanadatasource_devices_json"
+grafana_datasource_devices=$(
+	grafana_datasource_search "$GRAFANA_DATASOURCE_DEVICES" || \
+	grafana_datasource_create "$grafana_datasource_devices_json"
 ) || exit 1
 
-export GRAFANADATASOURCE_DEVICES_UID=$( jq -r .uid <<< "$grafanadatasource_devices" )
+export GRAFANA_DATASOURCE_DEVICES_UID=$( jq -r .uid <<< "$grafana_datasource_devices" )
 
 # Log
-jq <<< "$grafanadatasource_devices" >> /proc/1/fd/1
+jq <<< "$grafana_datasource_devices" >> /proc/1/fd/1
 
 # Datasource: Measurements
-grafanadatasource_measurements_json=$(
-	grafanadatasource_prepare "$GRAFANA_DATASOURCE_MEASUREMENTS"
+grafana_datasource_measurements_json=$(
+	grafana_datasource_prepare "$GRAFANA_DATASOURCE_MEASUREMENTS"
 )
 
-grafanadatasource_measurements=$(
-	grafanadatasource_search "$GRAFANA_DATASOURCE_MEASUREMENTS" || \
-	grafanadatasource_create "$grafanadatasource_measurements_json"
+grafana_datasource_measurements=$(
+	grafana_datasource_search "$GRAFANA_DATASOURCE_MEASUREMENTS" || \
+	grafana_datasource_create "$grafana_datasource_measurements_json"
 ) || exit 1
 
-export GRAFANADATASOURCE_MEASUREMENTS_UID=$( jq -r .uid <<< "$grafanadatasource_measurements" )
+export GRAFANA_DATASOURCE_MEASUREMENTS_UID=$( jq -r .uid <<< "$grafana_datasource_measurements" )
 
 # Log
-jq <<< "$grafanadatasource_measurements" >> /proc/1/fd/1
+jq <<< "$grafana_datasource_measurements" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Modify and copy public content
@@ -682,17 +724,17 @@ jq <<< "$grafanadatasource_measurements" >> /proc/1/fd/1
 # - Modify mqtt credentials and weather widget in config.js
 # - Move content to "${NANOHOME_ROOTPATH}/data/grafana"
 
-grafanacontent_source="${NANOHOME_ROOTPATH}/grafana-content"
-grafanacontent_destination="${NANOHOME_ROOTPATH}/data/grafana"
+grafana_content_source="${NANOHOME_ROOTPATH}/grafana-content"
+grafana_content_destination="${NANOHOME_ROOTPATH}/data/grafana"
 
 # Set preferences in config.js
-grafanacontent_setpreferences() {
+grafana_content_setpreferences() {
 	
 	# Grafana credentials
-	sed -i '/^var user =/c\var user = "'"${MQTT_USER}"'";' "${grafanacontent_source}/js/config.js"
-	sed -i '/^var pwd =/c\var pwd = "'"${MQTT_PASSWORD}"'";' "${grafanacontent_source}/js/config.js"
+	sed -i '/^var user =/c\var user = "'"${MQTT_USER}"'";' "${grafana_content_source}/js/config.js"
+	sed -i '/^var pwd =/c\var pwd = "'"${MQTT_PASSWORD}"'";' "${grafana_content_source}/js/config.js"
 
-	if ! grep -q "var user = \"${MQTT_USER}\";" "${grafanacontent_source}/js/config.js"; then
+	if ! grep -q "var user = \"${MQTT_USER}\";" "${grafana_content_source}/js/config.js"; then
 		echo -e "${LOG_ERRO} Grafana: Failed setting public content mqtt credentials" >> /proc/1/fd/1
 		return 1
 	else
@@ -701,10 +743,10 @@ grafanacontent_setpreferences() {
 
 	# Weather widget
 	if [[ -n "${WEATHER_URL}" ]]; then
-		sed -i '/^var weatherWidgetLink =/c\var weatherWidgetLink = "'"${WEATHER_URL}"'";' "${grafanacontent_source}/js/config.js"
-		sed -i '/^var weatherWidgetCity =/c\var weatherWidgetCity = "'"${WEATHER_LOCATION}"'";' "${grafanacontent_source}/js/config.js"
+		sed -i '/^var weatherWidgetLink =/c\var weatherWidgetLink = "'"${WEATHER_URL}"'";' "${grafana_content_source}/js/config.js"
+		sed -i '/^var weatherWidgetCity =/c\var weatherWidgetCity = "'"${WEATHER_LOCATION}"'";' "${grafana_content_source}/js/config.js"
 
-		if ! grep -q "var weatherWidgetLink = \"${WEATHER_URL}\";" "${grafanacontent_source}/js/config.js"; then
+		if ! grep -q "var weatherWidgetLink = \"${WEATHER_URL}\";" "${grafana_content_source}/js/config.js"; then
 			echo -e "${LOG_ERRO} Grafana: Failed setting weather widget preferences" >> /proc/1/fd/1
 			return 1
 		else
@@ -716,27 +758,27 @@ grafanacontent_setpreferences() {
 }
 
 # Move grafana content to persistent storage
-grafanacontent_move() {
-	rm -rf "${grafanacontent_destination}"/*
-	mv -f "${grafanacontent_source}"/* "${grafanacontent_destination}"
+grafana_content_move() {
+	rm -rf "${grafana_content_destination}"/*
+	mv -f "${grafana_content_source}"/* "${grafana_content_destination}"
 
 	if [[ $? -eq 0 ]]; then
-		echo -e "${LOG_SUCC} Grafana: Content moved to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
-		rm -rf "${grafanacontent_source}"
+		echo -e "${LOG_SUCC} Grafana: Content moved to \"${grafana_content_destination}\"" >> /proc/1/fd/1
+		rm -rf "${grafana_content_source}"
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Failed moving content to \"${grafanacontent_destination}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana: Failed moving content to \"${grafana_content_destination}\"" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
-if [[ -d "${grafanacontent_source}" ]]; then
+if [[ -d "${grafana_content_source}" ]]; then
 	echo -e "${LOG_INFO} Grafana: Modify public content" >> /proc/1/fd/1
 
-	grafanacontent_setpreferences || exit 1
-	grafanacontent_move || exit 1
+	grafana_content_setpreferences || exit 1
+	grafana_content_move || exit 1
 else
-	echo -e "${LOG_INFO} Grafana: Public content \"${grafanacontent_destination}\" already modified" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} Grafana: Public content \"${grafana_content_destination}\" already modified" >> /proc/1/fd/1
 fi
 
 #===============================================================
@@ -745,12 +787,12 @@ fi
 # - If dashboard folder "nanohome" does not exist create it
 
 # Search for existing dahboard folder
-grafanadashfolder_search() {
+grafana_dashfolder_search() {
 	local foldername=$1
 
 	local answer
 	answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder") || {
 		echo -e "${LOG_ERRO} Grafana: Failed searching for dashboard folder - API request failed" >> /proc/1/fd/1
 		return 1
@@ -772,12 +814,12 @@ grafanadashfolder_search() {
 }
 
 # Create a new dahboard folder
-grafanadashfolder_create() {
+grafana_dashfolder_create() {
 	local foldername=$1
 
 	local answer
 	answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X POST -H "Content-Type: application/json" \
 		-d "{\"title\": \"$foldername\"}" "http://${GRAFANA_SERVICE}/api/folders") || {
 		echo -e "${LOG_ERRO} Grafana: Failed creating dashboar folder - API request failed" >> /proc/1/fd/1
@@ -799,8 +841,8 @@ grafanadashfolder_create() {
 
 # Search for the folder, if not found, create it
 grafanadashfolder=$(
-	grafanadashfolder_search "${GRAFANA_DASHFOLDER_NAME}" || \
-	grafanadashfolder_create "${GRAFANA_DASHFOLDER_NAME}"
+	grafana_dashfolder_search "${GRAFANA_DASHFOLDER_NAME}" || \
+	grafana_dashfolder_create "${GRAFANA_DASHFOLDER_NAME}"
 ) || exit 1
 
 # Extract UID
@@ -821,19 +863,19 @@ jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 # - If dashbaord does not exist
 # - Load dashboard templates, prepare and upload them
 
-grafanadashboard_metadata='{
+grafana_dashboard_metadata='{
 	"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
 	"message": "Initial upload",
 	"overwrite": true
 }'
 
 # Search for existing dahboard
-grafanadashboard_find() {
+grafana_dashboard_find() {
 	local uid=$1
 
 	local answer
 	answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}") || {
 		echo -e "${LOG_ERRO} Grafana: Failed searching dashboard - API request failed" >> /proc/1/fd/1
 		return 1
@@ -856,7 +898,7 @@ grafanadashboard_find() {
 }
 
 # Prepare dashboard template for upload (metadata and datasource uid)
-grafanadashboard_prepare() {
+grafana_dashboard_prepare() {
 	local file=$1
 	local dsuid=$2
 
@@ -871,7 +913,7 @@ grafanadashboard_prepare() {
 
 	local output=$(
 		jq --argjson dashboard "$(jq '.dashboard' <<< "${result}")" \
-		'.dashboard = $dashboard' <<< "${grafanadashboard_metadata}"
+		'.dashboard = $dashboard' <<< "${grafana_dashboard_metadata}"
 	)
 
 	echo -e "${LOG_SUCC} Grafana: Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
@@ -880,12 +922,12 @@ grafanadashboard_prepare() {
 }
 
 # Upload new dashboard
-grafanadashboard_create() {
+grafana_dashboard_create() {
 	local jsondata=$1
 
 	local result
 	result=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X POST -d "${jsondata}" "http://${GRAFANA_SERVICE}/api/dashboards/db") || {
 		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed - API request failed" >> /proc/1/fd/1
 		return 1
@@ -903,78 +945,78 @@ grafanadashboard_create() {
 }
 
 # Dashboard: Home
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_HOME_UID}"; then
+if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_HOME_UID}"; then
 
-	grafanadashboard_home_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_HOME_FILE}" "${GRAFANADATASOURCE_MEASUREMENTS_UID}"
+	grafana_dashboard_home_json=$(
+		grafana_dashboard_prepare "${GRAFANA_DASHBOARD_HOME_FILE}" "${GRAFANA_DATASOURCE_MEASUREMENTS_UID}"
 	) || exit 1
 
-	grafanadashboard_home=$(
-		grafanadashboard_create "${grafanadashboard_home_json}"
+	grafana_dashboard_home=$(
+		grafana_dashboard_create "${grafana_dashboard_home_json}"
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafanadashboard_home}" >> /proc/1/fd/1
+	jq '.' <<< "${grafana_dashboard_home}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Devices
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_DEVICES_UID}"; then
+if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_DEVICES_UID}"; then
 
-	grafanadashboard_devices_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_DEVICES_FILE}" "${GRAFANADATASOURCE_DEVICES_UID}"
+	grafana_dashboard_devices_json=$(
+		grafana_dashboard_prepare "${GRAFANA_DASHBOARD_DEVICES_FILE}" "${GRAFANA_DATASOURCE_DEVICES_UID}"
 	) || exit 1
 
-	grafanadashboard_devices=$(
-		grafanadashboard_create "${grafanadashboard_devices_json}"
+	grafana_dashboard_devices=$(
+		grafana_dashboard_create "${grafana_dashboard_devices_json}"
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafanadashboard_devices}" >> /proc/1/fd/1	
+	jq '.' <<< "${grafana_dashboard_devices}" >> /proc/1/fd/1	
 fi
 
 # Dashboard: Timer
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_TIMER_UID}"; then
+if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_TIMER_UID}"; then
 
-	grafanadashboard_timer_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_TIMER_FILE}" "${GRAFANADATASOURCE_DEVICES_UID}"
+	grafana_dashboard_timer_json=$(
+		grafana_dashboard_prepare "${GRAFANA_DASHBOARD_TIMER_FILE}" "${GRAFANA_DATASOURCE_DEVICES_UID}"
 	) || exit 1
 
-	grafanadashboard_timer=$(	
-		grafanadashboard_create "${grafanadashboard_timer_json}"
+	grafana_dashboard_timer=$(	
+		grafana_dashboard_create "${grafana_dashboard_timer_json}"
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafanadashboard_timer}" >> /proc/1/fd/1
+	jq '.' <<< "${grafana_dashboard_timer}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Standby
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_STANDBY_UID}" ; then
+if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_STANDBY_UID}" ; then
 
-	grafanadashboard_standby_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_STANDBY_FILE}" "${GRAFANADATASOURCE_DEVICES_UID}"
+	grafana_dashboard_standby_json=$(
+		grafana_dashboard_prepare "${GRAFANA_DASHBOARD_STANDBY_FILE}" "${GRAFANA_DATASOURCE_DEVICES_UID}"
 	) || exit 1
 
-	grafanadashboard_standby=$(	
-		grafanadashboard_create "${grafanadashboard_standby_json}"
+	grafana_dashboard_standby=$(	
+		grafana_dashboard_create "${grafana_dashboard_standby_json}"
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafanadashboard_standby}" >> /proc/1/fd/1
+	jq '.' <<< "${grafana_dashboard_standby}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Measurements
-if ! grafanadashboard_find "${GRAFANA_DASHBOARD_MEASUREMENTS_UID}"; then
+if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_MEASUREMENTS_UID}"; then
 
-	grafanadashboard_measurements_json=$(
-		grafanadashboard_prepare "${GRAFANA_DASHBOARD_MEASUREMENTS_FILE}" "${GRAFANADATASOURCE_MEASUREMENTS_UID}"
+	grafana_dashboard_measurements_json=$(
+		grafana_dashboard_prepare "${GRAFANA_DASHBOARD_MEASUREMENTS_FILE}" "${GRAFANA_DATASOURCE_MEASUREMENTS_UID}"
 	) || exit 1
 
-	grafanadashboard_measurements=$(	
-		grafanadashboard_create "${grafanadashboard_measurements_json}"
+	grafana_dashboard_measurements=$(	
+		grafana_dashboard_create "${grafana_dashboard_measurements_json}"
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafanadashboard_measurements}" >> /proc/1/fd/1
+	jq '.' <<< "${grafana_dashboard_measurements}" >> /proc/1/fd/1
 fi
 
 #===============================================================
@@ -983,9 +1025,9 @@ fi
 # - Set home dashboard preference in grafana settings
 
 # Validate current home dashboard preference
-grafanadashboard_gethomepreference() {
+grafana_dashboard_homepreference_get() {
 	local answer=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/org/preferences") || {
 		echo -e "${LOG_ERRO} Grafana: Get home preference - API request failed" >> /proc/1/fd/1
 		return 1
@@ -1003,11 +1045,11 @@ grafanadashboard_gethomepreference() {
 }
 
 # Set new home dashbord preference
-grafanadashboard_sethomepreference() {
+grafana_dashboard_homepreference_set() {
 	local id=$1
 
 	local result=$(
-		curl -s "${grafanaapiheaders_token[@]}" \
+		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X PUT -H "Content-Type: application/json" \
 		-d "{\"homeDashboardID\":$id}" "http://${GRAFANA_SERVICE}/api/org/preferences") || {
 		echo -e "${LOG_ERRO} Grafana: Set home preference - API request failed" >> /proc/1/fd/1
@@ -1025,17 +1067,17 @@ grafanadashboard_sethomepreference() {
 	fi
 }
 
-grafanadashboard_home_id=$(
-	curl -s "${grafanaapiheaders_token[@]}" \
+grafana_dashboard_home_id=$(
+	curl -s "${grafana_authtoken_apiheaders[@]}" \
 	-X GET "http://${GRAFANA_SERVICE}/api/dashboards/uid/${GRAFANA_DASHBOARD_HOME_UID}" |
 	jq -r '.dashboard.id' 2>/dev/null | xargs
 )
 
 # Ensure ID retrieval was successful and and set home dashboard if needed
-if [[ -z "$grafanadashboard_home_id" || "$grafanadashboard_home_id" == "null" ]]; then
+if [[ -z "$grafana_dashboard_home_id" || "$grafana_dashboard_home_id" == "null" ]]; then
 	echo -e "${LOG_ERRO} Grafana: Home preference -  Failed to retrieve home dashboard ID" >> /proc/1/fd/1
 else
-	grafanadashboard_gethomepreference || grafanadashboard_sethomepreference "$grafanadashboard_home_id"
+	grafana_dashboard_homepreference_get || grafana_dashboard_homepreference_set "$grafana_dashboard_home_id"
 fi
 
 #===============================================================
