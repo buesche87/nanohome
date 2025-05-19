@@ -235,9 +235,9 @@ if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
 		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 	)
 
-	try_grafana_basicauth_test || exit 1
-else
 	try_grafana_authtoken_test || exit 1
+else
+	try_grafana_basicauth_test || exit 1
 fi
 
 #===============================================================
