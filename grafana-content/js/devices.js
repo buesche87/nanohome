@@ -54,7 +54,7 @@ function getDeviceDetails(device) {
 	mqttSubscribe(nanohomeTopics.deviceConfig, fastsubscribe);
 
 	// Stop processing if shelly is a gen1 device
-	if ( legacyKeywords.some(legacyKeywords => componentTopics.includes(legacyKeywords)) ) {
+	if ( legacyKeywords.some(legacyKeywords => componentTopics.connected.includes(legacyKeywords)) ) {
 		return false;
 	}
 
