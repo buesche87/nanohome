@@ -143,7 +143,6 @@ export INFLUXDB_ORG_ID=$( try_influxdb_orgid_get || exit 1 )
 # - Test Grafana connection to 3000 with admin:password
 
 # Test API connection with Basic Auth
-
 grafana_basicauth_test() {
 
 	grafana_basicauth_headers=(
@@ -169,6 +168,25 @@ grafana_basicauth_test() {
 	fi
 }
 
+try_grafana_basicauth_test() {
+    local retries=( 1 3 5 )
+    local result
+
+    for delay in "${retries[@]}"; do
+        result=$( grafana_basicauth_test ) && break
+		echo -e "${LOG_WARN} Grafana: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
+        sleep "$delay"
+    done
+
+    if [ ! $result ]; then
+		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
+        return 1
+    fi
+
+    echo "$result"
+}
+
+# Test API connection with Token Auth
 grafana_authtoken_test() {
 
 	grafana_authtoken_apiheaders=(
@@ -195,27 +213,8 @@ grafana_authtoken_test() {
 		return 0
 	else
 		echo -e "${LOG_ERRO} Grafana: Connection with service account token failed" >> /proc/1/fd/1
-		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
-}
-
-try_grafana_basicauth_test() {
-    local retries=( 1 3 5 )
-    local result
-
-    for delay in "${retries[@]}"; do
-        result=$( grafana_basicauth_test ) && break
-		echo -e "${LOG_WARN} Grafana: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
-        sleep "$delay"
-    done
-
-    if [ ! $result ]; then
-		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
-        return 1
-    fi
-
-    echo "$result"
 }
 
 try_grafana_authtoken_test() {
@@ -228,12 +227,13 @@ try_grafana_authtoken_test() {
         sleep "$delay"
     done
 
-    if [ ! $result ]; then
+    if $result; then
+		echo -e "${LOG_SUCC} Grafana: Connection successfull" >> /proc/1/fd/1
+		return 0
+	else
 		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
         return 1
-    fi
-
-    echo "$result"
+	fi
 }
 
 if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
