@@ -167,6 +167,30 @@ grafana_basicauth_test() {
 	fi
 }
 
+grafana_authtoken_test() {
+	local answer=$(
+		curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org"
+	)
+
+	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
+		echo -e "${LOG_ERRO} Grafana: No or invalid API response" >> /proc/1/fd/1
+		return 1
+	fi
+
+	local result=$(
+		jq -e 'has("name")' <<< "$answer" 2>/dev/null
+	)
+
+	if [[ $result == true ]]; then
+		echo -e "${LOG_SUCC} Grafana: Service account token valid" >> /proc/1/fd/1
+		return 0
+	else
+		echo -e "${LOG_ERRO} Grafana: Connection with service account token failed" >> /proc/1/fd/1
+		jq <<< "$answer" >> /proc/1/fd/1
+		return 1
+	fi
+}
+
 try_grafana_basicauth_test() {
     local retries=( 1 3 5 )
     local result
@@ -185,7 +209,36 @@ try_grafana_basicauth_test() {
     echo "$result"
 }
 
-try_grafana_basicauth_test || exit 1
+try_grafana_authtoken_test() {
+    local retries=( 1 3 5 )
+    local result
+
+    for delay in "${retries[@]}"; do
+        result=$( grafana_authtoken_test ) && break
+		echo -e "${LOG_WARN} Grafana: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
+        sleep "$delay"
+    done
+
+    if [ -z "$result" ]; then
+		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
+        return 1
+    fi
+
+    echo "$result"
+}
+
+if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
+
+	grafana_authtoken_apiheaders=(
+		-H "Accept: application/json"
+		-H "Content-Type:application/json"
+		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
+	)
+
+	try_grafana_basicauth_test || exit 1
+else
+	try_grafana_authtoken_test || exit 1
+fi
 
 #===============================================================
 # InfluxDB: Buckets
@@ -577,30 +630,6 @@ grafana_authtoken_apiheaders=(
 	-H "Content-Type:application/json"
 	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 )
-
-grafana_authtoken_test() {
-	local answer=$(
-		curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org"
-	)
-
-	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
-		echo -e "${LOG_ERRO} Grafana: No or invalid API response" >> /proc/1/fd/1
-		return 1
-	fi
-
-	local result=$(
-		jq -e 'has("name")' <<< "$answer" 2>/dev/null
-	)
-
-	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Service account token valid" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_ERRO} Grafana: Connection with service account token failed" >> /proc/1/fd/1
-		jq <<< "$answer" >> /proc/1/fd/1
-		return 1
-	fi
-}
 
 grafana_authtoken_test || exit 1
 
