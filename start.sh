@@ -118,7 +118,7 @@ influxdb_orgid_get() {
 }
 
 try_influxdb_orgid_get() {
-    local retries=(1 3 5)
+    local retries=(1 3 5 5 5 5 5 5 5)
     local result
 
     for delay in "${retries[@]}"; do
