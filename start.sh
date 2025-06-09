@@ -93,46 +93,34 @@ echo -e " " >> /proc/1/fd/1
 #===============================================================
 # InfluxDB: Validate connection and get Org ID
 #===============================================================
-# - Test InfluxDB connection to 8086
+# - Try connecting to the influxdb service
 # - Retrive Org ID
 
 influxdb_orgid_get() {
+	local response
+	response=$(curl -s --request GET "${INFLUXDB_HOST}/api/v2/orgs" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}")
 
-	local answer=$(
-		curl -s --request GET "${INFLUXDB_HOST}/api/v2/orgs" \
-		--header "Authorization: Token ${INFLUXDB_TOKEN}" | jq
-	)
-
-	local result=$(
-		jq -r --arg orgname "$INFLUXDB_ORG" '.orgs[] | select(.name == $orgname ) | .id' <<< "$answer"
-	)
-
-	if [[ -n "$result" ]]; then
-		echo -e "${LOG_SUCC} InfluxDB: OrgID for \"${INFLUXDB_ORG}\" found" >> /proc/1/fd/1
-		echo "$result"
-		return 0
-	else
-		echo -e "${LOG_ERRO} InfluxDB: Failed retriving OrgID for \"${INFLUXDB_ORG}\"" >> /proc/1/fd/1
-		return 1
-	fi
+	jq -r --arg orgname "$INFLUXDB_ORG" '.orgs[] | select(.name == $orgname) | .id' <<< "$response"
 }
 
+
 try_influxdb_orgid_get() {
-    local retries=(1 3 5 5 5 5 5 5 5)
-    local result
+	local retries=(1 5 10 60 120)
+	local result
 
-    for delay in "${retries[@]}"; do
-        result=$( influxdb_orgid_get ) && break
+	for delay in "${retries[@]}"; do
+		if result=$(influxdb_orgid_get) && [[ -n "$result" ]]; then
+			echo -e "${LOG_SUCC} InfluxDB: Successfully connected" >> /proc/1/fd/1
+			echo "$result"
+			return 0
+		fi
 		echo -e "${LOG_WARN} InfluxDB: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
-        sleep "$delay"
-    done
+		sleep "$delay"
+	done
 
-    if [ -z "$result" ]; then
-		echo -e "${LOG_ERRO} InfluxDB: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
-        return 1
-    fi
-
-    echo "$result"
+	echo -e "${LOG_ERRO} InfluxDB: No connection after ${#retries[@]} attempts" >> /proc/1/fd/1
+	return 1
 }
 
 export INFLUXDB_ORG_ID=$( try_influxdb_orgid_get || exit 1 )
@@ -140,105 +128,83 @@ export INFLUXDB_ORG_ID=$( try_influxdb_orgid_get || exit 1 )
 #===============================================================
 # Validate connection to Grafana
 #===============================================================
-# - Test Grafana connection to 3000 with admin:password
+# - Tests connectivity and authentication to Grafana on port 3000
+# - Uses either basic auth (admin:password) or service account token
 
-# Test API connection with Basic Auth
+# Test API access using Basic Authentication
 grafana_basicauth_test() {
-
-	grafana_basicauth_headers=(
-		-H "Accept: application/json"
-		-H "Content-Type:application/json"
-	)
-
-	local answer=$(
+	local response
+	response=$(
 		curl -s "${grafana_basicauth_headers[@]}" \
 		-X GET "http://${GRAFANA_ADMIN}:${GRAFANA_PASS}@${GRAFANA_SERVICE}/api/org"
 	)
 
-	local result=$(
-		jq -e 'has("name")' <<< "$answer"
-	)
+	jq -e 'has("name")' <<< "$response" >/dev/null 2>&1
+}
 
-	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Basic auth successful" >> /proc/1/fd/1
+# Retry if failed
+try_grafana_basicauth_test() {
+	local retries=( 1 3 5 )
+
+	for delay in "${retries[@]}"; do
+		if grafana_basicauth_test; then
+			echo -e "${LOG_SUCC} Grafana: Successfully connected using basic authentication" >> /proc/1/fd/1
+			return 0
+		fi
+		echo -e "${LOG_WARN} Grafana: Connection failed, retrying in ${delay}s…" >> /proc/1/fd/1
+		sleep "$delay"
+	done
+
+	echo -e "${LOG_ERRO} Grafana: Authentication via basic auth failed after ${#retries[@]} attempts. Check credentials in .env file" >> /proc/1/fd/1
+	return 1
+}
+
+# Test API access using Token Authentication
+grafana_authtoken_test() {
+	local response
+	response=$(curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org")
+
+	if [[ -z "$response" || ! "$response" =~ ^\{ ]]; then
+		echo -e "${LOG_ERRO} Grafana: No or invalid API response" >> /proc/1/fd/1
+		return 1
+	fi
+
+	if jq -e 'has("name")' <<< "$response" >/dev/null 2>&1; then
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Basic auth failed. Check credentials in .env file" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
-try_grafana_basicauth_test() {
-    local retries=( 1 3 5 )
-    local result
+# Retry if failed
+try_grafana_authtoken_test() {
+	local retries=( 1 3 5 )
 
-    for delay in "${retries[@]}"; do
-        result=$( grafana_basicauth_test ) && break
-		echo -e "${LOG_WARN} Grafana: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
-        sleep "$delay"
-    done
+	for delay in "${retries[@]}"; do
+		if grafana_authtoken_test; then
+			echo -e "${LOG_SUCC} Grafana: Successfully connected using service account token" >> /proc/1/fd/1
+			return 0
+		fi
+		echo -e "${LOG_WARN} Grafana: Connection failed, retrying in ${delay}s…" >> /proc/1/fd/1
+		sleep "$delay"
+	done
 
-    if [ ! $result ]; then
-		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
-        return 1
-    fi
-
-    echo "$result"
+	echo -e "${LOG_ERRO} Grafana: Authentication via service account token failed after ${#retries[@]} attempts. Check token in .env file" >> /proc/1/fd/1
+	return 1
 }
 
-# Test API connection with Token Auth
-grafana_authtoken_test() {
-
+if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
 	grafana_authtoken_apiheaders=(
 		-H "Accept: application/json"
 		-H "Content-Type:application/json"
 		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
 	)
-
-	local answer=$(
-		curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org"
-	)
-
-	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
-		echo -e "${LOG_ERRO} Grafana: No or invalid API response" >> /proc/1/fd/1
-		return 1
-	fi
-
-	local result=$(
-		jq -e 'has("name")' <<< "$answer" 2>/dev/null
-	)
-
-	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Service account token valid" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_ERRO} Grafana: Connection with service account token failed" >> /proc/1/fd/1
-		return 1
-	fi
-}
-
-try_grafana_authtoken_test() {
-    local retries=( 1 3 5 )
-    local result
-
-    for delay in "${retries[@]}"; do
-        result=$( grafana_authtoken_test ) && break
-		echo -e "${LOG_WARN} Grafana: Connection failed, retry in ${delay}s…" >> /proc/1/fd/1
-        sleep "$delay"
-    done
-
-    if $result; then
-		echo -e "${LOG_SUCC} Grafana: Connection successfull" >> /proc/1/fd/1
-		return 0
-	else
-		echo -e "${LOG_ERRO} Grafana: No Connection after ${#retries[@]} attempts." >> /proc/1/fd/1
-        return 1
-	fi
-}
-
-if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
 	try_grafana_authtoken_test || exit 1
 else
+	grafana_basicauth_headers=(
+		-H "Accept: application/json"
+		-H "Content-Type: application/json"
+	)
 	try_grafana_basicauth_test || exit 1
 fi
 
@@ -323,7 +289,7 @@ influxdb_bucket_prepare "${INFLUXDB_BUCKET_MEASUREMENTS}"
 export INFLUXDB_BUCKET_MEASUREMENTS_ID=$INFLUXDB_BUCKET_ID
 
 #===============================================================
-# InfluxDB: Auth token (for Grafana datasource)
+# InfluxDB: Auth token for Grafana datasource
 #===============================================================
 # - If no token with correct permissions exists, create one
 # - If one token found, validate permissions, exit if failed (manual deletion)
