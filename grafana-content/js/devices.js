@@ -538,4 +538,4 @@ function showExampleElement(device, element) {
 ===============================================================
 */
 
-getDeviceStatus(device)
+getDeviceStatus()
