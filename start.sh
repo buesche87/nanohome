@@ -850,7 +850,7 @@ if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
 fi
 
 # Log
-[[ "${DEBUG:-0}" -eq 1 ]] jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
+[[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Dashboards
