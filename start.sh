@@ -276,7 +276,7 @@ influxdb_bucket_prepare() {
 	export INFLUXDB_BUCKET_ID=$( jq -r '.id' <<< "$bucket_info" )
 
 	# Log
-	jq '. | {id, name, createdAt}' <<< "$bucket_info" >> /proc/1/fd/1
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq '. | {id, name, createdAt}' <<< "$bucket_info" >> /proc/1/fd/1
 }
 
 # Process required buckets
@@ -406,7 +406,7 @@ fi
 export INFLUXDB_ROTOKEN=$( jq -r '.token' <<< "$influxauthtoken" )
 
 # Log
-jq '.token = "<SECURETOKEN>"' <<< "$influxauthtoken" >> /proc/1/fd/1
+[[ "${DEBUG:-0}" -eq 1 ]] && jq '.token = "<SECURETOKEN>"' <<< "$influxauthtoken" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Service account 
@@ -554,7 +554,7 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 	)
 
 	# Log
-	jq <<< "$grafanaserviceaccount" >> /proc/1/fd/1
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "$grafanaserviceaccount" >> /proc/1/fd/1
 
 	grafana_serviceaccount_token=$(
 		grafana_sa_token_find "$grafana_serviceaccount_id"
@@ -579,7 +579,7 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 	export GRAFANA_SA_TOKEN=$( jq -r .key <<< "$grafana_serviceaccount_token" )
 
 	# Log
-	jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafana_serviceaccount_token" >> /proc/1/fd/1
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafana_serviceaccount_token" >> /proc/1/fd/1
 else
 	echo -e "${LOG_ERRO} Grafana: Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
 	exit 1
@@ -951,7 +951,7 @@ if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_HOME_UID}"; then
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafana_dashboard_home}" >> /proc/1/fd/1
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq '.' <<< "${grafana_dashboard_home}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Devices
@@ -966,7 +966,7 @@ if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_DEVICES_UID}"; then
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafana_dashboard_devices}" >> /proc/1/fd/1	
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq '.' <<< "${grafana_dashboard_devices}" >> /proc/1/fd/1	
 fi
 
 # Dashboard: Timer
@@ -996,7 +996,7 @@ if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_STANDBY_UID}" ; then
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafana_dashboard_standby}" >> /proc/1/fd/1
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq '.' <<< "${grafana_dashboard_standby}" >> /proc/1/fd/1
 fi
 
 # Dashboard: Measurements
@@ -1011,7 +1011,7 @@ if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_MEASUREMENTS_UID}"; then
 	) || exit 1
 
 	# Log
-	jq '.' <<< "${grafana_dashboard_measurements}" >> /proc/1/fd/1
+	[[ "${DEBUG:-0}" -eq 1 ]] && jq '.' <<< "${grafana_dashboard_measurements}" >> /proc/1/fd/1
 fi
 
 #===============================================================
