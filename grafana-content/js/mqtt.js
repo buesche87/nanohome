@@ -79,7 +79,7 @@ function mqttSubscribe(topic, timeout) {
 	Load MQTT Client
 ===============================================================
 */
-
+// Check, Load and Start
 function loadMQTTScriptAndConnect(scriptUrl, callback) {
     if (typeof Paho !== "undefined") {
         callback();
@@ -91,7 +91,7 @@ function loadMQTTScriptAndConnect(scriptUrl, callback) {
         return;
     }
 
-    // Prüfen, ob das Skript bereits geladen wird
+    // C
     if (document.querySelector(`script[src="${scriptUrl}"]`)) {
         console.log("MQTT script already loading.");
         return;
@@ -106,5 +106,5 @@ function loadMQTTScriptAndConnect(scriptUrl, callback) {
     document.head.appendChild(script);
 }
 
-// Verwendung:
+// Start
 loadMQTTScriptAndConnect(mqttws31minLocation, MQTTconnect);

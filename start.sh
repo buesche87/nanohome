@@ -193,11 +193,11 @@ try_grafana_authtoken_test() {
 	return 1
 }
 
-if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
+if [[ -n "${GRAFANA_SA_TOKEN}" ]]; then
 	grafana_authtoken_apiheaders=(
 		-H "Accept: application/json"
 		-H "Content-Type:application/json"
-		-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
+		-H "Authorization: Bearer ${GRAFANA_SA_TOKEN}"
 	)
 	try_grafana_authtoken_test || exit 1
 else
@@ -471,7 +471,7 @@ grafana_serviceaccount_create() {
 }
 
 # Search for existing service account token
-grafana_serviceaccount_token_find() {
+grafana_sa_token_find() {
 	local said="$1"
 
 	local answer=$(
@@ -494,7 +494,7 @@ grafana_serviceaccount_token_find() {
 }
 
 # Delete existing service account token
-grafana_serviceaccount_token_delete() {
+grafana_sa_token_delete() {
 	local said="$1"
 	local token_id="$2"
 
@@ -518,7 +518,7 @@ grafana_serviceaccount_token_delete() {
 }
 
 # Create a new service account token
-grafana_serviceaccount_token_create() {
+grafana_sa_token_create() {
 	local said="$1"
 
 	local answer=$(
@@ -542,7 +542,7 @@ grafana_serviceaccount_token_create() {
 	fi
 }
 
-if [[ -n "${GRAFANA_SERVICEACCOUNT_TOKEN}" ]]; then
+if [[ -n "${GRAFANA_SA_TOKEN}" ]]; then
 	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
 elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEACCOUNT}" ]]; then
 	echo -e "${LOG_WARN} Grafana: No service account token provided in .env file" >> /proc/1/fd/1
@@ -559,7 +559,7 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 	jq <<< "$grafanaserviceaccount" >> /proc/1/fd/1
 
 	grafana_serviceaccount_token=$(
-		grafana_serviceaccount_token_find "$grafana_serviceaccount_id"
+		grafana_sa_token_find "$grafana_serviceaccount_id"
 	)
 
 	grafana_serviceaccount_token_objects=$(
@@ -571,14 +571,14 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 			jq -r ".[$i].id" <<< "$grafana_serviceaccount_token"
 		)
 
-		grafana_serviceaccount_token_delete "$grafana_serviceaccount_id" "$grafana_serviceaccount_token_id" || exit 1
+		grafana_sa_token_delete "$grafana_serviceaccount_id" "$grafana_serviceaccount_token_id" || exit 1
 	done
 
 	grafana_serviceaccount_token=$(
-		grafana_serviceaccount_token_create "$grafana_serviceaccount_id"
+		grafana_sa_token_create "$grafana_serviceaccount_id"
 	) || exit 1
 
-	export GRAFANA_SERVICEACCOUNT_TOKEN=$( jq -r .key <<< "$grafana_serviceaccount_token" )
+	export GRAFANA_SA_TOKEN=$( jq -r .key <<< "$grafana_serviceaccount_token" )
 
 	# Log
 	jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafana_serviceaccount_token" >> /proc/1/fd/1
@@ -596,7 +596,7 @@ fi
 grafana_authtoken_apiheaders=(
 	-H "Accept: application/json"
 	-H "Content-Type:application/json"
-	-H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}"
+	-H "Authorization: Bearer ${GRAFANA_SA_TOKEN}"
 )
 
 grafana_authtoken_test || exit 1
