@@ -146,14 +146,14 @@ try_grafana_basicauth_test() {
 
 	for delay in "${retries[@]}"; do
 		if grafana_basicauth_test; then
-			echo -e "${LOG_SUCC} Grafana: Successfully connected using basic authentication" >> /proc/1/fd/1
+			echo -e "${LOG_SUCC} Grafana:  Successfully connected using basic authentication" >> /proc/1/fd/1
 			return 0
 		fi
-		echo -e "${LOG_WARN} Grafana: Connection failed, retrying in ${delay}s…" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana:  Connection failed, retrying in ${delay}s…" >> /proc/1/fd/1
 		sleep "$delay"
 	done
 
-	echo -e "${LOG_ERRO} Grafana: Authentication via basic auth failed after ${#retries[@]} attempts. Check credentials in .env file" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Grafana:  Authentication via basic auth failed after ${#retries[@]} attempts. Check credentials in .env file" >> /proc/1/fd/1
 	return 1
 }
 
@@ -163,7 +163,7 @@ grafana_authtoken_test() {
 	response=$(curl -s "${grafana_authtoken_apiheaders[@]}" -X GET "http://${GRAFANA_SERVICE}/api/org")
 
 	if [[ -z "$response" || ! "$response" =~ ^\{ ]]; then
-		echo -e "${LOG_ERRO} Grafana: No or invalid API response" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  No or invalid API response" >> /proc/1/fd/1
 		return 1
 	fi
 
@@ -180,14 +180,14 @@ try_grafana_authtoken_test() {
 
 	for delay in "${retries[@]}"; do
 		if grafana_authtoken_test; then
-			echo -e "${LOG_SUCC} Grafana: Successfully connected using service account token" >> /proc/1/fd/1
+			echo -e "${LOG_SUCC} Grafana:  Successfully connected using service account token" >> /proc/1/fd/1
 			return 0
 		fi
-		echo -e "${LOG_WARN} Grafana: Connection failed, retrying in ${delay}s…" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana:  Connection failed, retrying in ${delay}s…" >> /proc/1/fd/1
 		sleep "$delay"
 	done
 
-	echo -e "${LOG_ERRO} Grafana: Authentication via service account token failed after ${#retries[@]} attempts. Check token in .env file" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Grafana:  Authentication via service account token failed after ${#retries[@]} attempts. Check token in .env file" >> /proc/1/fd/1
 	return 1
 }
 
@@ -409,7 +409,7 @@ export INFLUXDB_ROTOKEN=$( jq -r '.token' <<< "$influxauthtoken" )
 [[ "${DEBUG:-0}" -eq 1 ]] && jq '.token = "<SECURETOKEN>"' <<< "$influxauthtoken" >> /proc/1/fd/1
 
 #===============================================================
-# Grafana: Service account 
+# Grafana:  Service account 
 #===============================================================
 # - If no access token specified in env file
 #   - Validate basic auth connection
@@ -436,11 +436,11 @@ grafana_serviceaccount_find() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Service account \"${GRAFANA_SERVICEACCOUNT}\" found" >> /proc/1/fd/1
 		jq -e '.serviceAccounts[] | {id, name, login, role}' <<< "$answer"
 		return 0
 	else
-		echo -e "${LOG_INFO} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Service account \"${GRAFANA_SERVICEACCOUNT}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -458,11 +458,11 @@ grafana_serviceaccount_create() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Service account \"${GRAFANA_SERVICEACCOUNT}\" created" >> /proc/1/fd/1
 		jq '. | {id, name, login, role}' <<< "$answer"
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Service account \"${GRAFANA_SERVICEACCOUNT}\" failed to create" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Service account \"${GRAFANA_SERVICEACCOUNT}\" failed to create" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
@@ -482,11 +482,11 @@ grafana_sa_token_find() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Service account token found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Service account token found" >> /proc/1/fd/1
 		jq <<< "$answer"
 		return 0
 	else
-		echo -e "${LOG_INFO} Grafana: Service account token not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Service account token not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -506,10 +506,10 @@ grafana_sa_token_delete() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Service account token deleted" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Service account token deleted" >> /proc/1/fd/1
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Failed to delete existing service account token" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed to delete existing service account token" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
@@ -530,20 +530,20 @@ grafana_sa_token_create() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: New service account token created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  New service account token created" >> /proc/1/fd/1
 		jq <<< "$answer"
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Error creating new service account token" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Error creating new service account token" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
 if [[ -n "${GRAFANA_SA_TOKEN}" ]]; then
-	echo -e "${LOG_SUCC} Grafana: Service account token provided" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Grafana:  Service account token provided" >> /proc/1/fd/1
 elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEACCOUNT}" ]]; then
-	echo -e "${LOG_WARN} Grafana: No service account token provided in .env file" >> /proc/1/fd/1
+	echo -e "${LOG_WARN} Grafana:  No service account token provided in .env file" >> /proc/1/fd/1
 
 	grafanaserviceaccount=$(
 		grafana_serviceaccount_find || grafana_serviceaccount_create
@@ -581,12 +581,12 @@ elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEAC
 	# Log
 	[[ "${DEBUG:-0}" -eq 1 ]] && jq '. | {id, name, key} | .key = "<SECUREKEY>"' <<< "$grafana_serviceaccount_token" >> /proc/1/fd/1
 else
-	echo -e "${LOG_ERRO} Grafana: Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Grafana:  Neither a service account token nor admin credentials set in .env" >> /proc/1/fd/1
 	exit 1
 fi
 
 #===============================================================
-# Grafana: Test API connection
+# Grafana:  Test API connection
 #===============================================================
 # - Test connection to "http://${GRAFANA_SERVICE}/api/org"
 # - With provided or created token
@@ -600,7 +600,7 @@ grafana_authtoken_apiheaders=(
 grafana_authtoken_test || exit 1
 
 #===============================================================
-# Grafana: Datasources
+# Grafana:  Datasources
 #===============================================================
 # - If datasources do not exist create them
 
@@ -613,7 +613,7 @@ grafana_datasource_search() {
 	)
 
 	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
-		echo -e "${LOG_INFO} Grafana: No or invalid respone searching for datasource \"${dsname}\"" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  No or invalid respone searching for datasource \"${dsname}\"" >> /proc/1/fd/1
 		return 1
 	fi
 
@@ -622,11 +622,11 @@ grafana_datasource_search() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Datasource \"${dsname}\" found" >> /proc/1/fd/1
 		jq -e --arg name "$dsname" '. | select(.name == $name) | {uid, name, type, url}' <<< "$answer" 2>/dev/null
 		return 0
 	else
-		echo -e "${LOG_INFO} Grafana: Datasource \"${dsname}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Datasource \"${dsname}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -663,7 +663,7 @@ grafana_datasource_create() {
 	)
 
 	if [[ -z "$answer" || ! "$answer" =~ ^\{ ]]; then
-		echo -e "${LOG_ERRO} Grafana: Error creating datasource \"${dsname}\" - No valid API response" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Error creating datasource \"${dsname}\" - No valid API response" >> /proc/1/fd/1
 		return 1
 	fi
 
@@ -672,11 +672,11 @@ grafana_datasource_create() {
 	)
 
 	if [[ $result == true ]]; then
-		echo -e "${LOG_SUCC} Grafana: Datasource \"${dsname}\" created" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Datasource \"${dsname}\" created" >> /proc/1/fd/1
 		jq -e '.datasource | {uid, name, type, url}' <<< "$answer" 2>/dev/null
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Failed to create datasource \"${dsname}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed to create datasource \"${dsname}\"" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
@@ -713,7 +713,7 @@ export GRAFANA_DATASOURCE_MEASUREMENTS_UID=$( jq -r .uid <<< "$grafana_datasourc
 [[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "$grafana_datasource_measurements" >> /proc/1/fd/1
 
 #===============================================================
-# Grafana: Modify and copy public content
+# Grafana:  Modify and copy public content
 #===============================================================
 # - If source folder grafana-content exists
 # - Modify mqtt credentials and weather widget in config.js
@@ -730,10 +730,10 @@ grafana_content_setpreferences() {
 	sed -i '/^var pwd =/c\var pwd = "'"${MQTT_PASSWORD}"'";' "${grafana_content_source}/js/config.js"
 
 	if ! grep -q "var user = \"${MQTT_USER}\";" "${grafana_content_source}/js/config.js"; then
-		echo -e "${LOG_ERRO} Grafana: Failed setting public content mqtt credentials" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed setting public content mqtt credentials" >> /proc/1/fd/1
 		return 1
 	else
-		echo -e "${LOG_SUCC} Grafana: Public content mqtt credentials set" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Public content mqtt credentials set" >> /proc/1/fd/1
 	fi
 
 	# Weather widget
@@ -742,10 +742,10 @@ grafana_content_setpreferences() {
 		sed -i '/^var weatherWidgetCity =/c\var weatherWidgetCity = "'"${WEATHER_LOCATION}"'";' "${grafana_content_source}/js/config.js"
 
 		if ! grep -q "var weatherWidgetLink = \"${WEATHER_URL}\";" "${grafana_content_source}/js/config.js"; then
-			echo -e "${LOG_ERRO} Grafana: Failed setting weather widget preferences" >> /proc/1/fd/1
+			echo -e "${LOG_ERRO} Grafana:  Failed setting weather widget preferences" >> /proc/1/fd/1
 			return 1
 		else
-			echo -e "${LOG_SUCC} Grafana: Public content weather widget preferences set" >> /proc/1/fd/1
+			echo -e "${LOG_SUCC} Grafana:  Public content weather widget preferences set" >> /proc/1/fd/1
 		fi
 	fi
 
@@ -758,26 +758,26 @@ grafana_content_move() {
 	mv -f "${grafana_content_source}"/* "${grafana_content_destination}"
 
 	if [[ $? -eq 0 ]]; then
-		echo -e "${LOG_SUCC} Grafana: Content moved to \"${grafana_content_destination}\"" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Content moved to \"${grafana_content_destination}\"" >> /proc/1/fd/1
 		rm -rf "${grafana_content_source}"
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Failed moving content to \"${grafana_content_destination}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed moving content to \"${grafana_content_destination}\"" >> /proc/1/fd/1
 		return 1
 	fi
 }
 
 if [[ -d "${grafana_content_source}" ]]; then
-	echo -e "${LOG_INFO} Grafana: Modify public content" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} Grafana:  Modify public content" >> /proc/1/fd/1
 
 	grafana_content_setpreferences || exit 1
 	grafana_content_move || exit 1
 else
-	echo -e "${LOG_INFO} Grafana: Public content \"${grafana_content_destination}\" already modified" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} Grafana:  Public content \"${grafana_content_destination}\" already modified" >> /proc/1/fd/1
 fi
 
 #===============================================================
-# Grafana: Dashboard folder
+# Grafana:  Dashboard folder
 #===============================================================
 # - If dashboard folder "nanohome" does not exist create it
 
@@ -789,7 +789,7 @@ grafana_dashfolder_search() {
 	answer=$(
 		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&type=dash-folder") || {
-		echo -e "${LOG_ERRO} Grafana: Failed searching for dashboard folder - API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed searching for dashboard folder - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
@@ -799,11 +799,11 @@ grafana_dashfolder_search() {
 	)
 
 	if [[ -n "$result" ]]; then
-		echo -e "${LOG_SUCC} Grafana: Dashboard folder \"$foldername\" found" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Dashboard folder \"$foldername\" found" >> /proc/1/fd/1
 		jq <<< "$result"
 		return 0
 	else
-		echo -e "${LOG_INFO} Grafana: Dashboard folder \"$foldername\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Dashboard folder \"$foldername\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 }
@@ -817,7 +817,7 @@ grafana_dashfolder_create() {
 		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X POST -H "Content-Type: application/json" \
 		-d "{\"title\": \"$foldername\"}" "http://${GRAFANA_SERVICE}/api/folders") || {
-		echo -e "${LOG_ERRO} Grafana: Failed creating dashboar folder - API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed creating dashboar folder - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
@@ -825,11 +825,11 @@ grafana_dashfolder_create() {
 	local result
 	result=$(
 		jq -e '. | {uid, title, url}' <<< "$answer") || {
-		echo -e "${LOG_ERRO} Grafana: Failed creating dashboar folder - Error parsing API response" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed creating dashboar folder - Error parsing API response" >> /proc/1/fd/1
 		return 1
 	}
 
-	echo -e "${LOG_SUCC} Grafana: Dashboard folder \"$foldername\" created" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Grafana:  Dashboard folder \"$foldername\" created" >> /proc/1/fd/1
 	jq <<< "$result"
 	return 0
 }
@@ -845,7 +845,7 @@ export GRAFANA_FOLDER_UID=$( jq -r '.uid' <<< "${grafanadashfolder}" 2>/dev/null
 
 # Ensure UID was successfully extracted
 if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
-	echo -e "${LOG_ERRO} Grafana: Failed to retrieve folder UID" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Grafana:  Failed to retrieve folder UID" >> /proc/1/fd/1
 	exit 1
 fi
 
@@ -853,7 +853,7 @@ fi
 [[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
 #===============================================================
-# Grafana: Dashboards
+# Grafana:  Dashboards
 #===============================================================
 # - If dashbaord does not exist
 # - Load dashboard templates, prepare and upload them
@@ -872,23 +872,23 @@ grafana_dashboard_find() {
 	answer=$(
 		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/search?query=&dashboardUIDs=${uid}") || {
-		echo -e "${LOG_ERRO} Grafana: Failed searching dashboard - API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed searching dashboard - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
 	if [[ -z "${answer}" || "${answer}" == "[]" ]]; then
-		echo -e "${LOG_INFO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Dashboard \"${uid}\" not found" >> /proc/1/fd/1
 		return 1
 	fi
 
 	local output
 	output=$(
 		jq -e --arg uid "${uid}" '.[] | select(.uid == $uid) | {uid, title, url}' <<< "${answer}") || {
-		echo -e "${LOG_INFO} Grafana: Dashboard \"${uid}\" not found" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Dashboard \"${uid}\" not found" >> /proc/1/fd/1
 		return 1
 	}
 
-	echo -e "${LOG_SUCC} Grafana: Dashboard \"${uid}\" found" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Grafana:  Dashboard \"${uid}\" found" >> /proc/1/fd/1
 	return 0
 }
 
@@ -902,7 +902,7 @@ grafana_dashboard_prepare() {
 		jq --arg uid "$dsuid" '
 		.dashboard |= walk(if type == "object" and .datasource? and .datasource.type == "influxdb"
 						   then .datasource.uid = $uid else . end)' "${file}") || {
-		echo -e "${LOG_ERRO} Grafana: Failed preparing dashboard \"${file}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Failed preparing dashboard \"${file}\"" >> /proc/1/fd/1
 		return 1
 	}
 
@@ -911,7 +911,7 @@ grafana_dashboard_prepare() {
 		'.dashboard = $dashboard' <<< "${grafana_dashboard_metadata}"
 	)
 
-	echo -e "${LOG_SUCC} Grafana: Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Grafana:  Dashboard \"${file}\" prepared for upload" >> /proc/1/fd/1
 	jq <<< "${output}"
 	return 0
 }
@@ -924,16 +924,16 @@ grafana_dashboard_create() {
 	result=$(
 		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X POST -d "${jsondata}" "http://${GRAFANA_SERVICE}/api/dashboards/db") || {
-		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed - API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Dashboard upload failed - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
 	if jq -e '.status == "success"' <<< "${result}" > /dev/null; then
-		echo -e "${LOG_SUCC} Grafana: Dashboard uploaded" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Dashboard uploaded" >> /proc/1/fd/1
 		jq '{uid, slug, url, folderUid}' <<< "${result}"
 		return 0
 	else
-		echo -e "${LOG_ERRO} Grafana: Dashboard upload failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Dashboard upload failed" >> /proc/1/fd/1
 		jq <<< "${result}" >> /proc/1/fd/1
 		return 1
 	fi  
@@ -1015,7 +1015,7 @@ if ! grafana_dashboard_find "${GRAFANA_DASHBOARD_MEASUREMENTS_UID}"; then
 fi
 
 #===============================================================
-# Grafana: Home dashboard preference
+# Grafana:  Home dashboard preference
 #===============================================================
 # - Set home dashboard preference in grafana settings
 
@@ -1024,16 +1024,16 @@ grafana_dashboard_homepreference_get() {
 	local answer=$(
 		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X GET "http://${GRAFANA_SERVICE}/api/org/preferences") || {
-		echo -e "${LOG_ERRO} Grafana: Get home preference - API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Get home preference - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
 	if jq -e --arg uid "${GRAFANA_DASHBOARD_HOME_UID}" '.homeDashboardUID == $uid' <<< "$answer" >/dev/null; then
-		echo -e "${LOG_SUCC} Grafana: Home dashboard preference is set" >> /proc/1/fd/1
-		jq <<< "$answer"
+		echo -e "${LOG_SUCC} Grafana:  Home dashboard preference is set" >> /proc/1/fd/1
+		[[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "$answer"
 		return 0
 	else
-		echo -e "${LOG_INFO} Grafana: Home dashboard preference is not set" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Grafana:  Home dashboard preference is not set" >> /proc/1/fd/1
 		jq <<< "$answer" >> /proc/1/fd/1
 		return 1
 	fi
@@ -1047,16 +1047,16 @@ grafana_dashboard_homepreference_set() {
 		curl -s "${grafana_authtoken_apiheaders[@]}" \
 		-X PUT -H "Content-Type: application/json" \
 		-d "{\"homeDashboardID\":$id}" "http://${GRAFANA_SERVICE}/api/org/preferences") || {
-		echo -e "${LOG_ERRO} Grafana: Set home preference - API request failed" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO} Grafana:  Set home preference - API request failed" >> /proc/1/fd/1
 		return 1
 	}
 
 	if jq -e '.message == "Preferences updated"' <<< "$result" >/dev/null; then
-		echo -e "${LOG_SUCC} Grafana: Home dashboard preference updated" >> /proc/1/fd/1
+		echo -e "${LOG_SUCC} Grafana:  Home dashboard preference updated" >> /proc/1/fd/1
 		jq <<< "$result"
 		return 0
 	else
-		echo -e "${LOG_WARN} Grafana: Failed to set home dashboard preference" >> /proc/1/fd/1
+		echo -e "${LOG_WARN} Grafana:  Failed to set home dashboard preference" >> /proc/1/fd/1
 		jq <<< "$result" >> /proc/1/fd/1
 		return 1
 	fi
@@ -1070,7 +1070,7 @@ grafana_dashboard_home_id=$(
 
 # Ensure ID retrieval was successful and and set home dashboard if needed
 if [[ -z "$grafana_dashboard_home_id" || "$grafana_dashboard_home_id" == "null" ]]; then
-	echo -e "${LOG_ERRO} Grafana: Home preference -  Failed to retrieve home dashboard ID" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Grafana:  Home preference -  Failed to retrieve home dashboard ID" >> /proc/1/fd/1
 else
 	grafana_dashboard_homepreference_get || grafana_dashboard_homepreference_set "$grafana_dashboard_home_id"
 fi
@@ -1085,7 +1085,7 @@ mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
 	-t "nanohome/startup" 
 
 if [[ $? -ne 1 ]]; then
-	echo -e "${LOG_SUCC} MQTT: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Nanohome: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
 else
 	echo -e "${LOG_WARN} MQTT: Could not connect to \"${MQTT_SERVER}\"" >> /proc/1/fd/1
 fi
