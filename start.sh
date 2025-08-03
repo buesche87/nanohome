@@ -104,7 +104,6 @@ influxdb_orgid_get() {
 	jq -r --arg orgname "$INFLUXDB_ORG" '.orgs[] | select(.name == $orgname) | .id' <<< "$response"
 }
 
-
 try_influxdb_orgid_get() {
 	local retries=(1 5 10 60 120)
 	local result
@@ -124,7 +123,6 @@ try_influxdb_orgid_get() {
 }
 
 export INFLUXDB_ORG_ID=$( try_influxdb_orgid_get || exit 1 )
-
 #===============================================================
 # Validate connection to Grafana
 #===============================================================
@@ -697,7 +695,7 @@ grafana_datasource_devices=$(
 export GRAFANA_DATASOURCE_DEVICES_UID=$( jq -r .uid <<< "$grafana_datasource_devices" )
 
 # Log
-jq <<< "$grafana_datasource_devices" >> /proc/1/fd/1
+[[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "$grafana_datasource_devices" >> /proc/1/fd/1
 
 # Datasource: Measurements
 grafana_datasource_measurements_json=$(
@@ -712,7 +710,7 @@ grafana_datasource_measurements=$(
 export GRAFANA_DATASOURCE_MEASUREMENTS_UID=$( jq -r .uid <<< "$grafana_datasource_measurements" )
 
 # Log
-jq <<< "$grafana_datasource_measurements" >> /proc/1/fd/1
+[[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "$grafana_datasource_measurements" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Modify and copy public content
@@ -852,7 +850,7 @@ if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
 fi
 
 # Log
-jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
+[[ "${DEBUG:-0}" -eq 1 ]] jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
 
 #===============================================================
 # Grafana: Dashboards
@@ -1097,17 +1095,13 @@ fi
 #===============================================================
 
 # Start device watcher
-/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
-
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher started" >> /proc/1/fd/1
-
-# Start  device watcher legacy
 /bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher legacy started" >> /proc/1/fd/1
+/bin/bash ${NANOHOME_ROOTPATH}/services/devicewatcher &
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Devicewatcher started" >> /proc/1/fd/1
 
 # Start measurements for legacy devices
 /bin/bash ${NANOHOME_ROOTPATH}/services/measurements_legacy &
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Measurements legacy started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Measurements started" >> /proc/1/fd/1
 
 # Start nanohome Shell
 /bin/bash ${NANOHOME_ROOTPATH}/services/nanohome_shell &
@@ -1116,11 +1110,11 @@ fi
 # Create and fill crontab file
 echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"
 /bin/bash ${NANOHOME_ROOTPATH}/bin/create_timer
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer loaded" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Timer active" >> /proc/1/fd/1
 
 # Start standby managers
 /bin/bash ${NANOHOME_ROOTPATH}/bin/create_standby
-[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standby manager started" >> /proc/1/fd/1
+[[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Standbymanager active" >> /proc/1/fd/1
 
 # Start crond
 crond -f &
