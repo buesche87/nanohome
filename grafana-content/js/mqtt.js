@@ -76,18 +76,35 @@ function mqttSubscribe(topic, timeout) {
 
 /*
 ===============================================================
-	MQTT Client - Define and Start
+	Load MQTT Client
 ===============================================================
 */
 
-// Connect MQTT
-if (typeof Paho === "undefined") {
-    var mqttwsScript = document.createElement("script");
-    document.body.appendChild(mqttwsScript);
-    mqttwsScript.onload = function () {
-        MQTTconnect();
+function loadMQTTScriptAndConnect(scriptUrl, callback) {
+    if (typeof Paho !== "undefined") {
+        callback();
+        return;
+    }
+
+    if (!scriptUrl) {
+        console.error("MQTT script URL is not defined.");
+        return;
+    }
+
+    // Prüfen, ob das Skript bereits geladen wird
+    if (document.querySelector(`script[src="${scriptUrl}"]`)) {
+        console.log("MQTT script already loading.");
+        return;
+    }
+
+    const script = document.createElement("script");
+    script.src = scriptUrl;
+    script.onload = callback;
+    script.onerror = () => {
+        console.error("Failed to load MQTT script:", scriptUrl);
     };
-    mqttwsScript.src = mqttws31minLocation;
-} else {
-    MQTTconnect();
+    document.head.appendChild(script);
 }
+
+// Verwendung:
+loadMQTTScriptAndConnect(mqttws31minLocation, MQTTconnect);
