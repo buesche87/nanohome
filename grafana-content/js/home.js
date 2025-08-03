@@ -142,7 +142,9 @@ function updateHomeOutput(value) {
 
 // Load the weather widget
 function loadWeatherWidget() {
-    document.getElementById("weather-container").innerHTML = `
+	let weathercontainer = document.getElementById("weather-container");
+
+    weathercontainer.innerHTML = `
         <a class="weatherwidget-io" href="${weatherWidgetLink}" 
            data-label_1="${weatherWidgetCity}" data-label_2="" 
            data-font="Open Sans" data-icons="Climacons Animated" 
@@ -151,7 +153,15 @@ function loadWeatherWidget() {
            data-highcolor="#de792d" data-suncolor="#de792d" 
            data-cloudfill="#5a5a5a">${weatherWidgetCity} Weather</a>`;
 
+    // Remove old script if available
+    let oldScript = document.getElementById("weather-widget-script");
+    if (oldScript) {
+        oldScript.remove();
+    }
+	
+	// Add new script
     let script = document.createElement("script");
+	script.id = "weather-widget-script";
     script.src = "https://weatherwidget.io/js/widget.min.js";
     document.body.appendChild(script);
 }
@@ -163,4 +173,4 @@ function loadWeatherWidget() {
 */
 
 loadWeatherWidget();
-/* setInterval(loadWeatherWidget, 600000); */
+setInterval(loadWeatherWidget, 600000);
