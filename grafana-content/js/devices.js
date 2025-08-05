@@ -531,11 +531,3 @@ function showExampleElement(device, element) {
 	htmlElement.classList.remove('elementHidden');
 	htmlElement.classList.add('elementFlex');
 }
-
-/*
-===============================================================
-	Execute
-===============================================================
-*/
-
-getDeviceStatus()
