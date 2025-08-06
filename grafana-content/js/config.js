@@ -128,5 +128,5 @@ function checkDigit(value) {
 // Execute command with nanohome shell
 function shellCommand(payload) {
 	mqttPublish(cmdInputTopic, payload, false);
-	// console.log('Execute: ' + payload);
+	console.log('Execute: ' + payload);
 }
