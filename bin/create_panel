@@ -18,7 +18,7 @@ MQTT_CONNECTION_STRING=(
 	-P "${MQTT_PASSWORD}"
 )
 
-# Define subscribe topic: "nanohome/timer/+"
+# Define subscribe topic: "nanohome/devices/+"
 SUBSCRIBETOPIC="nanohome/devices/${DESCRIPTION}"
 
 # Get dashboard configs from "nanohome/devices/$1"
@@ -157,7 +157,7 @@ curl --insecure \
 
 # Exit if there was an error
 if [[ $? -eq 0 ]]; then
-	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
 	return 0
 else
 	echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
