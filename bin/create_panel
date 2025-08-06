@@ -30,7 +30,7 @@ PUBLISHED_CONFIG_JSON=$(
 
 # Exit if no config found
 if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
     exit 1
 fi
 
@@ -114,7 +114,7 @@ DASHBOARD_CURRENT=$(
 
 # Exit if there was an error
 if [[ -z "${DASHBOARD_CURRENT}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\"" >> /proc/1/fd/1
     exit 1
 else
     [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\" loaded" >> /proc/1/fd/1
@@ -142,7 +142,7 @@ DASHBOARD_NEW=$(
 
 # Exit if there was an error
 if [[ -z "${DASHBOARD_NEW}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
     exit 1
 else
     [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
@@ -160,6 +160,6 @@ if [[ $? -eq 0 ]]; then
 	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
 	return 0
 else
-	[[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
 	exit 1
 fi	
