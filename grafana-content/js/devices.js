@@ -105,6 +105,26 @@ function saveComponent(device) {
 	} 
 }
 
+// Clear measurement through nanohome_shell
+function clearMeasurement(device) {
+	let componentDetails = getElementValues(device);
+
+	if (confirm("Clear Measurement?")) {
+		alert("Clearing Measurements...");
+		shellCommand('clear_measurement "' + componentDetails.description + '"' );
+	}
+}
+
+// Remove device through nanohome_shell
+function removeComponent(device) {
+	let componentDetails = getElementValues(device);
+
+	if (confirm("Remove Device?")) {
+		alert("Removing Device...");
+		shellCommand('remove_component "' + componentDetails.description + '"');
+	}
+}
+
 // Create a new dashboard panel through nanohome_shell
 function createPanel(device) {
 	let componentDetails = getElementValues(device);
@@ -125,25 +145,6 @@ function createPanel(device) {
 	}
 }
 
-// Clear measurement through nanohome_shell
-function clearMeasurement(device) {
-	let componentDetails = getElementValues(device);
-
-	if (confirm("Clear Measurement?")) {
-		alert("Clearing Measurements...");
-		shellCommand('clear_measurement "' + componentDetails.description + '"' );
-	}
-}
-
-// Remove device through nanohome_shell
-function removeComponent(device) {
-	let componentDetails = getElementValues(device);
-
-	if (confirm("Remove Device?")) {
-		alert("Removing Device...");
-		shellCommand('remove_component "' + componentDetails.description + '"');
-	}
-}
 
 /*
 ===============================================================
