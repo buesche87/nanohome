@@ -89,8 +89,7 @@ function saveComponent(device) {
 	let componentTopics = getDeviceTopics(componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
-
-	if (confirm("Clear Measurement?")) {
+	if (confirm("Save Device?")) {
 		// Stop processing if description is empty (will delete all device configs)
 		if ( checkEmpty(componentDetails.description) ) { return false; }
 
@@ -103,12 +102,7 @@ function saveComponent(device) {
 		
 		// Refresh device on dashboard
 		getDeviceStatus(device);
-	} else {
-	// Cancel clicked
-		alert("Cancelled.");
-	}
-
-
+	} 
 }
 
 // Create a new dashboard panel through nanohome_shell
@@ -136,11 +130,8 @@ function clearMeasurement(device) {
 	let componentDetails = getElementValues(device);
 
 	if (confirm("Clear Measurement?")) {
-		alert("Continuing...");
-		// shellCommand('clear_measurement "' + componentDetails.description + '"' );
-	} else {
-	// Cancel clicked
-		alert("Cancelled.");
+		alert("Clearing Measurements...");
+		shellCommand('clear_measurement "' + componentDetails.description + '"' );
 	}
 }
 
@@ -148,12 +139,9 @@ function clearMeasurement(device) {
 function removeComponent(device) {
 	let componentDetails = getElementValues(device);
 
-	if (confirm("Delete Device?")) {
-		alert("Continuing...");
-		// shellCommand('remove_component "' + componentDetails.description + '"');
-	} else {
-	// Cancel clicked
-		alert("Cancelled.");
+	if (confirm("Remove Device?")) {
+		alert("Removing Device...");
+		shellCommand('remove_component "' + componentDetails.description + '"');
 	}
 }
 
