@@ -89,18 +89,26 @@ function saveComponent(device) {
 	let componentTopics = getDeviceTopics(componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
-	// Stop processing if description is empty (will delete all device configs)
-	if ( checkEmpty(componentDetails.description) ) { return false; }
 
-	// Generate a device config and publish it as retained message
-	let jsonConfig = generateComponentConfig(componentDetails);
-	mqttPublish(nanohomeTopics.deviceConfig, JSON.stringify(jsonConfig), true);
-	
-	// Publish description as retained message to component topic
-	mqttPublish(componentTopics.description, componentDetails.description, true);
-	
-	// Refresh device on dashboard
-	getDeviceStatus(device);
+	if (confirm("Clear Measurement?")) {
+		// Stop processing if description is empty (will delete all device configs)
+		if ( checkEmpty(componentDetails.description) ) { return false; }
+
+		// Generate a device config and publish it as retained message
+		let jsonConfig = generateComponentConfig(componentDetails);
+		mqttPublish(nanohomeTopics.deviceConfig, JSON.stringify(jsonConfig), true);
+		
+		// Publish description as retained message to component topic
+		mqttPublish(componentTopics.description, componentDetails.description, true);
+		
+		// Refresh device on dashboard
+		getDeviceStatus(device);
+	} else {
+	// Cancel clicked
+		alert("Cancelled.");
+	}
+
+
 }
 
 // Create a new dashboard panel through nanohome_shell
@@ -127,14 +135,26 @@ function createPanel(device) {
 function clearMeasurement(device) {
 	let componentDetails = getElementValues(device);
 
-	shellCommand('clear_measurement "' + componentDetails.description + '"' );
+	if (confirm("Clear Measurement?")) {
+		alert("Continuing...");
+		// shellCommand('clear_measurement "' + componentDetails.description + '"' );
+	} else {
+	// Cancel clicked
+		alert("Cancelled.");
+	}
 }
 
 // Remove device through nanohome_shell
 function removeComponent(device) {
 	let componentDetails = getElementValues(device);
 
-	shellCommand('remove_component "' + componentDetails.description + '"');
+	if (confirm("Delete Device?")) {
+		alert("Continuing...");
+		// shellCommand('remove_component "' + componentDetails.description + '"');
+	} else {
+	// Cancel clicked
+		alert("Cancelled.");
+	}
 }
 
 /*
