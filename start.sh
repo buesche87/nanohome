@@ -1110,8 +1110,8 @@ echo "# Nanohome Crontabs" >> "${NANOHOME_CRONTABS}"
 # Start crond
 crond -f &
 
-# Finish
-tail -f /dev/null
-
 [[ $? -eq 0 ]] && echo -e "${LOG_SUCC} Nanohome: Boot completed" >> /proc/1/fd/1
 echo -e "" >> /proc/1/fd/1
+
+# Finish
+tail -f /dev/null
