@@ -101,7 +101,7 @@ fi
 # Download home dashboard from grafana
 DASHBOARD_CURRENT_JSON=$(
     curl -s \
-    -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+    -H "Authorization: Bearer ${GRAFANA_SA_TOKEN}" \
     -H "Content-Type: application/json" \
     -X GET "${GRAFANA_HOST}/api/dashboards/uid/${GRAFANA_DASHBOARD_HOME_UID}" \
     -- json
@@ -156,13 +156,13 @@ else
 fi
 
 
-echo -e "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" >> /proc/1/fd/1
+echo -e "Authorization: Bearer ${GRAFANA_SA_TOKEN}" >> /proc/1/fd/1
 echo -e "POST ${GRAFANA_HOST}/api/dashboards/db" >> /proc/1/fd/1
 
 
 # Upload dashboard to grafana
 curl --insecure \
-    -H "Authorization: Bearer ${GRAFANA_SERVICEACCOUNT_TOKEN}" \
+    -H "Authorization: Bearer ${GRAFANA_SA_TOKEN}" \
     -H "Content-Type: application/json" \
     -d "${DASHBOARD_NEW}" \
     -X POST "${GRAFANA_HOST}/api/dashboards/db"
