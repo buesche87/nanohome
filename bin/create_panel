@@ -145,8 +145,6 @@ DASHBOARD_NEW=$(
 	'.dashboard = $dashboard' <<< "${DASHBOARD_DATA}"
 )
 
-echo $DASHBOARD_NEW > "/nanohome/data/DASHBOARD_NEW.json"
-
 # Exit if there was an error
 if [[ -z "${DASHBOARD_NEW}" ]]; then
     echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
@@ -154,11 +152,6 @@ if [[ -z "${DASHBOARD_NEW}" ]]; then
 else
     [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
 fi
-
-
-echo -e "Authorization: Bearer ${GRAFANA_SA_TOKEN}" >> /proc/1/fd/1
-echo -e "POST ${GRAFANA_HOST}/api/dashboards/db" >> /proc/1/fd/1
-
 
 # Upload dashboard to grafana
 curl --insecure \
