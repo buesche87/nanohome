@@ -2,7 +2,7 @@
 #/////////////////////////////////////////////////////////////////////////////////////
 # nanohome - create_panel
 #
-# Create a panel on the home dashboard
+# Create a new panel on the home dashboard
 # - Get the current dashboard json from mqtt
 # - Load the json entry with index passed to script
 # - Load and prepare the panel templates
@@ -10,18 +10,12 @@
 # - Upload the updated dashboard
 #/////////////////////////////////////////////////////////////////////////////////////
 DESCRIPTION=$1
-
-# MQTT connection string with credentials
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
-# Define subscribe topic: "nanohome/devices/+"
 SUBSCRIBETOPIC="nanohome/devices/${DESCRIPTION}"
 
-# Get dashboard configs from "nanohome/devices/$1"
+# MQTT connection string with credentials
+MQTT_CONNECTION_STRING=(-h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}")
+
+# Get json device config from: "nanohome/devices/<description>"
 PUBLISHED_CONFIG_JSON=$(
     mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
     --retained-only --nodelay --quiet -C 1 -W 2 \
@@ -30,25 +24,20 @@ PUBLISHED_CONFIG_JSON=$(
 
 # Exit if no config found
 if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
-    echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Nanohome: Failed to create dashboard panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO}  > No retained messages found on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
     exit 1
 fi
 
 # Parse payload from json formatted message
-DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_CONFIG_JSON}" )
-COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG_JSON}" )
-DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG_JSON}" )
-ICON=$( jq -r '.icon' <<< "${PUBLISHED_CONFIG_JSON}" )
-LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
-DESCRIPTION_ESCAPED=$(echo "${DESCRIPTION}" | sed 's/[\/&]/\\&/g')
+read DEVICEID COMPONENT DESCRIPTION ICON LEGACY < <(
+  jq -r '.deviceId, .component, .description, .icon, .legacy' <<< "$PUBLISHED_CONFIG_JSON"
+)
+DESCRIPTION_ESCAPED=${DESCRIPTION//[\/&]/\\&}
 
-# Define "case" search string
-if [[ "${LEGACY}" == "true" ]]; then
-    COMPONENT_SEARCH="${COMPONENT%%:*}";
-    COMPONENT="${COMPONENT#*:}"
-else
-    COMPONENT_SEARCH="${COMPONENT%%:*}";
-fi
+# Define "case" search 
+COMPONENT_SEARCH="${COMPONENT%%:*}";
+$LEGACY && COMPONENT="${COMPONENT#*:}"
 
 # Define panel template
 case "${COMPONENT_SEARCH}" in
