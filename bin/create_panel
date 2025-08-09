@@ -107,6 +107,11 @@ DASHBOARD_CURRENT_JSON=$(
     -- json
 )
 
+# Extract folderuid
+GRAFANA_FOLDER_UID=$(
+    jq -r .meta.folderUid <<< "${DASHBOARD_CURRENT_JSON}"
+)
+
 # Extract dashboard content
 DASHBOARD_CURRENT=$(
     jq '.dashboard' <<< "${DASHBOARD_CURRENT_JSON}"

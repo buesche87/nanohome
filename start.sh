@@ -840,14 +840,14 @@ grafanadashfolder=$(
 	grafana_dashfolder_create "${GRAFANA_DASHFOLDER_NAME}"
 ) || exit 1
 
-# Extract UID
-export GRAFANA_FOLDER_UID=$( jq -r '.uid' <<< "${grafanadashfolder}" 2>/dev/null )
-
-# Ensure UID was successfully extracted
-if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
-	echo -e "${LOG_ERRO} Grafana:  Failed to retrieve folder UID" >> /proc/1/fd/1
-	exit 1
-fi
+# # Extract UID
+# export GRAFANA_FOLDER_UID=$( jq -r '.uid' <<< "${grafanadashfolder}" 2>/dev/null )
+# 
+# # Ensure UID was successfully extracted
+# if [[ -z "${GRAFANA_FOLDER_UID}" ]]; then
+# 	echo -e "${LOG_ERRO} Grafana:  Failed to retrieve folder UID" >> /proc/1/fd/1
+# 	exit 1
+# fi
 
 # Log
 [[ "${DEBUG:-0}" -eq 1 ]] && jq <<< "${grafanadashfolder}" >> /proc/1/fd/1
