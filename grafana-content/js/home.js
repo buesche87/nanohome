@@ -33,8 +33,17 @@ function subscribeToOutput() {
 
 // Send a command to a shelly device
 function sendCommand(device, component, description, command) {
-	let commandTopic = device + "/command/" + component;
-	let statusTopic = device + "/status/" + component;
+	let commandTopic;
+	let statusTopic;
+
+	// Legacy
+	if (component.includes(":")) {
+		commandTopic = device + "/command/" + component;
+		statusTopic = device + "/status/" + component;
+	} else {
+		commandTopic = "shellies/" + device + "/relay/" + component + "/command";
+		statusTopic = "shellies/" + device + "/relay/" + component;
+	}
 
 	mqttSubscribe(statusTopic, normalsubscribe);
 	mqttPublish(commandTopic, command, false);
