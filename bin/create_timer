@@ -8,29 +8,21 @@
 # - Create a new crontab entry for every config published
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# MQTT connection string with credentials
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
-
-# Define subscribe topic: "nanohome/timer/+"
-SUBSCRIBETOPIC="nanohome/timer/+"
-
 # Load timer configs
+SUBSCRIBETOPIC="nanohome/timer/+"
+MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 PUBLISHED_CONFIGS=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--retained-only --nodelay --quiet -W 2 \
-	-t "${SUBSCRIBETOPIC}" 
+	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" $MQTT_RETAINED_ALL	-t "${SUBSCRIBETOPIC}" 
 )
 
 # Exit script if no timer are configured
-if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+if [[ -z $PUBLISHED_CONFIGS ]]; then
+    echo -e "${LOG_INFO} Create timer: Failed to get timer config" >> /proc/1/fd/1
+	echo -e "${LOG_INFO}  > No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 	exit 0
 elif [[ "${PUBLISHED_CONFIGS}" == "[]" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_INFO} Nanohome: No timer configured on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
+    echo -e "${LOG_INFO} Create timer: No timer configured" >> /proc/1/fd/1
+	echo -e "${LOG_INFO}  > Empty message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 	sed -i '0,/# Nanohome Crontabs/!d' "/etc/crontabs/root"
 	exit 0
 fi
@@ -47,21 +39,28 @@ PUBLISHED_TIMER_ARRAY=$(
 	jq -s 'add' <<< "${PUBLISHED_CONFIGS}"
 )
 
+# Exit if there were errors
+if [[ -z $PUBLISHED_TIMER_ARRAY ]]; then
+    echo -e "${LOG_ERRO} Create timer: Failed to gather timer" >> /proc/1/fd/1
+	jq <<< "${PUBLISHED_CONFIGS}" >> /proc/1/fd/1
+	exit 1
+fi
+
 # Create a crontab entry for each config
 jq -c '.[]' <<< "${PUBLISHED_TIMER_ARRAY}" |
 while read -r TIMER; do
 
 	# Extract payload and device details from topic
-	DEVICEID=$( jq -r .deviceId <<< "${TIMER}" )
-	COMPONENT=$( jq -r .component <<< "${TIMER}" )
-	DESCRIPTION=$( jq -r .description <<< "${TIMER}" )
-	TIMERPERIOD=$( jq -r .timerPeriodValue <<< "${TIMER}" )
-	TIMERPERIODTXT=$( jq -r .timerPeriodText <<< "${TIMER}" )
-	TIMERON=$( jq -r .timerOn <<< "${TIMER}" )
-	TIMEROFF=$( jq -r .timerOff <<< "${TIMER}" )
-	LEGACY=$( jq -r .legacy <<< "${TIMER}" )
+	DEVICEID=$(jq -r '.deviceId' <<< "$TIMER")
+	COMPONENT=$(jq -r '.component' <<< "$TIMER")
+	DESCRIPTION=$(jq -r '.description' <<< "$TIMER")
+	TIMERPERIOD=$(jq -r .timerPeriodValue <<< "$TIMER")
+	TIMERPERIODTXT=$(jq -r .timerPeriodText <<< "$TIMER")
+	TIMERON=$(jq -r .timerOn <<< "$TIMER")
+	TIMEROFF=$(jq -r .timerOff <<< "$TIMER")
+	LEGACY=$(jq -r .legacy <<< "$TIMER")
 
-	if [[ "${LEGACY}" == "true" ]]; then
+	if $LEGACY; then
 		COMPONENTDEV=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
 		COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
 
@@ -78,15 +77,15 @@ while read -r TIMER; do
 	CRONENTRY="${CRONENTRY//_DEVICEID_/${DEVICEID}}"
 
 	# If timerOn set create a cron entry to switch on component
-	if [[ -n "${TIMERON}" ]]; then
+	if [[ -n $TIMERON ]]; then
 		CRONENTRY_ON="${CRONENTRY}"
 		HOUR="${TIMERON:0:2}"
 		MINUTE="${TIMERON:3:5}"
 
 		# Check component type
 		case "${COMPONENT}" in
-			"switch"*|"relay"*) MESSAGE="on" ;;
-			"cover"*) MESSAGE="open" ;;
+			switch*|relay*) MESSAGE="on" ;;
+			cover*) MESSAGE="open" ;;
 		esac
 
 		# Fill cron entry with "on" values
@@ -102,15 +101,15 @@ while read -r TIMER; do
 	fi
 
 	# If timerOff set create a cron entry to switch off component
-	if [[ -n "${TIMEROFF}" ]]; then
+	if [[ -n $TIMEROFF ]]; then
 		CRONENTRY_OFF="${CRONENTRY}"
 		HOUR="${TIMEROFF:0:2}"
 		MINUTE="${TIMEROFF:3:5}"
 
 		# Check component type
 		case "${COMPONENT}" in
-			"switch"*|"relay"*) MESSAGE="off" ;;
-			"cover"*) MESSAGE="close" ;;
+			switch*|relay*) MESSAGE="off" ;;
+			cover*) MESSAGE="close" ;;
 		esac
 
 		# Fill cron entry with "off" values
@@ -125,5 +124,5 @@ while read -r TIMER; do
 		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Nanohome: Timer for \"${DESCRIPTION}\" - [Off: ${TIMERPERIODTXT} - ${HOUR}:${MINUTE}]" >> /proc/1/fd/1
 	fi
 
-	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Timer for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Create timer: Timer for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
 done

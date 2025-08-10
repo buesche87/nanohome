@@ -22,6 +22,7 @@ export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
 # MQTT connection settings
 export MQTT_RETAINED_ONEMSG="--retained-only --nodelay --quiet -C 1 -W 1" # Get only one retained message, cancel after 1s if no message found
+export MQTT_RETAINED_ALL="--retained-only --nodelay --quiet -W 2" # Try to get all retained messages, cancel after 2 seconds
 
 # InfluxDB settings
 export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
