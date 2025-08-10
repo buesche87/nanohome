@@ -17,6 +17,7 @@ var exSliderDescriptionPrefix = "exSliderDescription_";
 var saveBtnPrefix = "saveBtn_";
 var clearMeasurementBtnPrefix = "clearMeasurementBtn_";
 var removeComponentBtnPrefix = "removeComponentBtn_";
+var removeDeviceBtnPrefix = "removeDeviceBtn_";
 
 /*
 ===============================================================
@@ -113,13 +114,19 @@ function clearMeasurement(device) {
 	}
 }
 
-// Remove device through nanohome_shell
+// Remove component through nanohome_shell
 function removeComponent(device) {
 	let componentDetails = getElementValues(device);
 
-	if (confirm("Remove Device?")) {
-		alert("Removing Device...");
+	if (confirm("Remove " + componentDetails.description + " from nanohome and clear measurements?")) {
 		shellCommand('remove_component "' + componentDetails.description + '"');
+	}
+}
+
+// Remove device through nanohome_shell
+function removeComponent(device) {
+	if (confirm("Remove " + device + " from nanohome?" )) {
+		shellCommand('remove_device "' + device + '"');
 	}
 }
 
@@ -413,7 +420,8 @@ function getHtmlElements(device) {
 		exSliderDescription:	document.getElementById(exSliderPrefix + device),
 		saveButton:				document.getElementById(saveBtnPrefix + device),
 		clearMeasurementBtn:	document.getElementById(clearMeasurementBtnPrefix + device),
-		removeComponentBtn:		document.getElementById(removeComponentBtnPrefix + device)
+		removeComponentBtn:		document.getElementById(removeComponentBtnPrefix + device),
+		removeDeviceBtn:		document.getElementById(removeDeviceBtnPrefix + device)
 	}
 }
 
@@ -502,6 +510,14 @@ function addHtmlElementFunctions(device) {
 			removeComponent(device);
 		});
 		htmlElements.removeComponentBtn.dataset.listenerAdded = "true";
+	}
+
+	// Remove device element
+	if (!htmlElements.removeDeviceBtn.dataset.listenerAdded) {
+		htmlElements.removeDeviceBtn.addEventListener("click", function() { 
+			removeDevice(device);
+		});
+		htmlElements.removeDeviceBtn.dataset.listenerAdded = "true";
 	}
 
 	// Example button
