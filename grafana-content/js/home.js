@@ -51,17 +51,6 @@ function sendCommand(device, component, description, command) {
 	// console.log('Command "' + command + '" sent for: ' + description);
 }
 
-// Send a command to a shelly gen1 device (legacy)
-function sendCommandLegacy(device, component, description, command) {
-	let commandTopic = "shellies/" + device + "/relay/" + component + "/command";
-	let statusTopic = "shellies/" + device + "/relay/" + component;
-
-	mqttSubscribe(statusTopic, normalsubscribe);
-	mqttPublish(commandTopic, command, false);
-
-	// console.log('Command "' + command + '" sent for: ' + description);
-}
-
 /*
 ===============================================================
 	onMessageArrived

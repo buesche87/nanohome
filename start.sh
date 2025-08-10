@@ -20,6 +20,10 @@ export MQTT_TOPIC_TIMER="nanohome/timer"
 export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
+# MQTT connection settings
+export MQTT_CONNECTION_STRING="-h $MQTT_SERVER -u $MQTT_USER -P $MQTT_PASSWORD"
+export MQTT_RETAINED_OMEMSG="--retained-only --nodelay --quiet -C 1 -W 1" # Get only one retained message, cancel after 1s if no message found
+
 # InfluxDB settings
 export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
 export INFLUXDB_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter

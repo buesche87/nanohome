@@ -10,57 +10,47 @@
 # - Upload the updated dashboard
 #/////////////////////////////////////////////////////////////////////////////////////
 DESCRIPTION=$1
-SUBSCRIBETOPIC="nanohome/devices/${DESCRIPTION}"
-
-# MQTT connection string with credentials
-MQTT_CONNECTION_STRING=(-h "${MQTT_SERVER}" -u "${MQTT_USER}" -P "${MQTT_PASSWORD}")
 
 # Get json device config from: "nanohome/devices/<description>"
+SUBSCRIBETOPIC="nanohome/devices/${DESCRIPTION}"
 PUBLISHED_CONFIG_JSON=$(
-    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-    --retained-only --nodelay --quiet -C 1 -W 2 \
-    -t "${SUBSCRIBETOPIC}"
+    mosquitto_sub $MQTT_CONNECTION_STRING $MQTT_RETAINED_OMEMSG -t $SUBSCRIBETOPIC
 )
 
 # Exit if no config found
-if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
-    echo -e "${LOG_ERRO} Nanohome: Failed to create dashboard panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+if [[ -z $PUBLISHED_CONFIG_JSON ]]; then
+    echo -e "${LOG_ERRO} Create panel: Failed to create dashboard panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     echo -e "${LOG_ERRO}  > No retained messages found on \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
     exit 1
 fi
 
-# Parse payload from json formatted message
-read DEVICEID COMPONENT DESCRIPTION ICON LEGACY < <(
-  jq -r '.deviceId, .component, .description, .icon, .legacy' <<< "$PUBLISHED_CONFIG_JSON"
-)
-DESCRIPTION_ESCAPED=${DESCRIPTION//[\/&]/\\&}
-
-# Define "case" search 
-COMPONENT_SEARCH="${COMPONENT%%:*}";
-$LEGACY && COMPONENT="${COMPONENT#*:}"
+# Extract config values
+DEVICEID=$(jq -r '.deviceId' <<< "$PUBLISHED_CONFIG_JSON")
+COMPONENT=$(jq -r '.component' <<< "$PUBLISHED_CONFIG_JSON")
+DESCRIPTION=$(jq -r '.description' <<< "$PUBLISHED_CONFIG_JSON")
+ICON=$(jq -r '.icon' <<< "$PUBLISHED_CONFIG_JSON")
+LEGACY=$(jq -r '.legacy' <<< "$PUBLISHED_CONFIG_JSON")
 
 # Define panel template
-case "${COMPONENT_SEARCH}" in
-    "switch"*)
-        TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML}"
-        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON}"
+case "${COMPONENT%%:*}" in
+    switch*|relay*)
+        PANEL_TEMPLATE_HTML=$(<"${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML}")
+        PANEL_TEMPLATE_JSON=$(<"${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON}")
         ;;
-    "relay"*)
-        TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_HTML_LEGACY}"
-        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_SWITCH_JSON}"
-        ;;
-    "cover"*)
-        TEMPLATE_HTML_FILE="${GRAFANA_PANEL_TEMPLATE_COVER_HTML}"
-        TEMPLATE_JSON_FILE="${GRAFANA_PANEL_TEMPLATE_COVER_JSON}"
+    cover*)
+        PANEL_TEMPLATE_HTML=$(<"${GRAFANA_PANEL_TEMPLATE_COVER_HTML}")
+        PANEL_TEMPLATE_JSON=$(<"${GRAFANA_PANEL_TEMPLATE_COVER_JSON}")
         ;;
     *)
-        echo -e "${LOG_ERRO} Nanohome: No dashboard element for component \"${COMPONENT_SEARCH}\" available" >> /proc/1/fd/1
+        echo -e "${LOG_ERRO} Create panel: No panel template for \"${DESCRIPTION}\" found" >> /proc/1/fd/1
+        echo -e "${LOG_ERRO}  > component searched: \"${COMPONENT_SEARCH}\"" >> /proc/1/fd/1
         exit 1
         ;;
 esac
 
-PANEL_TEMPLATE_HTML=$(<"${TEMPLATE_HTML_FILE}")
-PANEL_TEMPLATE_JSON=$(<"${TEMPLATE_JSON_FILE}")
+# Define "case" search
+DESCRIPTION_ESCAPED=${DESCRIPTION//[\/&]/\\&}
+$LEGACY && COMPONENT="${COMPONENT#*:}"
 
 # Replace device strings in html template
 PANEL_TEMPLATE_HTML=${PANEL_TEMPLATE_HTML//_DEVICEID_/${DEVICEID}}
@@ -79,12 +69,10 @@ PANEL_JSON=$(
 )
 
 # Exit if there was an error
-if [[ -z "${PANEL_JSON}" ]]; then
-    echo -e "${LOG_ERRO} Nanohome: Error loading template for \"${DESCRIPTION}\"" >> /proc/1/fd/1
-    [[ $LOG_DEBUG ]] && jq <<< "${PANEL_JSON}" >> /proc/1/fd/1
+if [[ -z $PANEL_JSON ]]; then
+    echo -e "${LOG_ERRO} Create panel: Error creating panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO}  > PANEL_JSON empty" >> /proc/1/fd/1
     exit 1
-else
-    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel template for \"${DESCRIPTION}\" loaded" >> /proc/1/fd/1
 fi
 
 # Download home dashboard from grafana
@@ -95,6 +83,12 @@ DASHBOARD_CURRENT_JSON=$(
     -X GET "${GRAFANA_HOST}/api/dashboards/uid/${GRAFANA_DASHBOARD_HOME_UID}" \
     -- json
 )
+
+# Exit if there was an error
+if [[ -z $DASHBOARD_CURRENT_JSON ]]; then
+    echo -e "${LOG_ERRO} Create panel: Could not download home dashboard with id \"${GRAFANA_DASHBOARD_HOME_UID}\"" >> /proc/1/fd/1
+    exit 1
+fi
 
 # Extract folderuid
 GRAFANA_FOLDER_UID=$(
@@ -107,11 +101,9 @@ DASHBOARD_CURRENT=$(
 )
 
 # Exit if there was an error
-if [[ -z "${DASHBOARD_CURRENT}" ]]; then
-    echo -e "${LOG_ERRO} Nanohome: Could not download home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\"" >> /proc/1/fd/1
+if [[ -z $DASHBOARD_CURRENT ]]; then
+    echo -e "${LOG_ERRO} Create panel: Could extract .dashboard from home dashboard json" >> /proc/1/fd/1
     exit 1
-else
-    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Home dashboard \"${GRAFANA_DASHBOARD_HOME_UID}\" loaded" >> /proc/1/fd/1
 fi
 
 # Merge new panel into dashboard
@@ -121,7 +113,7 @@ DASHBOARD_PREPARED=$(
 )
 
 # Prepare metadata for dashboard upload
-DASHBOARD_DATA='{
+DASHBOARD_METADATA='{
 	"dashboard": {},
 	"folderUid": "'"${GRAFANA_FOLDER_UID}"'",
 	"message": "Nanohome: Panel '"${DESCRIPTION}"' added",
@@ -131,29 +123,29 @@ DASHBOARD_DATA='{
 # Merge dashboard and metadata
 DASHBOARD_NEW=$(
 	jq --argjson dashboard "${DASHBOARD_PREPARED}" \
-	'.dashboard = $dashboard' <<< "${DASHBOARD_DATA}"
+	'.dashboard = $dashboard' <<< "${DASHBOARD_METADATA}"
 )
 
 # Exit if there was an error
-if [[ -z "${DASHBOARD_NEW}" ]]; then
-    echo -e "${LOG_ERRO} Nanohome: Could not merge panel \"${DESCRIPTION}\" into home dashbard" >> /proc/1/fd/1
+if [[ -z $DASHBOARD_NEW ]]; then
+    echo -e "${LOG_ERRO} Create panel: Could not merge panel \"${DESCRIPTION}\" into home dashboard" >> /proc/1/fd/1
     exit 1
-else
-    [[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Panel \"${DESCRIPTION}\" merged into home dashboard" >> /proc/1/fd/1
 fi
 
 # Upload dashboard to grafana
-curl --insecure \
+upload_status=$(curl --insecure \
+    -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: Bearer ${GRAFANA_SA_TOKEN}" \
     -H "Content-Type: application/json" \
     -d "${DASHBOARD_NEW}" \
-    -X POST "${GRAFANA_HOST}/api/dashboards/db"
+    -X POST "${GRAFANA_HOST}/api/dashboards/db")
 
-# Exit if there was an error
-if [[ $? -eq 0 ]]; then
-	echo -e "${LOG_SUCC} Nanohome: Home dashbaord updated" >> /proc/1/fd/1
-	return 0
+# Check if this was 
+if [ "$upload_status" -eq 200 ] || [ "$upload_status" -eq 202 ]; then
+    echo -e "${LOG_SUCC} Create panel: Successfully added panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+    exit 0
 else
-	echo -e "${LOG_ERRO} Nanohome: Failed to update home dashbaord" >> /proc/1/fd/1
-	exit 1
-fi	
+    echo -e "${LOG_ERRO} Nanohome: Failed to upload new dashboard with panel \"${DESCRIPTION}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO}  > status code: $upload_status" >> /proc/1/fd/1
+    exit 1
+fi
