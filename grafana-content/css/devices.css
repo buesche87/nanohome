@@ -330,7 +330,7 @@ input[type=range]::-moz-range-thumb {
 ===============================================================
 */
 /* Basis */
-[data-tooltip] { position: relative; cursor: help; }
+[data-tooltip] { position: relative }
 
 /* Tooltip-Container (wird per JS eingefügt) */
 .tooltip {
@@ -340,7 +340,7 @@ input[type=range]::-moz-range-thumb {
 	padding: 8px 10px;
 	font-size: 14px;
 	line-height: 1.2;
-	background: rgba(20,20,20,0.95);
+	background: rgba(61, 61, 61, 0.95);
 	color: #fff;
 	border-radius: 6px;
 	box-shadow: 0 6px 18px rgba(0,0,0,0.35);

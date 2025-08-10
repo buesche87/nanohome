@@ -89,20 +89,18 @@ function saveComponent(device) {
 	let componentTopics = getDeviceTopics(componentDetails);
 	let nanohomeTopics = getNanohomeTopics(componentDetails.description);
 
-	if (confirm("Save Device?")) {
-		// Stop processing if description is empty (will delete all device configs)
-		if ( checkEmpty(componentDetails.description) ) { return false; }
+	// Stop processing if description is empty (will delete all device configs)
+	if ( checkEmpty(componentDetails.description) ) { return false; }
 
-		// Generate a device config and publish it as retained message
-		let jsonConfig = generateComponentConfig(componentDetails);
-		mqttPublish(nanohomeTopics.deviceConfig, JSON.stringify(jsonConfig), true);
-		
-		// Publish description as retained message to component topic
-		mqttPublish(componentTopics.description, componentDetails.description, true);
-		
-		// Refresh device on dashboard
-		getDeviceStatus(device);
-	} 
+	// Generate a device config and publish it as retained message
+	let jsonConfig = generateComponentConfig(componentDetails);
+	mqttPublish(nanohomeTopics.deviceConfig, JSON.stringify(jsonConfig), true);
+	
+	// Publish description as retained message to component topic
+	mqttPublish(componentTopics.description, componentDetails.description, true);
+	
+	// Refresh device on dashboard
+	getDeviceStatus(device);
 }
 
 // Clear measurement through nanohome_shell
@@ -140,8 +138,6 @@ function createPanel(device) {
 		saveComponent(device);
 		shellCommand('create_panel "' + componentDetails.description + '"');
 		getDeviceStatus(device);
-	} else {
-		console.log("Panel creation aborted")
 	}
 }
 
