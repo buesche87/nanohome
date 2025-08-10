@@ -20,13 +20,11 @@ else
 
 	# Load standby configs
 	PUBLISHED_CONFIGS=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		--retained-only --nodelay --quiet -W 2 \
-		-t "${SUBSCRIBETOPIC}" 
+		mosquitto_sub ${MQTT_CONNECTION_STRING[@]} $MQTT_RETAINED_ALL -t "${SUBSCRIBETOPIC}" 
 	)
 
 	# Exit script if no standby managers are configured
-	if [[ -z "${PUBLISHED_CONFIGS}" ]]; then
+	if [[ -z $PUBLISHED_CONFIGS ]]; then
 		echo -e "${LOG_INFO} Standbymanager: No standby configurations found" >> /proc/1/fd/1
 		echo -e "${LOG_INFO}  > No message received from \"${SUBSCRIBETOPIC}\"" >> /proc/1/fd/1
 		exit 0

@@ -8,10 +8,10 @@ export NANOHOME_ROOTPATH="/nanohome"
 export NANOHOME_CRONTABS="/etc/crontabs/root"
 
 # Nanohome services
-export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL=30 # interval in seconds
-export NANOHOME_NOT_MONITORED_COMPONENTS="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"
-export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY="input,input_event"
-export NANOHOME_SHELL_ALLOWED_COMMANDS="create_panel,create_timer,create_standby,clear_measurement,remove_standby,remove_component,remove_device"
+: "${NANOHOME_MEASUREMENTS_LEGACY_INTERVAL:=30}" && export NANOHOME_MEASUREMENTS_LEGACY_INTERVAL # interval in seconds
+: "${NANOHOME_NOT_MONITORED_COMPONENTS:="input:0,input:1,ble,cloud,mqtt,sys,wifi,ws,status,ht_ui"}" && export NANOHOME_NOT_MONITORED_COMPONENTS
+: "${NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY:="input,input_event"}" && export NANOHOME_NOT_MONITORED_COMPONENTS_LEGACY
+: "${NANOHOME_SHELL_ALLOWED_COMMANDS:="create_panel,create_timer,create_standby,clear_measurement,remove_standby,remove_component,remove_device"}" && export NANOHOME_SHELL_ALLOWED_COMMANDS
 
 # MQTT topics for nanohome
 export MQTT_TOPIC_DEVICES="nanohome/devices"
@@ -25,15 +25,13 @@ export MQTT_RETAINED_ONEMSG="--retained-only --nodelay --quiet -C 1 -W 1" # Get 
 export MQTT_RETAINED_ALL="--retained-only --nodelay --quiet -W 2" # Try to get all retained messages, cancel after 2 seconds
 
 # InfluxDB settings
-export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
-export INFLUXDB_BUCKET_MEASUREMENTS="Measurements" # Must begin with capital letter
+: "${INFLUXDB_BUCKET_DEVICES:="Devices"}" && export INFLUXDB_BUCKET_DEVICES # Must begin with capital letter
+: "${INFLUXDB_BUCKET_MEASUREMENTS:="Measurements"}" && export INFLUXDB_BUCKET_MEASUREMENTS # Must begin with capital letter
 
 # Grafana panel template settings
 export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.html"
-export GRAFANA_PANEL_TEMPLATE_SWITCH_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_SWITCH_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_button.json"
 export GRAFANA_PANEL_TEMPLATE_COVER_HTML="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.html"
-export GRAFANA_PANEL_TEMPLATE_COVER_HTML_LEGACY="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider_legacy.html"
 export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates/shelly_slider.json"
 
 #===============================================================
@@ -41,26 +39,27 @@ export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates
 #===============================================================
 
 # InfluxDB settings
-INFLUXDB_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
+: "${INFLUXDB_ROTOKEN_DESCRIPTION:="nanohome grafana ro-token"}" && export INFLUXDB_ROTOKEN_DESCRIPTION
 
 # Grafana general settings
 MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 GRAFANA_SERVICE=$(echo "$GRAFANA_HOST" | sed -E 's|^https?://||')
-GRAFANA_SERVICEACCOUNT="nanohome"
-GRAFANA_DATASOURCE_DEVICES="Devices"
-GRAFANA_DATASOURCE_MEASUREMENTS="Measurements"
-GRAFANA_DASHFOLDER_NAME="nanohome"
+: "${GRAFANA_SERVICEACCOUNT:="nanohome"}"
+: "${GRAFANA_DATASOURCE_DEVICES:="Devices"}"
+: "${GRAFANA_DATASOURCE_MEASUREMENTS:="Measurements"}"
+: "${GRAFANA_DASHFOLDER_NAME:="nanohome"}"
 
 # Grafana dashboard template settings
-export GRAFANA_DASHBOARD_HOME_UID="XieEaLmRk"
+: "${GRAFANA_DASHBOARD_HOME_UID:="XieEaLmRk"}" && export GRAFANA_DASHBOARD_HOME_UID
+: "${GRAFANA_DASHBOARD_DEVICES_UID:="fe47pva0wy8lcb"}"
+: "${GRAFANA_DASHBOARD_TIMER_UID:="fe47pva0wy8lcb"}"
+: "${GRAFANA_DASHBOARD_STANDBY_UID:="ae489b6q64nwgf"}"
+: "${GRAFANA_DASHBOARD_MEASUREMENTS_UID:="ee8v5d70ojpj4b"}"
+
 GRAFANA_DASHBOARD_HOME_FILE="${NANOHOME_ROOTPATH}/grafana-templates/home.json"
-GRAFANA_DASHBOARD_DEVICES_UID="fe47pva0wy8lcb"
 GRAFANA_DASHBOARD_DEVICES_FILE="${NANOHOME_ROOTPATH}/grafana-templates/devices.json"
-GRAFANA_DASHBOARD_TIMER_UID="ae489b6q64nwgf"
 GRAFANA_DASHBOARD_TIMER_FILE="${NANOHOME_ROOTPATH}/grafana-templates/timer.json"
-GRAFANA_DASHBOARD_STANDBY_UID="adjak60hekvswd"
 GRAFANA_DASHBOARD_STANDBY_FILE="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
-GRAFANA_DASHBOARD_MEASUREMENTS_UID="ee8v5d70ojpj4b"
 GRAFANA_DASHBOARD_MEASUREMENTS_FILE="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
 
 #===============================================================

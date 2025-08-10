@@ -12,7 +12,7 @@
 SUBSCRIBETOPIC="nanohome/timer/+"
 MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 PUBLISHED_CONFIGS=$(
-	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" $MQTT_RETAINED_ALL	-t "${SUBSCRIBETOPIC}" 
+	mosquitto_sub ${MQTT_CONNECTION_STRING[@]} $MQTT_RETAINED_ALL -t "${SUBSCRIBETOPIC}" 
 )
 
 # Exit script if no timer are configured
