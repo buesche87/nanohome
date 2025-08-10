@@ -134,7 +134,7 @@ if [[ -z $DASHBOARD_NEW ]]; then
 fi
 
 # Upload dashboard to grafana
-upload_status=$(curl --insecure \
+curl_status=$(curl --insecure \
     -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: Bearer ${GRAFANA_SA_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -142,11 +142,11 @@ upload_status=$(curl --insecure \
     -X POST "${GRAFANA_HOST}/api/dashboards/db")
 
 # Check if this was successfull
-if [ "$upload_status" -eq 200 ] || [ "$upload_status" -eq 202 ]; then
+if [ "$curl_status" -eq 200 ] || [ "$curl_status" -eq 202 ]; then
     echo -e "${LOG_SUCC} Create panel: Successfully added panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     exit 0
 else
     echo -e "${LOG_ERRO} Nanohome: Failed to upload new dashboard with panel \"${DESCRIPTION}\"" >> /proc/1/fd/1
-    echo -e "${LOG_ERRO}  > status code: $upload_status" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO}  > status code: $curl_status" >> /proc/1/fd/1
     exit 1
 fi

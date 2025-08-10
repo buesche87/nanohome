@@ -121,7 +121,7 @@ function saveStandby(description) {
 	mqttPublish(nanohomeTopics.standbyConfig, JSON.stringify(newStandbyConfig), true);
 
 	// Run "create_standby" through nanohome shell to enable the timer
-	mqttPublish(cmdInputTopic, "create_standby" + description, false);
+	mqttPublish(cmdInputTopic, "create_standby " + description, false);
 
 	console.log("Config saved");
 }
@@ -143,7 +143,7 @@ function clearStandby(description) {
 	htmlElements.clearButton.disabled = true;
 
 	// Run "create_standby" through nanohome shell to enable the timer
-	mqttPublish(cmdInputTopic, "remove_standby" + description, false);
+	mqttPublish(cmdInputTopic, "remove_standby " + description, false);
 
 	console.log("Config cleared");
 }

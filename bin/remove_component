@@ -10,72 +10,82 @@
 DESCRIPTION="$1"
 
 # MQTT connection string with credentials
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
+MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 
 # Define Variables
 DEVICETOPIC="nanohome/devices/${DESCRIPTION}"
 STANDBYTOPIC="nanohome/standby/${DESCRIPTION}"
 TIMERTOPIC="nanohome/timer/${DESCRIPTION}"
-MEASUREMENTS_BUCKET="Measurements"
-NANOHOME_CRONTABS="/etc/crontabs/root"
 
 # Load component config from "nanohome/devices/"
 PUBLISHED_CONFIG_JSON=$(
-    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--retained-only --quiet -C 1 -W 1 \
-    -t "${DEVICETOPIC}"
+    mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" $MQTT_RETAINED_ONEMSG -t "${DEVICETOPIC}"
 )
 
 # Exit if no config found
 if [[ -z "${PUBLISHED_CONFIG_JSON}" ]]; then
-    [[ $LOG_EXEC ]] && echo -e "${LOG_ERRO} Nanohome: No retained messages found on \"${DEVICETOPIC}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO} Remove component: Failed to remove \"${DESCRIPTION}\"" >> /proc/1/fd/1
+	echo -e "${LOG_ERRO}  > No retained messages found on \"${DEVICETOPIC}\"" >> /proc/1/fd/1
     exit 1
 fi
 
 # Extract payload and device details from topic
-DEVICEID=$( jq -r '.deviceId' <<< "${PUBLISHED_CONFIG_JSON}" )
-COMPONENT=$( jq -r '.component' <<< "${PUBLISHED_CONFIG_JSON}" )
-DESCRIPTION=$( jq -r '.description' <<< "${PUBLISHED_CONFIG_JSON}" )
-LEGACY=$( jq -r '.legacy' <<< "${PUBLISHED_CONFIG_JSON}" )
+DEVICEID=$(jq -r '.deviceId' <<< "$PUBLISHED_CONFIG_JSON")
+COMPONENT=$(jq -r '.component' <<< "$PUBLISHED_CONFIG_JSON")
+DESCRIPTION=$( jq -r '.description' <<< "$PUBLISHED_CONFIG_JSON")
+LEGACY=$(jq -r '.legacy' <<< "$PUBLISHED_CONFIG_JSON")
 
 # Clear Measurement
-if [ -n "${DESCRIPTION}" ]; then
-	# influx delete --bucket "${MEASUREMENTS_BUCKET}" \
-	#  --start '1970-01-01T00:00:00Z' \
-	#  --stop "$(date --utc +"%Y-%m-%dT%H:%M:%SZ")" \
-	#  --predicate "_measurement=\"${DESCRIPTION}\""
+if [[ -n $DESCRIPTION ]]; then
 
-	curl --request POST "${INFLUXDB_HOST}/api/v2/delete?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_DEVICES}" \
+	curl_status=$(curl --request POST "${INFLUXDB_HOST}/api/v2/delete?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_MEASUREMENTS}" \
 	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
 	--header "Content-Type: application/json" \
 	--data '{
 		"start": "1970-01-01T00:00:00Z",
 		"stop": "'"$(date --utc +"%Y-%m-%dT%H:%M:%SZ")"'",
 		"predicate": "_measurement=\"'"${DESCRIPTION}"'\""
-	}'
+	}')
 
-	[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Measurements for \"${DESCRIPTION}\" cleared" >> /proc/1/fd/1
+	# Check if this was successfull
+	if [ "$curl_status" -eq 200 ] || [ "$curl_status" -eq 202 ]; then
+		echo -e "${LOG_SUCC} Remove component: Measurements for \"${DESCRIPTION}\" cleared" >> /proc/1/fd/1
+	else
+		echo -e "${LOG_ERRO} Remove component: Failed to clear measurements for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+		echo -e "${LOG_ERRO}  > status code: $curl_status" >> /proc/1/fd/1
+	fi
 fi
 
 # Prepare mqtt topics to be cleared
-if [ "${LEGACY}" == "true" ]; then
+if $LEGACY; then
+	# Define topics to be cleaned
 	COMPONENTNAME=$( cut -d ':' -f 1 <<< "${COMPONENT}" )
 	COMPONENTINDEX=$( cut -d ':' -f 2 <<< "${COMPONENT}" )
-
 	CONNECTEDTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/connected"
 	DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/description"
 	OUTPUTTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/output"
 	ENERGYTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/energy"
 	POWERTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/power"
-	DEVICETEMPTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/temperature"
+	TEMPTOPIC="shellies/${DEVICEID}/${COMPONENTNAME}/${COMPONENTINDEX}/temperature"
+
+	# Remove component from crontab file
+	sed -i "|${DEVICE}/${COMPONENTNAME}/${COMPONENTINDEX}|d" "${NANOHOME_CRONTABS}"
+
+	# Terminate running services (legacy devices only)
+	ENERGYPID=$(ps | grep "${ENERGYTOPIC}" | grep -v "grep" | awk '{print $1}')
+	POWERPID=$(ps | grep "${POWERTOPIC}" | grep -v "grep" | awk '{print $1}')
+	TEMPPID=$(ps | grep "${TEMPTOPIC}" | grep -v "grep" | awk '{print $1}')
+	[[ -n $ENERGYPID ]] && kill -9 "${ENERGYPID}"
+	[[ -n $POWERPID ]] && kill -9 "${POWERPID}"
+	[[ -n $TEMPPID ]] && kill -9 "${TEMPPID}"
 else
+	# Define topics to be cleaned
 	CONNECTEDTOPIC="${DEVICEID}/status/${COMPONENT}/connected"
 	DESCRIPTIONTOPIC="${DEVICEID}/status/${COMPONENT}/description"
 	OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
+
+	# Remove component from crontab file
+	sed -i "|${DEVICE}/${COMPONENT}|d" "${NANOHOME_CRONTABS}"
 fi
 
 # Clean mqtt topics
@@ -86,22 +96,9 @@ mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${DESCRIPTIONTOPIC}" -m ""
 mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${OUTPUTTOPIC}" -m ""
 
-# Remove component from crontab file
-if [ "${LEGACY}" == "true" ]; then
-	sed -i "|${DEVICE}/${COMPONENTNAME}/${COMPONENTINDEX}|d" "${NANOHOME_CRONTABS}"
-else
-	sed -i "|${DEVICE}/${COMPONENT}|d" "${NANOHOME_CRONTABS}"
-fi
-
-# Kill running services for legacy devices
-if [ "${LEGACY}" == "true" ]; then
-	ENERGYPID=$(ps | grep "${ENERGYTOPIC}" | grep -v "grep" | awk '{print $1}')
-	POWERPID=$(ps | grep "${POWERTOPIC}" | grep -v "grep" | awk '{print $1}')
-	TEMPPID=$(ps | grep "${DEVICETEMPTOPIC}" | grep -v "grep" | awk '{print $1}')
-	[[ -n "${ENERGYPID}" ]] && kill -9 "${ENERGYPID}"
-	[[ -n "${POWERPID}" ]] && kill -9 "${POWERPID}"
-	[[ -n "${TEMPPID}" ]] && kill -9 "${TEMPPID}"
-fi
+# Terminate active standbymanager
+PID=$(ps | grep "${STANDBYTOPIC}" | grep -v "grep" | awk '{print $1}')
+[[ -n "${PID}" ]] && kill -9 "${PID}"
 
 # Log
-[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Component \"${DESCRIPTION}\" removed" >> /proc/1/fd/1
+echo -e "${LOG_SUCC} Remove component: Component \"${DESCRIPTION}\" removed" >> /proc/1/fd/1

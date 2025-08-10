@@ -1,9 +1,8 @@
 #!/bin/bash
 #/////////////////////////////////////////////////////////////////////////////////////
-# nanohome - standbywatcher service
+# nanohome - remove standby
 #
-# Enable or disable a standbymanager for a device
-# if there is a new retained message in "nanohome/standby/+"
+# Disable standbymanager for a device
 #/////////////////////////////////////////////////////////////////////////////////////
 DESCRIPTION=$1
 
@@ -13,5 +12,11 @@ STANDBYTOPIC="nanohome/standby/${DESCRIPTION}/"
 # Kill standby manager for device
 PID=$(ps | grep "${STANDBYTOPIC}" | grep -v "grep" | awk '{print $1}')
 [[ -n "${PID}" ]] && kill -9 "${PID}"
+PID=$(ps | grep "${STANDBYTOPIC}" | grep -v "grep" | awk '{print $1}')
 
-[[ $LOG_EXEC ]] && echo -e "${LOG_SUCC} Nanohome: Standbymanager for \"${DESCRIPTION}\" terminated" >> /proc/1/fd/1
+if [[ -z $PID ]]; then
+    echo -e "${LOG_SUCC} Nanohome: Standbymanager for \"${DESCRIPTION}\" terminated" >> /proc/1/fd/1
+else 
+    echo -e "${LOG_ERRO} Nanohome: Could not terminate standbymanager for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+    echo -e "${LOG_ERRO}  > PID: ${PID}" >> /proc/1/fd/1
+fi

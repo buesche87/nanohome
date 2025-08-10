@@ -32,7 +32,7 @@ var mqttConnected = false;
 var cmdInputTopic = "nanohome/shell/input";
 var cmdOutputTopic = "nanohome/shell/output";
 
-// Weather widget preferences (set on first docker run)
+// Weather widget preferences (will be set from env)
 var weatherWidgetLink = "https://forecast7.com/en/47d058d31/lucerne/";
 var weatherWidgetCity = "Lucerne";
 
