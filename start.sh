@@ -541,6 +541,7 @@ if [[ -n "${GRAFANA_SA_TOKEN}" ]]; then
 	echo -e "${LOG_SUCC} Grafana:  Service account token provided" >> /proc/1/fd/1
 elif [[ -n "${GRAFANA_ADMIN}" && -n "${GRAFANA_PASS}" && -n "${GRAFANA_SERVICEACCOUNT}" ]]; then
 	echo -e "${LOG_WARN} Grafana:  No service account token provided in .env file" >> /proc/1/fd/1
+	echo -e "${LOG_INFO}  > Creating a token" >> /proc/1/fd/1
 
 	grafanaserviceaccount=$(
 		grafana_serviceaccount_find || grafana_serviceaccount_create
