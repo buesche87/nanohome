@@ -22,7 +22,7 @@ export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
 # MQTT connection settings
 export MQTT_CONNECTION_STRING="-h $MQTT_SERVER -u $MQTT_USER -P $MQTT_PASSWORD"
-export MQTT_RETAINED_OMEMSG="--retained-only --nodelay --quiet -C 1 -W 1" # Get only one retained message, cancel after 1s if no message found
+export MQTT_RETAINED_ONEMSG="--retained-only --nodelay --quiet -C 1 -W 1" # Get only one retained message, cancel after 1s if no message found
 
 # InfluxDB settings
 export INFLUXDB_BUCKET_DEVICES="Devices" # Must begin with capital letter
@@ -61,13 +61,6 @@ GRAFANA_DASHBOARD_STANDBY_UID="adjak60hekvswd"
 GRAFANA_DASHBOARD_STANDBY_FILE="${NANOHOME_ROOTPATH}/grafana-templates/standby.json"
 GRAFANA_DASHBOARD_MEASUREMENTS_UID="ee8v5d70ojpj4b"
 GRAFANA_DASHBOARD_MEASUREMENTS_FILE="${NANOHOME_ROOTPATH}/grafana-templates/measurements.json"
-
-# Mosquitto
-MQTT_CONNECTION_STRING=(
-	-h "${MQTT_SERVER}"
-	-u "${MQTT_USER}"
-	-P "${MQTT_PASSWORD}"
-)
 
 #===============================================================
 # Logging	  
@@ -1075,9 +1068,7 @@ fi
 #===============================================================
 # - If connection to mosquitto fails output a warning
 
-mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-	--nodelay --quiet -C 1 -W 1 \
-	-t "nanohome/startup" 
+mosquitto_sub $MQTT_CONNECTION_STRING --nodelay --quiet -C 1 -W 1 -t "nanohome/startup" 
 
 if [[ $? -ne 1 ]]; then
 	echo -e "${LOG_SUCC} Nanohome: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1
