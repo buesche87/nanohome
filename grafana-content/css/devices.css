@@ -323,3 +323,57 @@ input[type=range]::-moz-range-thumb {
 .elementFlex {
 	display: flex;
 }
+
+/*
+===============================================================
+	Tooltip
+===============================================================
+*/
+/* Basis */
+[data-tooltip] { position: relative; cursor: help; }
+
+/* Tooltip-Container (wird per JS eingefügt) */
+.tooltip {
+	position: fixed;               /* fixed = bleibt sichtbar beim Scrollen */
+	z-index: 9999;
+	max-width: 220px;
+	padding: 8px 10px;
+	font-size: 14px;
+	line-height: 1.2;
+	background: rgba(20,20,20,0.95);
+	color: #fff;
+	border-radius: 6px;
+	box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+	pointer-events: none;          /* verhindert, dass Tooltip Maus-Events fängt */
+	transform-origin: center top;
+	opacity: 0;
+	transition: opacity 140ms ease, transform 140ms ease;
+}
+
+/* Pfeil */
+.tooltip::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: -6px;
+	transform: translateX(-50%);
+	border: 6px solid transparent;
+	border-bottom-color: rgba(20,20,20,0.95);
+}
+
+/* Sichtbar */
+.tooltip.show {
+	opacity: 1;
+	transform: translateY(6px) scale(1);
+}
+
+/* Wenn Tooltip unter dem Element sein soll, Pfeil unten */
+.tooltip.bottom::after {
+	top: auto;
+	bottom: -6px;
+	border-bottom-color: transparent;
+	border-top-color: rgba(20,20,20,0.95);
+}
+
+/* Optional: besserer Fokus-Stil für Elemente mit Tooltip */
+[data-tooltip]:focus { outline: 2px dashed #6aa6ff; outline-offset: 3px; }
