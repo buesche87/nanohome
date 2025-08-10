@@ -329,12 +329,12 @@ input[type=range]::-moz-range-thumb {
 	Tooltip
 ===============================================================
 */
-/* Basis */
+
 [data-tooltip] { position: relative }
 
-/* Tooltip-Container (wird per JS eingefügt) */
+/* Tooltip-Container */
 .tooltip {
-	position: fixed;               /* fixed = bleibt sichtbar beim Scrollen */
+	position: fixed;
 	z-index: 9999;
 	max-width: 220px;
 	padding: 8px 10px;
@@ -344,17 +344,17 @@ input[type=range]::-moz-range-thumb {
 	color: #fff;
 	border-radius: 6px;
 	box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-	pointer-events: none;          /* verhindert, dass Tooltip Maus-Events fängt */
+	pointer-events: none;
 	transform-origin: center top;
 	opacity: 0;
 	transition: opacity 140ms ease, transform 140ms ease;
 }
 
-/* Sichtbar */
+/* Show tooltip */
 .tooltip.show {
 	opacity: 1;
 	transform: translateY(6px) scale(1);
 }
 
-/* Optional: besserer Fokus-Stil für Elemente mit Tooltip */
+/* Beter focus style */
 [data-tooltip]:focus { outline: 2px dashed #6aa6ff; outline-offset: 3px; }

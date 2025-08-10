@@ -92,7 +92,7 @@ var mqttws31minLocation = "../public/nanohome/js/mqttws31.min.js";
 ===============================================================
 */
 
-// Rturn latest index in json array, return 1 if none is set
+// Return latest index in json array, return 1 if none is set
 function getJsonIndex(payload) {
 	let jsonIndex = 1;
 
@@ -131,142 +131,147 @@ function shellCommand(payload) {
 	console.log('Execute: ' + payload);
 }
 
-
 /*
 ===============================================================
 	Tooltip
 ===============================================================
 */
 
+var autohidetimerms = 2000; // auto hide after 2 seconds
+
 (function () {
-  let tooltipEl = null;
-  let showTimeout = null;
-  let hideTimeout = null;
-  let autoHideTimer = null;
-
-  function createTooltip() {
-    tooltipEl = document.createElement('div');
-    tooltipEl.className = 'tooltip';
-    document.body.appendChild(tooltipEl);
-  }
-
-  function showTooltip(target) {
-    if (!tooltipEl) createTooltip();
-    clearTimeout(hideTimeout);
-    clearTimeout(autoHideTimer); // alten Timer löschen
-    const text = target.getAttribute('data-tooltip');
-    if (!text) return;
-    tooltipEl.textContent = text;
-
-    // Position berechnen
-    const rect = target.getBoundingClientRect();
-    const ttRect = tooltipEl.getBoundingClientRect(); // meist 0x0 vor show
+	let tooltipEl = null;
+	let showTimeout = null;
+	let hideTimeout = null;
+	let autoHideTimer = null;
 	
-    // Temporär sichtbar machen, um tatsächliche Größe zu messen
-    tooltipEl.style.opacity = 0;
-    tooltipEl.classList.add('show');
-    tooltipEl.style.left = '0px';
-    tooltipEl.style.top = '0px';
+	// create tooltip
+	function createTooltip() {
+		tooltipEl = document.createElement('div');
+		tooltipEl.className = 'tooltip';
+		document.body.appendChild(tooltipEl);
+	}
 
-    // Auto-Hide nach 2 Sekunden
-    autoHideTimer = setTimeout(hideTooltip, 2000);
+	// show tooltip
+	function showTooltip(target) {
+		if (!tooltipEl) createTooltip();
+		clearTimeout(hideTimeout);
+		clearTimeout(autoHideTimer);
+		const text = target.getAttribute('data-tooltip');
+		if (!text) return;
+		tooltipEl.textContent = text;
 
-    // kleine Verzögerung, damit Größenbestimmung korrekt ist
-    const measured = tooltipEl.getBoundingClientRect();
+		// calculate position
+		const rect = target.getBoundingClientRect();
+		const ttRect = tooltipEl.getBoundingClientRect();
 
-    // Standard: Tooltip oben über dem Element
-    const gap = 8;
-    let top = rect.top - measured.height - gap;
-    let left = rect.left + (rect.width - measured.width) / 2;
-    tooltipEl.classList.remove('bottom');
+		// temporary make visible to calculate actual size
+		tooltipEl.style.opacity = 0;
+		tooltipEl.classList.add('show');
+		tooltipEl.style.left = '0px';
+		tooltipEl.style.top = '0px';
 
-    // Wenn oben nicht genug Platz -> unter dem Element
-    if (top < 6) {
-      top = rect.bottom + gap;
-      tooltipEl.classList.add('bottom');
-    }
+		// auto hide tooltip
+		autoHideTimer = setTimeout(hideTooltip, autohidetimerms);
 
-    // Horizontal innerhalb des Viewports halten
-    const margin = 6;
-    if (left < margin) left = margin;
-    if (left + measured.width > window.innerWidth - margin) {
-      left = Math.max(margin, window.innerWidth - measured.width - margin);
-    }
+		// short timeout to get exact size
+		const measured = tooltipEl.getBoundingClientRect();
 
-    tooltipEl.style.left = `${Math.round(left)}px`;
-    tooltipEl.style.top = `${Math.round(top)}px`;
+		// tooltip above element
+		const gap = 8;
+		let top = rect.top - measured.height - gap;
+		let left = rect.left + (rect.width - measured.width) / 2;
+		tooltipEl.classList.remove('bottom');
 
-    // zeigt mit kleinem delay (verhindert flackern bei Mausbewegung)
-    clearTimeout(showTimeout);
-    showTimeout = setTimeout(() => {
-      tooltipEl.classList.add('show');
-      tooltipEl.style.opacity = '';
-    }, 40);
-  }
+		// tooltip below if there is no space
+		if (top < 6) {
+			top = rect.bottom + gap;
+			tooltipEl.classList.add('bottom');
+		}
 
-  function hideTooltip() {
-    clearTimeout(showTimeout);
-    clearTimeout(hideTimeout);
-    if (!tooltipEl) return;
-    tooltipEl.classList.remove('show');
-    // erst entfernen nach transition
-    hideTimeout = setTimeout(() => {
-      if (tooltipEl) {
-        tooltipEl.style.left = '-9999px';
-        tooltipEl.style.top = '-9999px';
-      }
-    }, 160);
-  }
+		// keep in viewport
+		const margin = 6;
+		if (left < margin) left = margin;
+		if (left + measured.width > window.innerWidth - margin) {
+			left = Math.max(margin, window.innerWidth - measured.width - margin);
+		}
 
-  // Delegation: mouseenter/mouseleave + focus/blur + touch
-  document.addEventListener('mouseover', e => {
-    const t = e.target.closest('[data-tooltip]');
-    if (t) showTooltip(t);
-  });
+		tooltipEl.style.left = `${Math.round(left)}px`;
+		tooltipEl.style.top = `${Math.round(top)}px`;
 
-  document.addEventListener('mouseout', e => {
-    const t = e.target.closest('[data-tooltip]');
-    if (t) hideTooltip();
-  });
+		// show with short delay
+		clearTimeout(showTimeout);
+		showTimeout = setTimeout(() => {
+			tooltipEl.classList.add('show');
+			tooltipEl.style.opacity = '';
+		}, 40);
+	}
 
-  document.addEventListener('focusin', e => {
-    const t = e.target.closest('[data-tooltip]');
-    if (t) showTooltip(t);
-  });
+	// hide tooltip
+	function hideTooltip() {
+		clearTimeout(showTimeout);
+		clearTimeout(hideTimeout);
+		if (!tooltipEl) return;
+		tooltipEl.classList.remove('show');
 
-  document.addEventListener('focusout', e => {
-    const t = e.target.closest('[data-tooltip]');
-    if (t) hideTooltip();
-  });
+		// wait for transition
+		hideTimeout = setTimeout(() => {
+			if (tooltipEl) {
+				tooltipEl.style.left = '-9999px';
+				tooltipEl.style.top = '-9999px';
+			}
+		}, 160);
+	}
 
-  // Touch: tap einmal um Tooltip anzuzeigen, beim zweiten Tap das Target aktivieren
-  let lastTouchTarget = null;
-  document.addEventListener('touchstart', e => {
-    const t = e.target.closest('[data-tooltip]');
-    if (!t) return;
-    if (lastTouchTarget === t) {
-      // zweiter Tap: nichts blockieren -> native event weiterverarbeiten
-      lastTouchTarget = null;
-      return;
-    }
-    lastTouchTarget = t;
-    showTooltip(t);
-    // Klick auf anderes Element versteckt Tooltip
-    document.addEventListener('touchend', function onEnd() {
-      lastTouchTarget = null;
-      document.removeEventListener('touchend', onEnd);
-    });
-    // Verhindere das sofortige Auslösen der Element-Aktion
-    e.preventDefault();
-  }, {passive: false});
+	// mouseenter/mouseleave + focus/blur + touch
+	document.addEventListener('mouseover', e => {
+		const t = e.target.closest('[data-tooltip]');
+		if (t) showTooltip(t);
+	});
 
-  // Bei Scroll/Resize neu positionieren oder verstecken
-  ['scroll', 'resize'].forEach(evt => {
-    window.addEventListener(evt, () => {
-      if (tooltipEl && tooltipEl.classList.contains('show')) {
-        // einfacher: verstecken, wird bei mousemove/focus wieder gezeigt
-        hideTooltip();
-      }
-    }, {passive: true});
-  });
+	document.addEventListener('mouseout', e => {
+		const t = e.target.closest('[data-tooltip]');
+		if (t) hideTooltip();
+	});
+
+	document.addEventListener('focusin', e => {
+		const t = e.target.closest('[data-tooltip]');
+		if (t) showTooltip(t);
+	});
+
+	document.addEventListener('focusout', e => {
+		const t = e.target.closest('[data-tooltip]');
+		if (t) hideTooltip();
+	});
+
+	// touch: tap once to show, twice to activate target
+	let lastTouchTarget = null;
+	document.addEventListener('touchstart', e => {
+		const t = e.target.closest('[data-tooltip]');
+		if (!t) return;
+		if (lastTouchTarget === t) { // second tap: don't block
+			lastTouchTarget = null;
+			return;
+		}
+		lastTouchTarget = t;
+		showTooltip(t);
+
+		// tap on other element to hide tooltip
+		document.addEventListener('touchend', function onEnd() {
+			lastTouchTarget = null;
+			document.removeEventListener('touchend', onEnd);
+		});
+
+		// block immediate action on element on first tap
+		e.preventDefault();
+	}, {passive: false});
+
+	// reposition while scrolling
+	['scroll', 'resize'].forEach(evt => {
+		window.addEventListener(evt, () => {
+			if (tooltipEl && tooltipEl.classList.contains('show')) {
+				hideTooltip();
+			}
+		}, {passive: true});
+	});
 })();
