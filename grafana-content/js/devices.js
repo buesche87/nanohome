@@ -145,7 +145,6 @@ function createPanel(device) {
 	}
 }
 
-
 /*
 ===============================================================
 	onMessageArrived

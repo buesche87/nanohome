@@ -13,8 +13,9 @@ DESCRIPTION=$1
 
 # Get json device config from: "nanohome/devices/<description>"
 SUBSCRIBETOPIC="nanohome/devices/${DESCRIPTION}"
+MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 PUBLISHED_CONFIG_JSON=$(
-    mosquitto_sub $MQTT_CONNECTION_STRING $MQTT_RETAINED_ONEMSG -t $SUBSCRIBETOPIC
+    mosquitto_sub ${MQTT_CONNECTION_STRING[@]} $MQTT_RETAINED_ONEMSG -t $SUBSCRIBETOPIC
 )
 
 # Exit if no config found
@@ -140,7 +141,7 @@ upload_status=$(curl --insecure \
     -d "${DASHBOARD_NEW}" \
     -X POST "${GRAFANA_HOST}/api/dashboards/db")
 
-# Check if this was 
+# Check if this was successfull
 if [ "$upload_status" -eq 200 ] || [ "$upload_status" -eq 202 ]; then
     echo -e "${LOG_SUCC} Create panel: Successfully added panel for \"${DESCRIPTION}\"" >> /proc/1/fd/1
     exit 0

@@ -21,7 +21,6 @@ export MQTT_TOPIC_CMDINPUT="nanohome/shell/input"
 export MQTT_TOPIC_CMDOUTPUT="nanohome/shell/output"
 
 # MQTT connection settings
-export MQTT_CONNECTION_STRING="-h $MQTT_SERVER -u $MQTT_USER -P $MQTT_PASSWORD"
 export MQTT_RETAINED_ONEMSG="--retained-only --nodelay --quiet -C 1 -W 1" # Get only one retained message, cancel after 1s if no message found
 
 # InfluxDB settings
@@ -44,6 +43,7 @@ export GRAFANA_PANEL_TEMPLATE_COVER_JSON="${NANOHOME_ROOTPATH}/grafana-templates
 INFLUXDB_ROTOKEN_DESCRIPTION="nanohome grafana ro-token"
 
 # Grafana general settings
+MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 GRAFANA_SERVICE=$(echo "$GRAFANA_HOST" | sed -E 's|^https?://||')
 GRAFANA_SERVICEACCOUNT="nanohome"
 GRAFANA_DATASOURCE_DEVICES="Devices"
@@ -1068,7 +1068,7 @@ fi
 #===============================================================
 # - If connection to mosquitto fails output a warning
 
-mosquitto_sub $MQTT_CONNECTION_STRING --nodelay --quiet -C 1 -W 1 -t "nanohome/startup" 
+mosquitto_sub ${MQTT_CONNECTION_STRING[@]} --nodelay --quiet -C 1 -W 1 -t "nanohome/startup" 
 
 if [[ $? -ne 1 ]]; then
 	echo -e "${LOG_SUCC} Nanohome: Connection to \"${MQTT_SERVER}\" successful" >> /proc/1/fd/1

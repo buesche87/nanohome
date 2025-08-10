@@ -171,4 +171,4 @@ function loadWeatherWidget() {
 */
 
 loadWeatherWidget();
-setInterval(loadWeatherWidget, 600000);
+// setInterval(loadWeatherWidget, 600000);
