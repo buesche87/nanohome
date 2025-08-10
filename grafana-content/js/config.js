@@ -142,6 +142,7 @@ function shellCommand(payload) {
   let tooltipEl = null;
   let showTimeout = null;
   let hideTimeout = null;
+  let autoHideTimer = null;
 
   function createTooltip() {
     tooltipEl = document.createElement('div');
@@ -152,6 +153,7 @@ function shellCommand(payload) {
   function showTooltip(target) {
     if (!tooltipEl) createTooltip();
     clearTimeout(hideTimeout);
+    clearTimeout(autoHideTimer); // alten Timer löschen
     const text = target.getAttribute('data-tooltip');
     if (!text) return;
     tooltipEl.textContent = text;
@@ -164,6 +166,10 @@ function shellCommand(payload) {
     tooltipEl.classList.add('show');
     tooltipEl.style.left = '0px';
     tooltipEl.style.top = '0px';
+
+    // Auto-Hide nach 2 Sekunden
+    autoHideTimer = setTimeout(hideTooltip, 2000);
+
     // kleine Verzögerung, damit Größenbestimmung korrekt ist
     const measured = tooltipEl.getBoundingClientRect();
 
