@@ -13,7 +13,7 @@ MQTT_CONNECTION_STRING=(-h "$MQTT_SERVER" -u "$MQTT_USER" -P "$MQTT_PASSWORD")
 if [[ -n "${DESCRIPTION}" ]]; then
 	# Start a standby manager for a specific device
 	/bin/bash "/nanohome/services/standbymanager" "${DESCRIPTION}" &
-	echo -e "${LOG_SUCC} Standbymanager: Started for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+	echo -e "${LOG_SUCC} Standbymanager: Created for \"${DESCRIPTION}\"" >> /proc/1/fd/1
 else
 	# Start all configured standby manager
 	SUBSCRIBETOPIC="nanohome/standby/+"
@@ -42,7 +42,7 @@ else
 	while read -r CONFIG; do
 		DESCRIPTION=$( jq -r '.description' <<< "${CONFIG}" )
 		/bin/bash "/nanohome/services/standbymanager" "${DESCRIPTION}" &
-		echo -e "${LOG_SUCC} Standbymanager: Started for \"${DESCRIPTION}\"" >> /proc/1/fd/1
+		echo -e "${LOG_INFO} Standbymanager: Started for \"${DESCRIPTION}\"" >> /proc/1/fd/1
 		sleep 1
 	done
 fi

@@ -124,5 +124,5 @@ while read -r TIMER; do
 		[[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Nanohome: Timer for \"${DESCRIPTION}\" - [Off: ${TIMERPERIODTXT} - ${HOUR}:${MINUTE}]" >> /proc/1/fd/1
 	fi
 
-	echo -e "${LOG_SUCC} Create timer: Timer for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
+	echo -e "${LOG_INFO} Create timer: Timer for \"${DESCRIPTION}\" created" >> /proc/1/fd/1
 done
