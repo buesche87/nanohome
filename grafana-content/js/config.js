@@ -161,6 +161,7 @@ function shellCommand(payload) {
     // Position berechnen
     const rect = target.getBoundingClientRect();
     const ttRect = tooltipEl.getBoundingClientRect(); // meist 0x0 vor show
+	
     // Temporär sichtbar machen, um tatsächliche Größe zu messen
     tooltipEl.style.opacity = 0;
     tooltipEl.classList.add('show');

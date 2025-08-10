@@ -32,12 +32,12 @@ function getDeviceStatus(device) {
 	mqttSubscribe(descriptionTopicAllLegacy, fastsubscribe);
 
 	// Stop processing if no device was provided (initial page load)
-	if ( elementHiddenOrMissing(device) ) { return false; }
+	if ( checkEmpty(device) ) { return false; }
 
 	// Wait for the messages to arrive before further processing
 	setTimeout(() => {
 		getDeviceDetails(device)
-	}, fastsubscribe);
+	}, longsubscribe);
 }
 
 // Get device details (onLoad - per device)
