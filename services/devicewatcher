@@ -10,11 +10,6 @@
 #   parse measurement values and write them into Influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Convert string-boolean to 1 or 0
-convert_value() {
-	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
-}
-
 # MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
@@ -33,6 +28,25 @@ MQTT_RETAINED_OPTIONS=(
 
 INFLUXDB_BUCKET_DEVICES="Devices"
 INFLUXDB_BUCKET_MEASUREMENTS="Measurements"
+
+#===============================================================
+# Functions
+#===============================================================
+
+# Convert string-boolean to 1 or 0
+convert_value() {
+	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
+}
+
+publish_payload() {
+	local PAYLOAD=$1
+	local BUCKET=$2
+
+	curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${BUCKET}&precision=s" \
+	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
+	--header "Content-Type: text/plain" \
+	--data-binary "${PAYLOAD}" 
+}
 
 #===============================================================
 # Infinitely subscribe to "+/status/+"
@@ -63,26 +77,18 @@ while read -r COMPONENTSTATUS; do
 	CONNECTEDTOPIC="${DEVICEID}/status/${COMPONENT}/connected"
 
 	CONNECTED=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_RETAINED_OPTIONS[@]}" \
-		-t "${CONNECTEDTOPIC}"
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" "${MQTT_RETAINED_OPTIONS[@]}" -t "${CONNECTEDTOPIC}"
 	)
 
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
 
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
 
-		# Publish connected=false for newly discovered components, this will make them visible on the device manager dashboard
-		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
-
-		# Add device ping to influxdb "Devices" bucket
+		# Create device ping payload
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 
-		curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_DEVICES}&precision=s" \
-		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
-		--header "Content-Type: text/plain" \
-		--data-binary "${DEVICE_PAYLOAD}" 
-
+		# Add device ping to influxdb "Devices" bucket
+		publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
@@ -95,20 +101,16 @@ while read -r COMPONENTSTATUS; do
 	DESCRIPTIONTOPIC="${DEVICEID}/status/${COMPONENT}/description"
 
 	DESCRIPTION=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_RETAINED_OPTIONS[@]}" \
-		-t "${DESCRIPTIONTOPIC}"
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" "${MQTT_RETAINED_OPTIONS[@]}" -t "${DESCRIPTIONTOPIC}"
 	)
 
 	if [[ -z "${DESCRIPTION}" ]]; then
 
-		# Add device ping to influxdb "Devices" bucket
+		# Create device ping payload
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 
-		curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_DEVICES}&precision=s" \
-		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
-		--header "Content-Type: text/plain" \
-		--data-binary "${DEVICE_PAYLOAD}" 
+		# Add device ping to influxdb "Devices" bucket 
+		publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
@@ -144,9 +146,7 @@ while read -r COMPONENTSTATUS; do
 
 	if [[ "${OUTPUTVALUE}" != "null" ]]; then
 		OUTPUTTOPIC="${DEVICEID}/status/${COMPONENT}/output"
-
-		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-			-t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${OUTPUTTOPIC}" -m "${OUTPUTVALUE}"
 	fi
 
 	#===============================================================
@@ -156,10 +156,8 @@ while read -r COMPONENTSTATUS; do
 	# InfluxDB: Write a device ping into the 'Devices' bucket
 	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
-	curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_DEVICES}&precision=s" \
-	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
-	--header "Content-Type: text/plain" \
-	--data-binary "${DEVICE_PAYLOAD}" 
+	# Add device ping to influxdb "Devices" bucket 
+	publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 
@@ -177,12 +175,10 @@ while read -r COMPONENTSTATUS; do
 
 	# InfluxDB: Write measurements into the 'Measurements' bucket
 	if [[ "${MEASUREMENT_PAYLOAD}" != "${DESCRIPTION_ESCAPED} " ]]; then
-		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
 
-		curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_MEASUREMENTS}&precision=s" \
-		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
-		--header "Content-Type: text/plain" \
-		--data-binary "${MEASUREMENT_PAYLOAD}" 
+		# Publish measurement payload		
+		MEASUREMENT_PAYLOAD="${MEASUREMENT_PAYLOAD%,}"
+		publish_payload $MEASUREMENT_PAYLOAD $INFLUXDB_BUCKET_MEASUREMENTS
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher: Measurement saved to \"$INFLUXDB_BUCKET_MEASUREMENTS\" - [${MEASUREMENT_PAYLOAD}]" >> /proc/1/fd/1
 	else

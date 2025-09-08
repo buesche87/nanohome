@@ -8,11 +8,6 @@
 # - Write component infos into influx bucket "Devices"
 #/////////////////////////////////////////////////////////////////////////////////////
 
-# Convert string-boolean to 1 or 0
-convert_value() {
-	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
-}
-
 # MQTT connection string with credentials
 MQTT_CONNECTION_STRING=(
 	-h "${MQTT_SERVER}"
@@ -28,6 +23,25 @@ MQTT_RETAINED_OPTIONS=(
 	-C 1
 	-W 1
 )
+
+#===============================================================
+# Functions
+#===============================================================
+
+# Convert string-boolean to 1 or 0
+convert_value() {
+	[[ "$1" == "true" ]] || [[ "$1" == "on" ]] && echo 1 || echo 0
+}
+
+publish_payload() {
+	local PAYLOAD=$1
+	local BUCKET=$2
+
+	curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${BUCKET}&precision=s" \
+	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
+	--header "Content-Type: text/plain" \
+	--data-binary "${PAYLOAD}" 
+}
 
 #===============================================================
 # Infinitely subscribe to "shellies/+/+/+"
@@ -60,9 +74,7 @@ while read -r DEVICESTATUS; do
 	CONNECTEDTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/connected"
 
 	CONNECTED=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_RETAINED_OPTIONS[@]}" \
-		-t "${CONNECTEDTOPIC}"
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" "${MQTT_RETAINED_OPTIONS[@]}" -t "${CONNECTEDTOPIC}"
 	)
 
 	CONNECTEDVALUE=$( convert_value "${CONNECTED}" )
@@ -70,7 +82,16 @@ while read -r DEVICESTATUS; do
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
 
 		# Publish connected=false for newly discovered components, this will make them visible on the device manager dashboard
-		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
+		# mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
+
+		# Create device ping payload
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
+
+		# Add device ping to influxdb "Devices" bucket
+		publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
+
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		continue
 	fi
 
 	#===============================================================
@@ -80,12 +101,22 @@ while read -r DEVICESTATUS; do
 	DESCRIPTIONTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/description"
 
 	DESCRIPTION=$(
-		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" \
-		"${MQTT_RETAINED_OPTIONS[@]}" \
-		-t "${DESCRIPTIONTOPIC}"
+		mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" "${MQTT_RETAINED_OPTIONS[@]}" -t "${DESCRIPTIONTOPIC}"
 	)
 
 	DESCRIPTION_ESCAPED="${DESCRIPTION// /\\ }"
+
+	if [[ -z "${DESCRIPTION}" ]]; then
+
+		# Create device ping payload
+		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
+
+		# Add device ping to influxdb "Devices" bucket 
+		publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
+
+		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
+		continue
+	fi
 
 	#===============================================================
 	# Publish output value
@@ -93,27 +124,19 @@ while read -r DEVICESTATUS; do
 
 	# This value will be used on the home dashboard
 	OUTPUTVALUE=$( convert_value "${OUTPUT}" )
-
 	OUTPUTTOPIC="shellies/${DEVICEID}/${COMPONENT}/${COMPONENTINDEX}/output"
 
-	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" \
-		-t "${OUTPUTTOPIC}"	-m "${OUTPUTVALUE}"
+	mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${OUTPUTTOPIC}"	-m "${OUTPUTVALUE}"
 
 	#===============================================================
 	# Write measurements into influx buckets
 	#===============================================================
 
 	# InfluxDB: Write a device ping into the 'Devices' bucket
-	if [[ -z "${DESCRIPTION}" ]]; then
-		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
-	else
-		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
-	fi
+	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
-	curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_DEVICES}&precision=s" \
-	--header "Authorization: Token ${INFLUXDB_TOKEN}" \
-	--header "Content-Type: text/plain" \
-	--data-binary "${DEVICE_PAYLOAD}" 
+	# Add device ping to influxdb "Devices" bucket 
+	publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 done
