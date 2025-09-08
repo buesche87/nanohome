@@ -10,7 +10,7 @@ var host = location.hostname;
 var user = "mqtt_grafana"; // will be set from env
 var pwd = "Grafana@MQTT"; // will be set from env
 var port = 1884;
-var useTLS = false;
+var useTLS = (location.protocol === "https:"); // true bei https, false bei http
 var mqtt;
 var reconnectTimeout = 2000;
 var cleansession = true;
