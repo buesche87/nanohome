@@ -146,7 +146,7 @@ button:disabled, button:disabled:hover {
 
 /* expanded style with scrolling and animation from close to open */
 .btnDropdown:hover {
-	height: 200px;
+	height: 190px;
 	width: 50px;
 	margin-top: 11px;
 	overflow-y: scroll;
