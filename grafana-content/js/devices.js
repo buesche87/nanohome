@@ -346,7 +346,9 @@ function setExampleElementDescription(payload) {
 	// Populate button or slider, the one thats visible
 	if ( !elementHiddenOrMissing(htmlElements.exBtnDescription) ) {
 		htmlElements.exBtnDescription.textContent = jsonData.description;
-	} else if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) {
+	}
+	
+	if ( !elementHiddenOrMissing(htmlElements.exSliderDescription) ) {
 		htmlElements.exSliderDescription.textContent = jsonData.description;
 	}
 }
