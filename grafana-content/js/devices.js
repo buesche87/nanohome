@@ -4,21 +4,6 @@
 ===============================================================
 */
 
-// HTML element prefixes
-var statusPrefix = "status_";
-var componentPrefix = "component_";
-var connectedPrefix = "connected_";
-var descriptionPrefix = "description_";
-var exBtnDescriptionPrefix = "exBtnDescription_";
-var exBtnIconFormPrefix = "exButtonForm_";
-var exBtnIconOption = "exButtonImage-select";
-var exSliderPrefix = "exSlider_";
-var exSliderDescriptionPrefix = "exSliderDescription_";
-var saveBtnPrefix = "saveBtn_";
-var clearMeasurementBtnPrefix = "clearMeasurementBtn_";
-var removeComponentBtnPrefix = "removeComponentBtn_";
-var removeDeviceBtnPrefix = "removeDeviceBtn_";
-
 /*
 ===============================================================
 	MQTT Subscribe
@@ -246,7 +231,7 @@ function onMessageArrived(message) {
 
 // Populate component dropdown - [string input]
 function populateComponentElement(device, component) {
-	let componentSelect = document.getElementById(componentPrefix + device);
+	let componentSelect = document.getElementById("component_" + device);
 	let optionExists = false;
 
 	// Stop processing if component element is hidden
@@ -362,7 +347,7 @@ function setExampleElementIcon(payload) {
     if ( elementHiddenOrMissing(htmlElements.exBtnIconForm) )  { return false; }
 
 	// Get available icons
-	let radioButtons = htmlElements.exBtnIconForm.elements[exBtnIconOption];
+	let radioButtons = htmlElements.exBtnIconForm.elements["exButtonImage-select"];
 	
 	// Set icon if available was found
 	for (let i = 0; i < radioButtons.length; i++) {
@@ -412,18 +397,18 @@ function generateComponentConfig(componentDetails) {
 // Get current devices html elements - [string input]
 function getHtmlElements(device) {
 	return {
-		description:			document.getElementById(descriptionPrefix + device),
-		component:				document.getElementById(componentPrefix + device),
-		connected:				document.getElementById(connectedPrefix + device),
-		status:					document.getElementById(statusPrefix + device),
-		exBtnIconForm:			document.getElementById(exBtnIconFormPrefix + device),
-		exBtnDescription:		document.getElementById(exBtnDescriptionPrefix + device),
-		exSlider:				document.getElementById(exSliderPrefix + device),
-		exSliderDescription:	document.getElementById(exSliderDescriptionPrefix + device),
-		saveButton:				document.getElementById(saveBtnPrefix + device),
-		clearMeasurementBtn:	document.getElementById(clearMeasurementBtnPrefix + device),
-		removeComponentBtn:		document.getElementById(removeComponentBtnPrefix + device),
-		removeDeviceBtn:		document.getElementById(removeDeviceBtnPrefix + device)
+		description:			document.getElementById("description_" + device),
+		component:				document.getElementById("component_" + device),
+		connected:				document.getElementById("connected_" + device),
+		status:					document.getElementById("status_" + device),
+		exBtnIconForm:			document.getElementById("exButtonForm_" + device),
+		exBtnDescription:		document.getElementById("exBtnDescription_" + device),
+		exSlider:				document.getElementById("exSlider_" + device),
+		exSliderDescription:	document.getElementById("exSliderDescription_" + device),
+		saveButton:				document.getElementById("saveBtn_" + device),
+		clearMeasurementBtn:	document.getElementById("clearMeasurementBtn_" + device),
+		removeComponentBtn:		document.getElementById("removeComponentBtn_" + device),
+		removeDeviceBtn:		document.getElementById("removeDeviceBtn_" + device)
 	}
 }
 
@@ -438,7 +423,7 @@ function getElementValues(device) {
 
 	// Define icon value
 	if ( !elementHiddenOrMissing(htmlElements.exBtnIconForm) ) {
-		icon = htmlElements.exBtnIconForm.elements[exBtnIconOption].value;
+		icon = htmlElements.exBtnIconForm.elements["exButtonImage-select"].value;
 	} 
 
 	// Define legacy status

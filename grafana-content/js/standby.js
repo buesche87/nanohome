@@ -4,17 +4,6 @@
 ===============================================================
 */
 
-// Json datastore
-var deviceDataAttribute = "deviceData"; // Attribute name
-
-// HTML element prefixes
-var devicePrefix = "standbyDevice_";
-var thresholdPrefix = "standbyThreshold_";
-var delayPrefix = "standbyDelay_";
-var statusPrefix = "standbyStatus_";
-var saveBtnPrefix = "standbySaveBtn_";
-var clearBtnPrefix = "clearStandbyBtn_";
-
 /*
 ===============================================================
 	MQTT Subscribe
@@ -73,7 +62,7 @@ function saveToStore(deviceConfig) {
     if ( elementHiddenOrMissing(dataStore) ) { return false; }
 
 	// Save config to datastore
-	dataStore.setAttribute(deviceDataAttribute, JSON.stringify(deviceConfig));
+	dataStore.setAttribute("deviceData", JSON.stringify(deviceConfig));
 }
 
 // Populate standby settings - [json payload]
@@ -159,7 +148,7 @@ function clearStandby(description) {
 function generateStandbyConfig(description) {
 	let htmlElements = getHtmlElements(description);
 	let dataStore = htmlElements.standbyStatus;
-	let deviceConfig = JSON.parse(dataStore.getAttribute(deviceDataAttribute));
+	let deviceConfig = JSON.parse(dataStore.getAttribute("deviceData"));
 
 	// Set optional delay time to 0 if it was not set
 	if ( checkEmpty(htmlElements.standbyDelay.value) ) { htmlElements.standbyDelay.value = 0; }
@@ -186,12 +175,12 @@ function generateStandbyConfig(description) {
 // Get current devices html elements
 function getHtmlElements(description) {
 	return {
-		standbyDevice:		document.getElementById(devicePrefix + description),
-		standbyStatus:		document.getElementById(statusPrefix + description),
-		standbyThreshold:	document.getElementById(thresholdPrefix + description),
-		standbyDelay:		document.getElementById(delayPrefix + description),
-		saveButton:			document.getElementById(saveBtnPrefix + description),
-		clearButton:		document.getElementById(clearBtnPrefix + description)
+		standbyDevice:		document.getElementById("standbyDevice_" + description),
+		standbyStatus:		document.getElementById("standbyStatus_" + description),
+		standbyThreshold:	document.getElementById("standbyThreshold_" + description),
+		standbyDelay:		document.getElementById("standbyDelay_" + description),
+		saveButton:			document.getElementById("standbySaveBtn_" + description),
+		clearButton:		document.getElementById("clearStandbyBtn_" + description)
 	};
 }
 

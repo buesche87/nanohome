@@ -3,6 +3,7 @@
 	MQTT Functions
 ===============================================================
 */
+
 // Check MQTT Status
 function checkMqttStatus() {
     if(mqttConnected) {

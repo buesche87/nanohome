@@ -1,4 +1,3 @@
-
 /*
 ===============================================================
 	MQTT Options
@@ -21,6 +20,9 @@ var fastsubscribe = 50;
 var normalsubscribe = 100;
 var longsubscribe = 200;
 var mqttConnected = false;
+
+// Timeout in ms to display an output
+var statusOutputTimeout = 5000;
 
 /*
 ===============================================================

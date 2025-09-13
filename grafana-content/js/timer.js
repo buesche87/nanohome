@@ -4,20 +4,6 @@
 ===============================================================
 */
 
-// Json datastore
-var deviceDataAttribute = "deviceData";
-var timerDataAttribute = "timerData";
-
-// HTML element prefixes
-var timerListPrefix = "timerList_"
-var timerEntryPrefix = "details_"
-var timerPeriodPrefix = "timerPeriod_"
-var timerOnPrefix = "timerOn_"
-var timerOffPrefix = "timerOff_"
-var timerStatusPrefix = "timerStatus_"
-var saveBtnPrefix = "timerSaveBtn_"
-var removeBtnPrefix = "timerRemoveBtn_"
-
 /*
 ===============================================================
 	MQTT Subscribe
@@ -45,7 +31,7 @@ function saveTimer(description) {
 
 	// Load timer config from datastore
 	let dataStore = htmlElements.timerStatus;
-	let existingTimerConfig = JSON.parse(dataStore.getAttribute(timerDataAttribute));
+	let existingTimerConfig = JSON.parse(dataStore.getAttribute("timerData"));
 
 	// Calculate an index for a new entry in the json array or create a new array if no config was found
 	let jsonIndex = !elementHiddenOrMissing(existingTimerConfig) ? getJsonIndex(existingTimerConfig) : (existingTimerConfig = [], 1);
@@ -80,7 +66,7 @@ function removeTimer(description) {
 
 	// Load timer json from datastore
 	let dataStore = htmlElements.timerStatus;
-	let existingTimerConfig = JSON.parse(dataStore.getAttribute(timerDataAttribute));
+	let existingTimerConfig = JSON.parse(dataStore.getAttribute("timerData"));
 
 	// Get timer details from selected entry
 	let selectedIndex = htmlElements.timerList.selectedIndex;
@@ -159,10 +145,10 @@ function saveToStore(config, description, store) {
 	// Save config to devices datastore
 	switch(store) {
 		case "devices":
-			dataStore.setAttribute(deviceDataAttribute, JSON.stringify(config));
+			dataStore.setAttribute("deviceData", JSON.stringify(config));
 			break;
 		case "timer":
-			dataStore.setAttribute(timerDataAttribute, JSON.stringify(config));
+			dataStore.setAttribute("timerData", JSON.stringify(config));
 			break;
 	}
 }
@@ -223,7 +209,7 @@ function generateTimerConfig(description, index) {
 
 	// Load config from datastore
 	let dataStore = htmlElements.timerStatus;
-	let deviceConfig = JSON.parse(dataStore.getAttribute(deviceDataAttribute));
+	let deviceConfig = JSON.parse(dataStore.getAttribute("deviceData"));
 
 	// Generate config with provided values
 	let selectedIndex = htmlElements.timerPeriod.selectedIndex;
@@ -252,14 +238,14 @@ function generateTimerConfig(description, index) {
 // Get current devices html elements
 function getHtmlElements(description) {
 	return {
-		timerList:		document.getElementById(timerListPrefix + description),
-		timerEntry:		document.getElementById(timerEntryPrefix + description),
-		timerPeriod:	document.getElementById(timerPeriodPrefix + description),
-		timerOn:		document.getElementById(timerOnPrefix + description),
-		timerOff:		document.getElementById(timerOffPrefix + description),
-		timerStatus:	document.getElementById(timerStatusPrefix + description),
-		saveButton:		document.getElementById(saveBtnPrefix + description),
-		removeButton:	document.getElementById(removeBtnPrefix + description)
+		timerList:		document.getElementById("timerList_" + description),
+		timerEntry:		document.getElementById("details_" + description),
+		timerPeriod:	document.getElementById("timerPeriod_" + description),
+		timerOn:		document.getElementById("timerOn_" + description),
+		timerOff:		document.getElementById("timerOff_" + description),
+		timerStatus:	document.getElementById("timerStatus_" + description),
+		saveButton:		document.getElementById("timerSaveBtn_" + description),
+		removeButton:	document.getElementById("timerRemoveBtn_" + description)
 	};
 }
 
