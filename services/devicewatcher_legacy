@@ -88,7 +88,7 @@ while read -r DEVICESTATUS; do
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 
 		# Add device ping to influxdb "Devices" bucket
-		publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
+		publish_payload "${DEVICE_PAYLOAD}" "${INFLUXDB_BUCKET_DEVICES}"
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
@@ -112,7 +112,7 @@ while read -r DEVICESTATUS; do
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
 
 		# Add device ping to influxdb "Devices" bucket 
-		publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
+		publish_payload "${DEVICE_PAYLOAD}" "${INFLUXDB_BUCKET_DEVICES}"
 
 		[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 		continue
@@ -136,7 +136,7 @@ while read -r DEVICESTATUS; do
 	DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENT},Description=${DESCRIPTION_ESCAPED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE},Output=${OUTPUTVALUE}"
 
 	# Add device ping to influxdb "Devices" bucket 
-	publish_payload $DEVICE_PAYLOAD $INFLUXDB_BUCKET_DEVICES
+	publish_payload "${DEVICE_PAYLOAD}" "${INFLUXDB_BUCKET_DEVICES}"
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_INFO} Devicewatcher Legacy: Device ping saved to \"$INFLUXDB_BUCKET_DEVICES\" - [${DEVICE_PAYLOAD}]" >> /proc/1/fd/1
 done
