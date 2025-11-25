@@ -138,7 +138,7 @@ function shellCommand(payload) {
 	Tooltip
 ===============================================================
 */
-
+/*
 var autohidetimerms = 2000; // auto hide after 2 seconds
 
 (function () {
@@ -277,3 +277,4 @@ var autohidetimerms = 2000; // auto hide after 2 seconds
 		}, {passive: true});
 	});
 })();
+*/
