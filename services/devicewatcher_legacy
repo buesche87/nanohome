@@ -82,7 +82,7 @@ while read -r DEVICESTATUS; do
 	if [[ $CONNECTEDVALUE -eq 0 ]]; then
 
 		# Publish connected=false for newly discovered components, this will make them visible on the device manager dashboard
-		# mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
+		mosquitto_pub -r "${MQTT_CONNECTION_STRING[@]}" -t "${CONNECTEDTOPIC}" -m "false"
 
 		# Create device ping payload
 		DEVICE_PAYLOAD="${DEVICEID},Component=${COMPONENTMERGED} Online=${ONLINEVALUE},Connected=${CONNECTEDVALUE}"
