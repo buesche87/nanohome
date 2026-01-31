@@ -95,6 +95,17 @@ update_state() {
 [[ $LOG_DEBUG ]] && echo -e "${LOG_INFO} Standbymanager: Subscribing to \"${STATUSTOPIC}\"" >> /proc/1/fd/1
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${STATUSTOPIC}" |
+awk '
+{
+	buf = $0
+	now = systime()
+	if (now != last) {
+		if (last != 0) print buf_last
+		last = now
+	}
+	buf_last = buf
+}
+' |
 while read -r CURRENTPOWER; do
 
 	# Extract current power from json formatted message
