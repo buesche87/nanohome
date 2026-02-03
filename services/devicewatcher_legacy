@@ -48,17 +48,6 @@ publish_payload() {
 #===============================================================
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "shellies/+/+/+" | 
-awk '
-{
-	buf = $0
-	now = systime()
-	if (now != last) {
-		if (last != 0) print buf_last
-		last = now
-	}
-	buf_last = buf
-}
-' |
 while read -r DEVICESTATUS; do
 
 	# Extract payload and topic from json formatted message

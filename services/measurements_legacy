@@ -36,25 +36,13 @@ start_measurement() {
 	local topic=$3
 
 	mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" -t "${topic}" |
-	awk '
-	{
-		buf = $0
-		now = systime()
-		if (now != last) {
-			if (last != 0) print buf_last
-			last = now
-		}
-		buf_last = buf
-	}
-	' |
 	while read -r value; do
-		MEASUREMENT_PAYLOAD="${description} ${measurement}=${value}"
+		MEASUREMENT_PAYLOAD="${description} ${measurement}=$value"
 
-		curl -s --request POST \
-			"${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_MEASUREMENTS}&precision=s" \
-			--header "Authorization: Token ${INFLUXDB_TOKEN}" \
-			--header "Content-Type: text/plain" \
-			--data-binary "${MEASUREMENT_PAYLOAD}"
+		curl -s --request POST "${INFLUXDB_HOST}/api/v2/write?org=${INFLUXDB_ORG}&bucket=${INFLUXDB_BUCKET_MEASUREMENTS}&precision=s" \
+		--header "Authorization: Token ${INFLUXDB_TOKEN}" \
+		--header "Content-Type: text/plain" \
+		--data-binary "${MEASUREMENT_PAYLOAD}"
 	done &
 
 	[[ $LOG_SERVICES ]] && echo -e "${LOG_SUCC} Devwatcher Legacy: Measurement started - [${topic}]" >> /proc/1/fd/1

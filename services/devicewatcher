@@ -6,7 +6,7 @@
 # - Subscribe to the status topic of all devices
 # - Filter not monitored components from messages
 # - Write device status in Influx "Devices" bucket
-# - For connected devices with valid description
+# - For connected devices with valid deription
 #   parse measurement values and write them into Influx bucket "Measurements"
 #/////////////////////////////////////////////////////////////////////////////////////
 
@@ -53,17 +53,6 @@ publish_payload() {
 #===============================================================
 
 mosquitto_sub "${MQTT_CONNECTION_STRING[@]}" --nodelay --quiet -F "%j" -t "+/status/+" |
-awk '
-{
-	buf = $0
-	now = systime()
-	if (now != last) {
-		if (last != 0) print buf_last
-		last = now
-	}
-	buf_last = buf
-}
-' |
 while read -r COMPONENTSTATUS; do
 
 	# Extract payload and topic from json formatted message
