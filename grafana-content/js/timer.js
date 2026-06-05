@@ -169,7 +169,7 @@ function populateTimerList(timerConfig, description) {
 
 		// Set display text of entry
 		option.textContent = entry.timerPeriodText;
-		option.textContent += entry.timerOn ? " - On: " + entry.timerOn : "";
+		option.textContent += entry.timerOn ? " - On:  " + entry.timerOn : "";
 		option.textContent += entry.timerOff ? " - Off: " + entry.timerOff : "";
 
 		// Set json config as value

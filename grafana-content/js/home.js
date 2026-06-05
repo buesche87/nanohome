@@ -176,4 +176,10 @@ document.querySelectorAll('.btnHome').forEach(btn => {
       event.currentTarget.classList.add('statusgreen');
     })
   );
+
+  ['mouseup', 'touchend', 'mouseleave'].forEach(e =>
+    btn.addEventListener(e, (event) => {
+      event.currentTarget.classList.remove('statusgreen');
+    })
+  );
 });
