@@ -168,4 +168,12 @@ function loadWeatherWidget() {
 */
 
 loadWeatherWidget();
-// setInterval(loadWeatherWidget, 600000);
+
+// if a button is touched, change its color to green (kids 🚬)
+document.querySelectorAll('.btnHome').forEach(btn => {
+  ['mousedown', 'touchstart'].forEach(e =>
+    btn.addEventListener(e, (event) => {
+      event.currentTarget.classList.add('statusgreen');
+    })
+  );
+});
