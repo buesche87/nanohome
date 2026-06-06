@@ -177,7 +177,7 @@ document.querySelectorAll('.btnHome').forEach(btn => {
     })
   );
 
-  ['mouseup', 'touchend', 'mouseleave'].forEach(e =>
+  ['mouseup', 'touchend'].forEach(e =>
     btn.addEventListener(e, (event) => {
       event.currentTarget.classList.remove('statusgreen');
     })
